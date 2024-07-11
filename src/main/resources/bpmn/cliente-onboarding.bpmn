@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" id="Definitions_1gdliox" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.16.0">
+  <bpmn:process id="cliente-onboarding" name="Cliente Onboarding (Simple)" isExecutable="true">
+    <bpmn:extensionElements>
+      <zeebe:userTaskForm id="userTaskForm_1uf9j0b">{
+  "components": [
+    {
+      "label": "Some Input ",
+      "type": "textfield",
+      "id": "Field_1b2m8b7",
+      "key": "someInput",
+      "description": "Typically useful details about the application :-)",
+      "disabled": true
+    },
+    {
+      "label": "Cliente Score",
+      "type": "textfield",
+      "id": "Field_1fkt9v4",
+      "key": "score",
+      "disabled": true,
+      "description": "Score derrived for this cliente from out great scoring service"
+    },
+    {
+      "label": "Automatic Processing?",
+      "type": "checkbox",
+      "id": "Field_1n7851c",
+      "key": "automaticProcessing",
+      "description": "Can this application be processed automatically without further manual interaction?"
+    }
+  ],
+  "type": "default",
+  "id": "Form_0w8g0i0",
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.0.0",
+  "exporter": {
+    "name": "Camunda Modeler",
+    "version": "5.2.0"
+  },
+  "schemaVersion": 4
+}</zeebe:userTaskForm>
+    </bpmn:extensionElements>
+    <bpmn:startEvent id="StartEventClienteOnboardingSimple" name="Cliente order received">
+      <bpmn:extensionElements>
+        <zeebe:properties>
+          <zeebe:property name="camundaModeler:exampleOutputJson" value="{&#10;  &#34;clienteName&#34;: &#34;bernd&#34;,&#10; &#34;clienteEmail&#34;: &#34;noreply@camunda.com&#34;&#10;}" />
+        </zeebe:properties>
+      </bpmn:extensionElements>
+      <bpmn:outgoing>Flow_015dit6</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="TaskScoreCliente" name="Score cliente">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="scoreCliente" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_015dit6</bpmn:incoming>
+      <bpmn:outgoing>Flow_0cxim98</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="GatewayOrderAccepted" name="Order accepted?">
+      <bpmn:incoming>Flow_182g5kj</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlowOrderAcceptedNo</bpmn:outgoing>
+      <bpmn:outgoing>SequenceFlowOrderAcceptedYes</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="EndEventRejected" name="Cliente order rejected">
+      <bpmn:incoming>SequenceFlowOrderAcceptedNo</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="SequenceFlowOrderAcceptedNo" name="No" sourceRef="GatewayOrderAccepted" targetRef="EndEventRejected">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=(automaticProcessing = false)</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="SequenceFlowOrderAcceptedYes" name="Yes" sourceRef="GatewayOrderAccepted" targetRef="TaskCreateClienteInCrm">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=( automaticProcessing=true )</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:endEvent id="EndEventProcessed" name="Cliente order processed">
+      <bpmn:incoming>Flow_0y7x6do</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_0y7x6do" sourceRef="TaskCreateClienteInCrm" targetRef="EndEventProcessed" />
+    <bpmn:serviceTask id="TaskCreateClienteInCrm" name="Create&#10;cliente order in CRM system">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="addClienteToCrm" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlowOrderAcceptedYes</bpmn:incoming>
+      <bpmn:outgoing>Flow_0y7x6do</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="TaskApproveClienteOrder" name="Approve cliente order">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="userTask" />
+        <zeebe:formDefinition formKey="camunda-forms:bpmn:userTaskForm_1uf9j0b" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0cxim98</bpmn:incoming>
+      <bpmn:outgoing>Flow_182g5kj</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_015dit6" sourceRef="StartEventClienteOnboardingSimple" targetRef="TaskScoreCliente" />
+    <bpmn:sequenceFlow id="Flow_0cxim98" sourceRef="TaskScoreCliente" targetRef="TaskApproveClienteOrder" />
+    <bpmn:sequenceFlow id="Flow_182g5kj" sourceRef="TaskApproveClienteOrder" targetRef="GatewayOrderAccepted" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="cliente-onboarding">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEventClienteOnboardingSimple">
+        <dc:Bounds x="172" y="109" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="152" y="152" width="78" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1raexvc_di" bpmnElement="TaskScoreCliente">
+        <dc:Bounds x="290" y="87" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_19ecd5n_di" bpmnElement="GatewayOrderAccepted" isMarkerVisible="true">
+        <dc:Bounds x="605" y="102" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="589" y="78" width="83" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0x3ownm_di" bpmnElement="EndEventRejected">
+        <dc:Bounds x="612" y="222" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="592" y="265" width="78" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_16rs01c_di" bpmnElement="TaskCreateClienteInCrm">
+        <dc:Bounds x="720" y="87" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1mqrzkh_di" bpmnElement="TaskApproveClienteOrder">
+        <dc:Bounds x="440" y="87" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_11d1rd0_di" bpmnElement="EndEventProcessed">
+        <dc:Bounds x="912" y="109" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="892" y="152" width="78" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0zlu1eg_di" bpmnElement="SequenceFlowOrderAcceptedNo">
+        <di:waypoint x="630" y="152" />
+        <di:waypoint x="630" y="222" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="638" y="184" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0amyhlw_di" bpmnElement="SequenceFlowOrderAcceptedYes">
+        <di:waypoint x="655" y="127" />
+        <di:waypoint x="720" y="127" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="679" y="109" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0y7x6do_di" bpmnElement="Flow_0y7x6do">
+        <di:waypoint x="820" y="127" />
+        <di:waypoint x="912" y="127" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_015dit6_di" bpmnElement="Flow_015dit6">
+        <di:waypoint x="208" y="127" />
+        <di:waypoint x="290" y="127" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0cxim98_di" bpmnElement="Flow_0cxim98">
+        <di:waypoint x="390" y="127" />
+        <di:waypoint x="440" y="127" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_182g5kj_di" bpmnElement="Flow_182g5kj">
+        <di:waypoint x="540" y="127" />
+        <di:waypoint x="605" y="127" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

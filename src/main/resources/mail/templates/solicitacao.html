@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Nova Solicitação de Aprovação de Perfil</title>
+</head>
+<body>
+<h1>Nova Solicitação de Aprovação de Perfil</h1>
+<p>Olá,</p>
+<p>Você recebeu uma nova solicitação de aprovação de perfil.</p>
+<p>Detalhes da solicitação:</p>
+<ul>
+    <li><strong>Nome do usuário:</strong> <span th:text="${solicitante.username}"></span></li>
+    <li><strong>Perfil:</strong> <span th:text="${perfil}"></span></li>
+</ul>
+<p>Por favor, <a th:href="${link.address}" th:placeholder="${link.hint}" target="_blank">acesse o sistema</a> para aprovar ou rejeitar a solicitação.</p>
+<p>Obrigado,</p>
+<p>Sua Equipe</p>
+</body>
+</html>

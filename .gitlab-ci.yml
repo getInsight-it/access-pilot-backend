@@ -1,0 +1,52 @@
+stages:
+  - build
+  - package
+  - deploy
+
+build:
+  stage: build
+  tags:
+    - docker
+  image: registry.gitlab.com/getinsight.it/arquitetura/docker-base-images/builder/builder-java:21
+  before_script:
+    - curl -fsSL "https://gitlab.com/api/v4/projects/33054505/repository/files/maven-settings.xml/raw?ref=main&private_token=$GITLAB_API_TOKEN"  --output maven-settings.xml
+  script:
+    - mvn clean package -T $(nproc) -Dmaven.artifact.threads=$(nproc) -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -s maven-settings.xml
+  cache:
+    when: on_success
+    paths:
+      - $CI_PROJECT_DIR/.m2/repository
+  artifacts:
+    when: on_success
+    paths:
+      - target/
+
+package:
+  stage: package
+  tags:
+    - docker
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - docker info
+    - docker login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY
+  script:
+    - docker build --no-cache --pull -t ${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID} .
+    - docker push ${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}
+
+deploy:
+  stage: deploy
+  tags:
+    - docker
+  image: registry.gitlab.com/getinsight.it/arquitetura/docker-base-images/builder/builder-java:21
+  before_script:
+    - curl -fsSL "https://gitlab.com/api/v4/projects/33054505/repository/files/maven-settings.xml/raw?ref=main&private_token=$GITLAB_API_TOKEN" --output maven-settings.xml
+  script:
+    - mvn archetype:create-from-project -T $(nproc) -Dmaven.artifact.threads=$(nproc) -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -s maven-settings.xml
+    - cd target/generated-sources/archetype
+    - mvn deploy -T $(nproc) -Dmaven.artifact.threads=$(nproc) -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -s $CI_PROJECT_DIR/maven-settings.xml
+  cache:
+    when: on_success
+    paths:
+      - $CI_PROJECT_DIR/.m2/repository

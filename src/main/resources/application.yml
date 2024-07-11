@@ -1,0 +1,186 @@
+app:
+  name: @project.artifactId@
+  version: @project.version@
+
+server:
+  port: 8080
+  compression:
+    enabled: true
+  forward-headers-strategy: framework
+  shutdown: graceful
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: true
+    encoding:
+      enabled: true
+      charset: UTF-8
+  undertow:
+    url-charset: UTF-8
+
+zeebe:
+  client:
+    broker:
+      gateway-address: localhost:26500
+    security:
+      plaintext: true
+
+jwt:
+  auth:
+    converter:
+      resource-id: app-backend-number-one
+      principal-attribute: preferred_username
+
+spring:
+  application:
+    name: ${app.name:backend-accesspilot}
+
+  main:
+    lazy-initialization: true
+    allow-bean-definition-overriding: true
+    cloud-platform: kubernetes
+
+  docker:
+    compose:
+      enabled: true
+      lifecycle-management: start_and_stop
+      file: ./etc/docker-compose.yaml
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9080/realms/accesspilot
+          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
+        opaquetoken:
+          client-id: ${jwt.auth.converter.resource-id}
+          client-secret: ANCgAlx8rvqXrWkosEMIdvmjEFspi9L0
+          introspection-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/token/introspect
+      client:
+        provider:
+          keycloak:
+            issuer-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}
+            jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}
+        registration:
+          registration-keycloak:
+            provider: keycloak
+            client-id: ${jwt.auth.converter.resource-id}
+            client-secret: ANCgAlx8rvqXrWkosEMIdvmjEFspi9L0
+            authorization-grant-type: client_credentials
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 100MB
+
+  jackson:
+    default-property-inclusion: non-empty
+    deserialization:
+      fail-on-unknown-properties: false
+    locale: pt_BR
+    time-zone: America/Sao_Paulo
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: postgres
+    hikari:
+      auto-commit: false
+      connection-init-sql: SELECT 1;
+      connection-test-query: SELECT 1;
+      minimum-idle: 0
+      maximum-pool-size: 10
+      connection-timeout: 30000
+      idle-timeout: 60000
+      leakDetectionThreshold: 10000
+      isolate-internal-queries: true
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    generate-ddl: true
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        use_sql_comments: true
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/master.xml
+    url: ${spring.datasource.url}
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+
+  mail:
+    protocol: ${MAIL_PROTOCOL:smtp}
+    port: ${MAIL_PORT:1025}
+    host: ${MAIL_HOST:localhost}
+    properties:
+      mail:
+        from: ${MAIL_FROM:no-reply@localhost}
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+    test-connection: true
+
+
+sentry:
+  dsn: https://bad955d8e5204ba2b802d4b0feb75d15@o4504299478188032.ingest.sentry.io/4505352505917440
+  traces-sample-rate: 1.0
+  enable-uncaught-exception-handler: true
+
+springdoc:
+  swagger-ui:
+    enabled: true
+    default-model-expand-depth: 0
+    doc-expansion: none
+    disable-swagger-default-url: true
+    display-request-duration: true
+    oauth:
+      client-id: ${jwt.auth.converter.resource-id}
+      client-secret: ${spring.security.oauth2.resourceserver.opaquetoken.client-secret}
+      realm: getInsight
+      scopes:
+        - openid
+    csrf:
+      enabled: false
+    show-extensions: true
+    show-common-extensions: true
+    syntax-highlight:
+      theme: monokai
+  show-actuator: false
+  writer-with-default-pretty-printer: true
+  api-docs:
+    groups:
+      enabled: true
+    resolve-schema-properties: true
+    enabled: true
+  paths-to-exclude:
+    - /error
+
+management:
+  endpoint:
+    mappings:
+      enabled: true
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  info:
+    git:
+      mode: full
+
+logging:
+  level:
+    root: info
