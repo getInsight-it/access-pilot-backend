@@ -1,0 +1,7 @@
+SELECT ID,
+       ID_ROLE_EXTERNO,
+       NOME,
+       DESCRICAO,
+       ID_ROLE_PARENT,
+       ID_CLIENTE
+FROM TB_ROLE

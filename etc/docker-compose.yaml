@@ -1,0 +1,170 @@
+name: getinsight
+services:
+  postgres:
+    container_name: getInsight_PostgreSQL
+    image: postgres:16-alpine
+    hostname: postgres
+    restart: unless-stopped
+    healthcheck:
+      test: pg_isready -U postgres -d postgres
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    volumes:
+      - type: volume
+        source: postgres
+        target: /var/lib/postgresql/data
+      - type: bind
+        source: ./.initdb
+        target: /docker-entrypoint-initdb.d
+        read_only: true
+        consistency: consistent
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+
+  rabbitmq:
+    container_name: getInsight_RabbitMQ
+    image: rabbitmq:management-alpine
+    hostname: rabbitmq
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: rabbitmq
+        target: /var/lib/rabbitmq
+      - type: bind
+        source: ./rabbitmq/enabled_plugins
+        target: /etc/rabbitmq/enabled_plugins
+        read_only: false
+        consistency: consistent
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  redis:
+    container_name: getInsight_Redis
+    image: redis:alpine
+    hostname: redis
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: redis
+        target: /data
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: getInsight_MinIO
+    hostname: minio
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: minio
+        target: /data
+    environment:
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=abc12345
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+
+  mongo:
+    container_name: getInsight_MongoDB
+    image: mongo:latest
+    restart: unless-stopped
+    hostname: mongodb
+    volumes:
+        - type: volume
+          source: mongo
+          target: /data/db
+        - type: volume
+          source: mongo_cfg
+          target: /data/configdb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=123456
+    ports:
+      - "27017:27017"
+
+  mailhog:
+    container_name: getInsight_Mailhog
+    image: minidocks/mailhog:latest
+    hostname: mailhog
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: mailhog
+        target: /maildir
+    environment:
+      - MH_HOSTNAME=mailhog
+      - MH_STORAGE=maildir
+      - MH_MAILDIR_PATH=/maildir
+    ports:
+      - "1025:25"
+      - "7025:80"
+
+  keycloak:
+    container_name: getInsight_Keycloak
+    image: quay.io/keycloak/keycloak:24.0
+    hostname: keycloak
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+    volumes:
+      - type: bind
+        source: ./realm-export.json
+        target: /opt/keycloak/data/import/realm-export.json
+        read_only: true
+        consistency: consistent
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+    healthcheck:
+      test: curl --head -fsS http://localhost:8080/health/ready
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: 123456
+      KC_HTTP_HOST: 0.0.0.0
+      KC_HEALTH_ENABLED: true
+      KC_METRICS_ENABLED: false
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      KC_DB_POOL_MIN_SIZE: 0
+      KC_DB_POOL_MAX_SIZE: 10
+      KC_DB_POOL_INITIAL_SIZE: 1
+      KC_LOG_CONSOLE_COLOR: true
+      KC_LOG_LEVEL: INFO
+      KC_CACHE: local
+    command:
+      - "start-dev"
+      - "--import-realm"
+    ports:
+      - "7080:8080"
+
+volumes:
+  postgres:
+  rabbitmq:
+  redis:
+  minio:
+  mongo:
+  mongo_cfg:
+  mailhog:

@@ -1,0 +1,7 @@
+SELECT ID,
+       USERNAME,
+       NOME,
+       SOBRENOME,
+       EMAIL,
+       ID_USUARIO_EXTERNO
+FROM TB_USUARIO
