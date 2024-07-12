@@ -60,7 +60,8 @@ public class SolicitacaoProcess {
 
     @JobWorker(type = "task-notification-to-user")
     public void handleSendNotificationToUser(JobClient client, ActivatedJob job) {
-
+        var id = ((Number) job.getVariablesAsMap().get("id")).longValue();
+        solicitacaoService.sendNotificationToUser(id);
     }
 
 

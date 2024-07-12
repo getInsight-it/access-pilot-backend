@@ -89,7 +89,7 @@ public class RoleService {
             var roles = keycloakClient.getRolesByClientUUID(client.getId());
             var clienteEntity = clienteRepository.findByClientId(client.getClientId()).orElseThrow(() -> new ResourceNotFoundException("Client não encontrado"));
             for (RoleRepresentationDTO role : roles) {
-                    var entity = roleRepository.findByNome(role.getName()).orElseGet(() -> {
+                    var entity = roleRepository.findByNomeAndCliente(role.getName(), clienteEntity).orElseGet(() -> {
                     var newEntity = new RoleEntity();
                     newEntity.setNome(role.getName());
                     newEntity.setCliente(clienteEntity);

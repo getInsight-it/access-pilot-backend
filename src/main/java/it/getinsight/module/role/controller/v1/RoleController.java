@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
-import it.getinsight.module.email.service.EmailService;
 import it.getinsight.module.role.dto.RoleDTO;
 import it.getinsight.module.role.service.RoleService;
 import it.getinsight.module.usuario.dto.UsuarioDTO;
@@ -29,7 +28,6 @@ import java.util.List;
 public class RoleController {
 
     private final RoleService roleService;
-    private final EmailService emailService;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
@@ -119,16 +117,10 @@ public class RoleController {
     }
 
 
-    @PostMapping("/sincronizar")
-    @Operation(summary = "Sincronizar roles com IDP", description = "Sincronizar roles com IDP")
-    public ResponseEntity<Void> sincronizarRoles() {
+    @PostMapping("/synchronize")
+    @Operation(summary = "synchronize roles com IDP", description = "synchronize roles com IDP")
+    public ResponseEntity<Void> synchronizeRoles() {
         roleService.synchronizationRoles();
-        return ResponseEntity.noContent().build();
-    }
-
-    @PostMapping("/send")
-    @Operation(summary = "Sincronizar roles com IDP", description = "Sincronizar roles com IDP")
-    public ResponseEntity<Void> sincronizarRoles2() {
         return ResponseEntity.noContent().build();
     }
 

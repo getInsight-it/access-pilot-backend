@@ -33,7 +33,7 @@
       <bpmn:incoming>Flow_15rolp5</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="Flow_1jnoux6" sourceRef="StartEvent_1" targetRef="Activity_0jevk6b" />
-    <bpmn:sequenceFlow id="Flow_15hhr58" sourceRef="Activity_19qhwwh" targetRef="TaskDefineStatusSolicitacao" />
+    <bpmn:sequenceFlow id="Flow_15hhr58" sourceRef="Activity_19qhwwh" targetRef="Activity_0ywbeu6" />
     <bpmn:sequenceFlow id="Flow_1ow8kqh" sourceRef="Activity_0jevk6b" targetRef="Activity_19qhwwh" />
     <bpmn:sequenceFlow id="Flow_0e1smyx" sourceRef="Activity_149ppnd" targetRef="Activity_0v95dv7" />
     <bpmn:sequenceFlow id="Flow_051hgpg" name="Sim" sourceRef="Gateway_04gqyld" targetRef="Activity_1jayg83">
@@ -47,36 +47,8 @@
       <bpmn:outgoing>Flow_051hgpg</bpmn:outgoing>
       <bpmn:outgoing>Flow_029bvrk</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:sequenceFlow id="Flow_1hg20re" sourceRef="Activity_0ywbeu6" targetRef="Event_078ev13" />
+    <bpmn:sequenceFlow id="Flow_1hg20re" sourceRef="Activity_0ywbeu6" targetRef="Activity_1e0mb0m" />
     <bpmn:sequenceFlow id="Flow_0af1c4e" sourceRef="Event_078ev13" targetRef="Gateway_04gqyld" />
-    <bpmn:intermediateCatchEvent id="Event_078ev13">
-      <bpmn:incoming>Flow_1hg20re</bpmn:incoming>
-      <bpmn:outgoing>Flow_0af1c4e</bpmn:outgoing>
-      <bpmn:messageEventDefinition id="MessageEventDefinition_0jtmk4q" messageRef="Message_10h382h" />
-    </bpmn:intermediateCatchEvent>
-    <bpmn:sequenceFlow id="Flow_1ldpsrs" sourceRef="Activity_09u7ic2" targetRef="Activity_0ywbeu6" />
-    <bpmn:sequenceFlow id="Flow_1hrea6l" sourceRef="TaskDefineStatusSolicitacao" targetRef="Activity_09u7ic2" />
-    <bpmn:sendTask id="Activity_0ywbeu6" name="Envia notificação de aprovação em sistema externo">
-      <bpmn:extensionElements>
-        <zeebe:taskDefinition type="task-send-approves" />
-      </bpmn:extensionElements>
-      <bpmn:incoming>Flow_1ldpsrs</bpmn:incoming>
-      <bpmn:outgoing>Flow_1hg20re</bpmn:outgoing>
-    </bpmn:sendTask>
-    <bpmn:serviceTask id="Activity_09u7ic2" name="Salva novo status da solicitação">
-      <bpmn:extensionElements>
-        <zeebe:taskDefinition type="task-save-status" retries="5" />
-      </bpmn:extensionElements>
-      <bpmn:incoming>Flow_1hrea6l</bpmn:incoming>
-      <bpmn:outgoing>Flow_1ldpsrs</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:scriptTask id="TaskDefineStatusSolicitacao" name="Define status de solicitação&#10;&#10;[AGUARDANDO]">
-      <bpmn:extensionElements>
-        <zeebe:script expression="=&#34;WAINING_FOR_ROLES_CONFIRMATION&#34;" resultVariable="status" />
-      </bpmn:extensionElements>
-      <bpmn:incoming>Flow_15hhr58</bpmn:incoming>
-      <bpmn:outgoing>Flow_1hrea6l</bpmn:outgoing>
-    </bpmn:scriptTask>
     <bpmn:endEvent id="Event_0zpnzsl" name="Fim">
       <bpmn:incoming>Flow_022sb3b</bpmn:incoming>
     </bpmn:endEvent>
@@ -120,6 +92,34 @@
       <bpmn:outgoing>Flow_022sb3b</bpmn:outgoing>
     </bpmn:sendTask>
     <bpmn:sequenceFlow id="Flow_022sb3b" sourceRef="Activity_0v95dv7" targetRef="Event_0zpnzsl" />
+    <bpmn:sequenceFlow id="Flow_1hwgv2e" sourceRef="Activity_1e0mb0m" targetRef="Activity_09bdfbv" />
+    <bpmn:intermediateCatchEvent id="Event_078ev13">
+      <bpmn:incoming>Flow_1x0gqwp</bpmn:incoming>
+      <bpmn:outgoing>Flow_0af1c4e</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_0jtmk4q" messageRef="Message_10h382h" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:serviceTask id="Activity_09bdfbv" name="Salva novo status da solicitação">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="task-save-status" retries="5" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1hwgv2e</bpmn:incoming>
+      <bpmn:outgoing>Flow_1x0gqwp</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_1x0gqwp" sourceRef="Activity_09bdfbv" targetRef="Event_078ev13" />
+    <bpmn:sendTask id="Activity_0ywbeu6" name="Envia notificação de aprovação em sistema externo">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="task-send-approves" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_15hhr58</bpmn:incoming>
+      <bpmn:outgoing>Flow_1hg20re</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:scriptTask id="Activity_1e0mb0m" name="Define status de solicitação&#10;&#10;[AGUARDANDO APROVACAO]">
+      <bpmn:extensionElements>
+        <zeebe:script expression="=&#34;WAINING_FOR_ROLES_CONFIRMATION&#34;" resultVariable="status" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1hg20re</bpmn:incoming>
+      <bpmn:outgoing>Flow_1hwgv2e</bpmn:outgoing>
+    </bpmn:scriptTask>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_15r65m9">
@@ -153,21 +153,6 @@
           <dc:Bounds x="996" y="472" width="89" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_01k9ur0_di" bpmnElement="Event_078ev13">
-        <dc:Bounds x="832" y="482" width="36" height="36" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_07jv6xq_di" bpmnElement="Activity_0ywbeu6">
-        <dc:Bounds x="800" y="330" width="100" height="80" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="BPMNShape_1bwivrq" bpmnElement="Activity_09u7ic2">
-        <dc:Bounds x="800" y="150" width="100" height="80" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_0vhze7d_di" bpmnElement="TaskDefineStatusSolicitacao">
-        <dc:Bounds x="570" y="150" width="100" height="80" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0zpnzsl_di" bpmnElement="Event_0zpnzsl">
         <dc:Bounds x="1942" y="252" width="36" height="36" />
         <bpmndi:BPMNLabel>
@@ -190,6 +175,21 @@
         <dc:Bounds x="1706" y="370" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_01k9ur0_di" bpmnElement="Event_078ev13">
+        <dc:Bounds x="1112" y="632" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_19w5sxs" bpmnElement="Activity_09bdfbv">
+        <dc:Bounds x="880" y="610" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_07jv6xq_di" bpmnElement="Activity_0ywbeu6">
+        <dc:Bounds x="600" y="170" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_0yvv3sw" bpmnElement="Activity_1e0mb0m">
+        <dc:Bounds x="880" y="170" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_1jnoux6_di" bpmnElement="Flow_1jnoux6">
         <di:waypoint x="260" y="492" />
         <di:waypoint x="260" y="250" />
@@ -197,8 +197,8 @@
       <bpmndi:BPMNEdge id="Flow_15hhr58_di" bpmnElement="Flow_15hhr58">
         <di:waypoint x="430" y="250" />
         <di:waypoint x="430" y="500" />
-        <di:waypoint x="620" y="500" />
-        <di:waypoint x="620" y="230" />
+        <di:waypoint x="650" y="500" />
+        <di:waypoint x="650" y="250" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1ow8kqh_di" bpmnElement="Flow_1ow8kqh">
         <di:waypoint x="310" y="210" />
@@ -229,22 +229,12 @@
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1hg20re_di" bpmnElement="Flow_1hg20re">
-        <di:waypoint x="850" y="410" />
-        <di:waypoint x="850" y="482" />
+        <di:waypoint x="700" y="210" />
+        <di:waypoint x="880" y="210" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0af1c4e_di" bpmnElement="Flow_0af1c4e">
-        <di:waypoint x="868" y="500" />
-        <di:waypoint x="987" y="500" />
-        <di:waypoint x="987" y="510" />
-        <di:waypoint x="1105" y="510" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1ldpsrs_di" bpmnElement="Flow_1ldpsrs">
-        <di:waypoint x="850" y="230" />
-        <di:waypoint x="850" y="330" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1hrea6l_di" bpmnElement="Flow_1hrea6l">
-        <di:waypoint x="670" y="190" />
-        <di:waypoint x="800" y="190" />
+        <di:waypoint x="1130" y="632" />
+        <di:waypoint x="1130" y="535" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_15rolp5_di" bpmnElement="Flow_15rolp5">
         <di:waypoint x="1180" y="210" />
@@ -258,6 +248,14 @@
         <di:waypoint x="1756" y="370" />
         <di:waypoint x="1756" y="270" />
         <di:waypoint x="1942" y="270" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1hwgv2e_di" bpmnElement="Flow_1hwgv2e">
+        <di:waypoint x="930" y="250" />
+        <di:waypoint x="930" y="610" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1x0gqwp_di" bpmnElement="Flow_1x0gqwp">
+        <di:waypoint x="980" y="650" />
+        <di:waypoint x="1112" y="650" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

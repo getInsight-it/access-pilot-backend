@@ -7,6 +7,9 @@ import it.getinsight.client.KeycloakClient;
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.exception.BusinessException;
 import it.getinsight.core.exception.ResourceNotFoundException;
+import it.getinsight.core.helper.PaginationHelper;
+import it.getinsight.core.pagination.PageableRequestModel;
+import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.email.dto.EmailDTO;
 import it.getinsight.module.email.service.EmailService;
 import it.getinsight.module.erro.service.ErroService;
@@ -23,6 +26,7 @@ import it.getinsight.module.usuario.mapper.UsuarioMapperImpl;
 import it.getinsight.module.usuario.repository.UsuarioRepository;
 import it.getinsight.module.usuario.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -30,10 +34,9 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static it.getinsight.message.MessageProperty.APROVADOR_NAO_AUTORIZADO;
 import static it.getinsight.message.MessageProperty.SOLICITACAO_NAO_ENCOTRADA_ERRO;
@@ -55,6 +58,7 @@ public class SolicitacaoService {
     private final ObjectMapper mapper;
 
     private static final String NAME_QUERY_OBTER_TODOS_SOLICITACAO = "obter-todos-solicitacoes";
+    private static final String NAME_QUERY_OBTER_TODOS_SOLICITACAO_ME = "obter-todas-solicitacoes-filhas";
     private final UsuarioMapperImpl usuarioMapperImpl;
 
     @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
@@ -142,10 +146,36 @@ public class SolicitacaoService {
             });
     }
 
-    public List<SolicitacaoDTO> getAllConfigurationsDynamicQuery() {
-        final var parameters = DynamicParameters.get();
+    public List<SolicitacaoDTO> getAllSolicitacoesDynamicQuery() {
+        var parameters = DynamicParameters.get();
         return solicitacaoRepository.findAllNative(NAME_QUERY_OBTER_TODOS_SOLICITACAO, parameters, solicitacaoMapper);
     }
+
+    public PageableResponseModel<SolicitacaoDTO> getAllSolicitacoesByStatusDynamicQuery(PageableRequestModel<String> configPage) {
+        var model = new SolicitacaoEntity();
+        configPage.getFilter().filter(StringUtils::isNotBlank).ifPresent(o -> model.setStatus(SolicitacaoStatus.valueOf(o)));
+        var principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Map<String, Object> resourceAccess = principal.getClaim("resource_access");
+        Set<String> roles = extractRoles(resourceAccess);
+
+        final var parameters = DynamicParameters.get()
+            .append("status", model.getStatus().name())
+            .append("rolesParent", roles);
+        return solicitacaoRepository.findAllNative(NAME_QUERY_OBTER_TODOS_SOLICITACAO_ME, parameters,PaginationHelper.toPageable(configPage), solicitacaoMapper);
+    }
+
+    private Set<String> extractRoles(Map<String, Object> resourceAccess) {
+        return resourceAccess.values().stream()
+            .flatMap(this::extractRolesFromClientAccess)
+            .collect(Collectors.toSet());
+    }
+
+    private Stream<String> extractRolesFromClientAccess(Object clientAccess) {
+        Map<String, Object> clientAccessMap = (Map<String, Object>) clientAccess;
+        List<String> roles = (List<String>) clientAccessMap.get("roles");
+        return roles.stream();
+    }
+
 
     @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
     public void sendApproves(Long solicitacaoId) {
@@ -164,6 +194,7 @@ public class SolicitacaoService {
                 .to(approvedDTO.email())
                 .subject("Aprovação de solicitação")
                 .templateName("solicitacao.html")
+                .variables(getVariables(solicitanteDTO,approvedDTO,solicitacaoDTO, roleEntity.getNome()))
                 .isHtml(true)
                 .build())
             .forEach(emailService::sendMail);
@@ -171,5 +202,31 @@ public class SolicitacaoService {
         solicitacaoRepository.save(solicitacaoEntity);
     }
 
+    private Map<String, Object> getVariables(UsuarioDTO solicitanteDTO, UsuarioDTO aprovadorDTO, SolicitacaoDTO solicitacaoDTO, String perfil) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("link", Map.of("address", "http://localhost:8080", "hint", "Accesspilot frontend"));
+        variables.put("perfil", perfil);
+        variables.put("aprovador", aprovadorDTO);
+        variables.put("solicitante", solicitanteDTO);
+        variables.put("solicitacao", solicitacaoDTO);
 
+        return variables;
+    }
+
+    public void sendNotificationToUser(Long id) {
+        var solicitacaoEntity = solicitacaoRepository.findById(id).orElseThrow(SOLICITACAO_NAO_ENCOTRADA_ERRO::businessException);
+        var solicitacaoDTO = solicitacaoMapper.toDto(solicitacaoEntity);
+        var usuarioSolicitante = Optional.of(solicitacaoEntity.getUsuarioSolicitante()).map(usuarioMapperImpl::toDto).orElseThrow(() -> new BusinessException("Não foi possivel converter o usuário"));
+        var usuarioAprovador = Optional.of(solicitacaoEntity.getUsuarioAprovador()).map(usuarioMapperImpl::toDto).orElseThrow(() -> new BusinessException("Não foi possivel converter o usuário"));
+        var roleEntity = roleRepository.findByIdRoleExterno(solicitacaoEntity.getRole().getIdRoleExterno()).orElseThrow(() -> new ResourceNotFoundException("Role não encontrada"));
+        var variables = getVariables(usuarioAprovador, usuarioSolicitante, solicitacaoDTO, roleEntity.getNome());
+        variables.put("status", solicitacaoEntity.getStatus().name());
+        emailService.sendMail(EmailDTO.builder()
+            .to(usuarioSolicitante.email())
+            .subject("Status da solicitação de perfil")
+            .templateName("status-solicitacao.html")
+            .variables(variables)
+            .isHtml(true)
+            .build());
+    }
 }

@@ -111,8 +111,8 @@ public class ClienteController {
             })
         }
     )
-    @PostMapping(value = "/sincronizar", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ClienteDTO> sincronizar() {
+    @PostMapping(value = "/synchronize", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ClienteDTO> synchronize() {
         clienteService.synchronizationClients();
         return ResponseEntity.noContent().build();
     }

@@ -36,7 +36,7 @@ Para continuar, atente aos pré-requisitos:
 
 - Java JDK 17
   - Como instalar?
-    - Via [SDKMan](https://sdkman.io): `sdk install java 17.0.8-tem` (**recomendado**)
+    - Via [SDKMan](https://sdkman.io): `sdk install java 21.0.2-tem` (**recomendado**)
     - Instalação manual: [baixar](https://adoptium.net/temurin/releases?version=17)
 - Maven 3.9.4
   - Como instalar?
@@ -167,3 +167,63 @@ Em seguida execute o seguinte comando:
 mvn deploy
 ```
 
+## Requisitos
+- Camunda Platform >= 8.5.0
+
+## Passos para Subir o Ambiente
+
+1. **Clone o repositório:**
+   ```bash
+   git clone <URL-do-repositório>
+   cd camunda-platform
+   ```
+
+2. **Suba o ambiente usando Docker Compose:**
+   ```bash
+   docker compose -p <nome-do-projeto> -f docker-compose.yaml up -d
+   ```
+
+3. **Aguarde alguns minutos para o ambiente iniciar e estabilizar.**
+
+4. **Acesse os seguintes serviços:**
+    - **Operate:** [http://localhost:8081](http://localhost:8081)
+    - **Tasklist:** [http://localhost:8082](http://localhost:8082)
+    - **Optimize:** [http://localhost:8083](http://localhost:8083)
+    - **Identity:** [http://localhost:8084](http://localhost:8084)
+    - **Elasticsearch:** [http://localhost:9200](http://localhost:9200)
+    - **Keycloak:** [http://localhost:18080/auth/](http://localhost:18080/auth/)
+
+## Importação do Arquivo BPMN
+
+1. **Baixe e instale o Camunda Desktop Modeler:** [Camunda Desktop Modeler](https://camunda.com/download/modeler/)
+2. **Abra o Desktop Modeler e importe o arquivo BPMN `solicitacao.bpmn` localizado na pasta `resource`.**
+    - No Desktop Modeler, selecione a opção para importar um modelo.
+    - Navegue até a pasta `resource` e selecione o arquivo `solicitacao.bpmn`.
+
+3. **Faça o deploy do modelo importado para o ambiente local Zeebe:**
+    - Use as seguintes configurações:
+        - **URL:** http://localhost:26500
+        - **Autenticação:** Nenhuma (caso a autenticação não esteja configurada)
+
+## Parar o Ambiente
+
+Para parar e remover todos os containers, execute:
+```bash
+docker compose -p <nome-do-projeto> -f docker-compose.yaml down -v
+```
+3. **Aguarde alguns minutos para o ambiente iniciar e estabilizar.**
+
+4. **Acesse os seguintes serviços:**
+    - **Operate:** [http://localhost:8081](http://localhost:8081)
+    - **Tasklist:** [http://localhost:8082](http://localhost:8082)
+    - **Optimize:** [http://localhost:8083](http://localhost:8083)
+    - **Identity:** [http://localhost:8084](http://localhost:8084)
+    - **Elasticsearch:** [http://localhost:9200](http://localhost:9200)
+    - **Keycloak:** [http://localhost:18080/auth/](http://localhost:18080/auth/)
+
+## Parar o Ambiente
+
+Para parar e remover todos os containers, execute:
+```bash
+docker compose -p <nome-do-projeto> -f docker-compose.yaml up -d
+```

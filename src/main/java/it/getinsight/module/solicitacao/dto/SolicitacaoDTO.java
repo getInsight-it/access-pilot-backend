@@ -12,7 +12,6 @@ public record SolicitacaoDTO(
     @Size(min = 1, max = 100)
     @NotBlank
     Long id,
-    @NotBlank
     SolicitacaoStatus status,
     @NotBlank
     String userId,
