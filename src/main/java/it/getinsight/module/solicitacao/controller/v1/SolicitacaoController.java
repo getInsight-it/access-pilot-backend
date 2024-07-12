@@ -1,15 +1,16 @@
 package it.getinsight.module.solicitacao.controller.v1;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import it.getinsight.core.pagination.PageableRequestModel;
+import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.solicitacao.dto.SolicitacaoDTO;
 import it.getinsight.module.solicitacao.service.SolicitacaoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/v1/solicitacoes")
@@ -32,9 +33,16 @@ public class SolicitacaoController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 
-    @GetMapping
-    public ResponseEntity<List<SolicitacaoDTO>> getAllSolicitacao() {
-        return ResponseEntity.ok(solicitacaoService.getAllConfigurationsDynamicQuery());
+    @GetMapping(path = "/me/paginado-por-nome", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PageableResponseModel<SolicitacaoDTO>> recuperarTodosPaginado(
+        @RequestParam(defaultValue = "0") Integer pageIndex,
+        @RequestParam(defaultValue = "10") Integer pageSize,
+        @RequestParam(defaultValue = "nome") String sortField,
+        @RequestParam(defaultValue = "ASC") String sortType,
+        @RequestParam(required = false) String filter
+    ) {
+        final var pageRequest = PageableRequestModel.of(pageIndex, pageSize, sortType, sortField, filter);
+        return ResponseEntity.ok(solicitacaoService.getAllSolicitacoesByStatusDynamicQuery(pageRequest));
     }
 
 
