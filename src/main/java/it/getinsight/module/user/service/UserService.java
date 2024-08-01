@@ -1,0 +1,94 @@
+package it.getinsight.module.user.service;
+
+import it.getinsight.module.keycloak.client.KeycloakClient;
+import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
+import it.getinsight.core.exception.ResourceNotFoundException;
+import it.getinsight.core.helper.PaginationHelper;
+import it.getinsight.core.pagination.PageableRequestModel;
+import it.getinsight.core.pagination.PageableResponseModel;
+import it.getinsight.module.user.dto.UserDTO;
+import it.getinsight.module.user.entity.UserEntity;
+import it.getinsight.module.user.mapper.UserMapper;
+import it.getinsight.module.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class UserService {
+
+    private final UserRepository userRepository;
+    private final KeycloakClient keycloakClient;
+    private final UserMapper userMapper;
+
+    private static final String NAME_QUERY_FIND_ALL_USERS = "find-all-users";
+
+    public List<UserDTO> getAllUsersDynamicQuery() {
+        final var parameters = DynamicParameters.get();
+        return userRepository.findAllNative(NAME_QUERY_FIND_ALL_USERS, parameters, userMapper);
+    }
+
+    public PageableResponseModel<UserDTO> getAllUsersPageable(PageableRequestModel<UserDTO> configPage) {
+        final var model = configPage
+            .getFilter()
+            .map(userMapper::toEntity)
+            .orElse(new UserEntity());
+
+        final var matcher = ExampleMatcher
+            .matchingAll()
+            .withIgnoreNullValues()
+            .withMatcher("firstName", ExampleMatcher.GenericPropertyMatcher::contains);
+
+        final var example = Example.of(model, matcher);
+
+        final var page = userRepository.findAll(example, PaginationHelper.toPageable(configPage));
+        return PaginationHelper.toPageResponse(userMapper.toDto(page.getContent()), page.getTotalElements());
+    }
+
+    public PageableResponseModel<UserDTO> getAllUsersPageableByName(PageableRequestModel<String> configPage) {
+        final var model = new UserEntity();
+        configPage.getFilter().ifPresent(model::setFirstName);
+
+        final var matcher = ExampleMatcher
+            .matching()
+            .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING)
+            .withIgnoreNullValues()
+            .withIgnoreCase();
+
+        final var example = Example.of(model, matcher);
+
+        final var page = userRepository.findAll(example, PaginationHelper.toPageable(configPage));
+        return PaginationHelper.toPageResponse(userMapper.toDto(page.getContent()), page.getTotalElements());
+    }
+
+    public UserDTO findById(Long id) {
+        var entity = userRepository.findById(id).orElseThrow(ResourceNotFoundException::new);
+        return userMapper.toDto(entity);
+    }
+
+
+    public UserDTO findOrImportByExternalId(String externalId) {
+        var entity = userRepository.findByExternalId(externalId).orElseGet(() -> {
+            final var userDTO = keycloakClient.getUsers(externalId);
+            final var userEntity = new UserEntity(null, userDTO.username(), userDTO.firstName(), userDTO.lastName(), userDTO.email(), userDTO.id());
+            return userRepository.save(userEntity);
+        });
+        return userMapper.toDto(entity);
+    }
+
+
+    @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
+    public UserDTO addUser(UserDTO userDTO) {
+        var entity = userMapper.toEntity(userDTO);
+        entity.setId(null);
+        return userMapper.toDto(userRepository.save(entity));
+    }
+
+}

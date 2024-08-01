@@ -1,0 +1,45 @@
+package it.getinsight.module.request.entity;
+
+import it.getinsight.core.model.jpa.entity.BaseEntity;
+import it.getinsight.module.request.enuns.RequestStatus;
+import it.getinsight.module.role.entity.RoleEntity;
+import it.getinsight.module.user.entity.UserEntity;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.io.Serial;
+
+
+@Getter
+@Setter
+@Entity
+@Table(name = "TB_SOLICITACAO")
+@SequenceGenerator(name = "RequestEntity.sq", sequenceName = "SQ_SOLICITACAO", allocationSize = 1)
+public class RequestEntity extends BaseEntity<Long> {
+
+    @Serial
+    private static final long serialVersionUID = 5287296228628658948L;
+
+    @Id
+    @Column(name = "ID")
+    @GeneratedValue(generator = "RequestEntity.sq", strategy = GenerationType.SEQUENCE)
+    private Long id;
+
+    @Column(name = "STATUS")
+    @Enumerated(EnumType.STRING)
+    private RequestStatus status = RequestStatus.CREATED;
+
+    @ManyToOne
+    @JoinColumn(name = "ID_ROLE", referencedColumnName = "ID")
+    private RoleEntity role;
+
+    @ManyToOne
+    @JoinColumn(name = "ID_USUARIO_SOLICITANTE", referencedColumnName = "ID")
+    private UserEntity requestingUser;
+
+    @ManyToOne
+    @JoinColumn(name = "ID_USUARIO_APROVADOR", referencedColumnName = "ID")
+    private UserEntity approvingUser;
+
+}

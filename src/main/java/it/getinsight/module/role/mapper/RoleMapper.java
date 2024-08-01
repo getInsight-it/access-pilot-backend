@@ -22,15 +22,15 @@ public interface RoleMapper extends BaseMapper<RoleEntity, RoleDTO>, BaseGeneric
         expression = "java(toLong( value, 0 ))"
     )
    @Mapping(
-       target = "idRoleExterno",
+       target = "roleExternalId",
        expression = "java(toString( value, 1 ))"
    )
     @Mapping(
-        target = "nome",
+        target = "name",
         expression = "java(toString( value, 2 ))"
     )
     @Mapping(
-        target = "descricao",
+        target = "description",
         expression = "java(toString( value, 3 ))"
     )
    @Mapping(

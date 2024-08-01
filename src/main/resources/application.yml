@@ -132,6 +132,13 @@ spring:
             enable: false
     test-connection: true
 
+minio:
+  endpoint: http://localhost:9000
+  accessKey: admin
+  secretKey: abc12345
+  buckets:
+    - private-getinsight-accesspilot-docs
+
 
 sentry:
   dsn: https://bad955d8e5204ba2b802d4b0feb75d15@o4504299478188032.ingest.sentry.io/4505352505917440

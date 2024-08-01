@@ -25,10 +25,10 @@ public class SecurityConfiguration {
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement( session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers(HttpMethod.POST, "v1/solicitacoes/**", "v1/configurations/**", "v1/roles/**","v1/clientes/**", "v1/emails/**").authenticated()
-                .requestMatchers(HttpMethod.PUT, "v1/solicitacoes/**", "v1/configurations/**", "v1/roles/**","v1/clientes/**", "v1/emails/**").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "v1/solicitacoes/**", "v1/configurations/**", "v1/roles/**","v1/clientes/**", "v1/emails/**").authenticated()
-                .requestMatchers(HttpMethod.GET, "v1/solicitacoes/**", "v1/configurations/**", "v1/roles/**","v1/clientes/**", "v1/emails/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "v1/requests/**", "v1/configurations/**", "v1/roles/**", "v1/clients/**", "v1/emails/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "v1/requests/**", "v1/configurations/**", "v1/roles/**", "v1/clients/**", "v1/emails/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "v1/requests/**", "v1/configurations/**", "v1/roles/**", "v1/clients/**", "v1/emails/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "v1/requests/**", "v1/configurations/**", "v1/roles/**", "v1/clients/**", "v1/emails/**").authenticated()
                 .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/configuration/ui", "/swagger-ui/**", "/swagger-resources/**", "/configuration/security", "/swagger-ui.html", "/webjars/**").permitAll()
             ).oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
         return http.build();

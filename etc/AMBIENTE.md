@@ -114,7 +114,7 @@ Em seguida, para instalar o MongoDB:
 
 <sub>Modo Cluster</sub>
 ```shell
-docker run -d -p 27017:27017 --name=MongoDB --restart=always -e MONGODB_USERNAME=usuario -e MONGODB_PASSWORD=senha -e MONGODB_DATABASE=dbTeste -e MONGODB_REPLICA_SET_MODE=primary -e MONGODB_REPLICA_SET_KEY=replicasetkey123 -v mongo:/bitnami/mongodb bitnami/mongodb:latest
+docker run -d -p 27017:27017 --name=MongoDB --restart=always -e MONGODB_USERNAME=user -e MONGODB_PASSWORD=senha -e MONGODB_DATABASE=dbTeste -e MONGODB_REPLICA_SET_MODE=primary -e MONGODB_REPLICA_SET_KEY=replicasetkey123 -v mongo:/bitnami/mongodb bitnami/mongodb:latest
 ```
 
 <sub>Modo Normal</sub>
