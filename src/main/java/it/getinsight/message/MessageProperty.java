@@ -9,12 +9,12 @@ import org.apache.commons.lang3.ArrayUtils;
 @RequiredArgsConstructor
 public enum MessageProperty implements IMessageProperty {
 
-    //ver o arquivo src/main/resources/api/messages_pt_BR.properties
+    //see the file src/main/resources/api/messages_en_US.properties
 
-    EXEMPLO_MENSAGEM_ERRO("exemplo.de.erro"),
-    SOLICITACAO_NAO_ENCOTRADA_ERRO("solicitacao.nao.encontrada"),
-    EXEMPLO_MENSAGEM_COM_PARAMETRO("exemplo.de.erro.com.parametro"),
-    APROVADOR_NAO_AUTORIZADO("solicitante.aprovador.nao.autorizado");
+    EXAMPLE_ERROR_MESSAGE("example.of.error"),
+    REQUEST_NOT_FOUND_ERROR("request.not.found"),
+    EXAMPLE_MESSAGE_WITH_PARAMETER("example.of.error.with.parameter"),
+    APPROVE_NOT_AUTHORIZED("requester.approve.not.authorized");
 
     private final String key;
 
@@ -27,8 +27,8 @@ public enum MessageProperty implements IMessageProperty {
 
     @Override
     public IMessageProperty bind(String... pArgs) {
-       this.args = ArrayUtils.isNotEmpty(pArgs) ? pArgs : null;
-       return this;
+        this.args = ArrayUtils.isNotEmpty(pArgs) ? pArgs : null;
+        return this;
     }
 
 }

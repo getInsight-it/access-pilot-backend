@@ -14,23 +14,24 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/v1/emails")
-@Tag(name = "Email", description = "Operações sobre emails.")
+@RequestMapping("/v1/notifications/emails")
+@Tag(name = "Email", description = "Operations on e-mails.")
 @RequiredArgsConstructor
 public class EmailController {
 
     private final EmailService emailService;
 
     @Operation(
-        summary = "Envia um e-mail",
+        summary = "Send an e-mail",
         responses = {
-            @ApiResponse(responseCode = "200", description = "E-mail enviado com sucesso"),
-            @ApiResponse(responseCode = "400", description = "Erro ao enviar e-mail")
+            @ApiResponse(responseCode = "200", description = "E-mail was send successfully"),
+            @ApiResponse(responseCode = "400", description = "Some error occurred while sending the e-mail")
         }
     )
-    @PostMapping(value = "/send", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> sendEmail(@RequestBody EmailDTO emailDTO) {
         emailService.sendMail(emailDTO);
         return ResponseEntity.ok().build();
     }
+
 }

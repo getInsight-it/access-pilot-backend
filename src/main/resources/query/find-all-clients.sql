@@ -1,0 +1,6 @@
+SELECT ID,
+       CLIENT_ID,
+       CLIENT_UUID,
+       MANAGED,
+       DESCRICAO
+FROM TB_CLIENTE

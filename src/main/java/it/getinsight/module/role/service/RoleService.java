@@ -1,21 +1,22 @@
 package it.getinsight.module.role.service;
 
 
-import it.getinsight.client.KeycloakClient;
+import it.getinsight.module.client.entity.ClientEntity;
+import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
-import it.getinsight.module.client.repository.ClienteRepository;
+import it.getinsight.module.client.repository.ClientRepository;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
 import it.getinsight.module.role.dto.RoleDTO;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.mapper.RoleMapper;
 import it.getinsight.module.role.repository.RoleRepository;
-import it.getinsight.module.usuario.dto.UsuarioDTO;
-import it.getinsight.module.usuario.service.UsuarioService;
+import it.getinsight.module.user.dto.UserDTO;
+import it.getinsight.module.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
@@ -33,16 +34,16 @@ import java.util.Optional;
 public class RoleService {
 
     private final RoleRepository roleRepository;
-    private final ClienteRepository clienteRepository;
+    private final ClientRepository clientRepository;
     private final RoleMapper roleMapper;
     private final KeycloakClient keycloakClient;
-    private final UsuarioService usuarioService;
+    private final UserService userService;
 
-    private static final String NAME_QUERY_OBTER_TODOS_ROLES = "obter-todos-roles";
+    private static final String NAME_QUERY_FIND_ALL_ROLES = "find-all-roles";
 
     public List<RoleDTO> getAllRolesDynamicQuery() {
         final var parameters = DynamicParameters.get();
-        return roleRepository.findAllNative(NAME_QUERY_OBTER_TODOS_ROLES, parameters, roleMapper);
+        return roleRepository.findAllNative(NAME_QUERY_FIND_ALL_ROLES, parameters, roleMapper);
     }
 
     public PageableResponseModel<RoleDTO> getAllRolesPageable(PageableRequestModel<RoleDTO> configPage) {
@@ -51,7 +52,7 @@ public class RoleService {
         final var matcher = ExampleMatcher
             .matchingAll()
             .withIgnoreNullValues()
-            .withMatcher("nome", ExampleMatcher.GenericPropertyMatcher::contains);
+            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains);
 
         final var example = Example.of(model, matcher);
 
@@ -61,7 +62,7 @@ public class RoleService {
 
     public PageableResponseModel<RoleDTO> getAllRolesPageableByName(PageableRequestModel<String> configPage) {
         final var model = new RoleEntity();
-        configPage.getFilter().ifPresent(model::setNome);
+        configPage.getFilter().ifPresent(model::setName);
 
         final var matcher = ExampleMatcher
             .matching()
@@ -75,48 +76,47 @@ public class RoleService {
         return PaginationHelper.toPageResponse(roleMapper.toDto(page.getContent()), page.getTotalElements());
     }
 
-    public RoleDTO recuperarPorId(Long id) {
+    public RoleDTO getById(Long id) {
         var entity = roleRepository.findById(id).orElseThrow(ResourceNotFoundException::new);
         return roleMapper.toDto(entity);
     }
 
-
     @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
-    public void synchronizationRoles() {
+    public void synchronizeRoles(List<String> clientIds) {
         var clients = keycloakClient.getClients().stream()
-            .filter(client -> client.getAttributes().containsKey("acl.client.managed") && client.getAttributes().get("acl.client.managed").equals("true")).toList();
+            .filter(client -> client.attributes().containsKey("acl.client.managed") && client.attributes().get("acl.client.managed").equals("true"))
+            .filter(client -> clientIds.contains(client.clientId()))
+            .toList();
         for (ClientRepresentationDTO client : clients) {
-            var roles = keycloakClient.getRolesByClientUUID(client.getId());
-            var clienteEntity = clienteRepository.findByClientId(client.getClientId()).orElseThrow(() -> new ResourceNotFoundException("Client não encontrado"));
+            var roles = keycloakClient.getRolesByClientUUID(client.id());
+            var clientEntity = clientRepository.findByClientId(client.clientId()).orElseThrow(() -> new ResourceNotFoundException("Client not found"));
             for (RoleRepresentationDTO role : roles) {
-                    var entity = roleRepository.findByNomeAndCliente(role.getName(), clienteEntity).orElseGet(() -> {
+                var entity = roleRepository.findByNameAndClient(role.name(), clientEntity).orElseGet(() -> {
                     var newEntity = new RoleEntity();
-                    newEntity.setNome(role.getName());
-                    newEntity.setCliente(clienteEntity);
-                    newEntity.setIdRoleExterno(role.getId());
-                    newEntity.setDescricao(role.getDescription());
+                    newEntity.setName(role.name());
+                    newEntity.setClient(clientEntity);
+                    newEntity.setRoleExternalId(role.id());
+                    newEntity.setDescription(role.description());
                     return roleRepository.save(newEntity);
                 });
-                entity.setDescricao(role.getDescription());
-                entity.setCliente(clienteEntity);
-                entity.setIdRoleExterno(role.getId());
-                entity.setNome(role.getName());
+                entity.setDescription(role.description());
+                entity.setClient(clientEntity);
+                entity.setRoleExternalId(role.id());
+                entity.setName(role.name());
                 roleRepository.save(entity);
             }
         }
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
-    public List<UsuarioDTO> recuperarOuImportarAprovadoresPorIdRole(Long id) {
-        var roleEntity = roleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Role não encontrada"));
-        var roleParent = Optional.ofNullable(roleEntity.getRole()).orElseThrow(() -> new ResourceNotFoundException("Role não tem role pai"));
-        var role = keycloakClient.getRoleByNameAndClientUUID(roleParent.getNome(), roleEntity.getCliente().getClientUUID());
-        return keycloakClient.getUsersByClientUUIDAndRoleName(roleEntity.getCliente().getClientUUID(), role.getName()).stream()
+    public List<UserDTO> getOrImportApprovesByRoleId(Long id) {
+        var roleEntity = roleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Role not found"));
+        var roleParent = Optional.ofNullable(roleEntity.getRole()).orElseThrow(() -> new ResourceNotFoundException("Role has no parent role"));
+        var role = keycloakClient.getRoleByNameAndClientUUID(roleParent.getName(), roleEntity.getClient().getClientUUID());
+        return keycloakClient.getUsersByClientUUIDAndRoleName(roleEntity.getClient().getClientUUID(), role.name()).stream()
             .map(user ->
-                usuarioService.recuperarOuImportarPorIdUsuarioExterno(user.getId())
+                userService.findOrImportByExternalId(user.id())
             )
             .toList();
     }
-
-
 }

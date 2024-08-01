@@ -9,15 +9,15 @@ public record RoleDTO(
 
     Long id,
 
-    String idRoleExterno,
+    String roleExternalId,
 
     @NotEmpty
     @Size(min = 3, max = 100)
-    String nome,
+    String name,
 
     @NotEmpty
     @Size(min = 3, max = 100)
-    String descricao,
+    String description,
 
     Long idRoleParent,
 

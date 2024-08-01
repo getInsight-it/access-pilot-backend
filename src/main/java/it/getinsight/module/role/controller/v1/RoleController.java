@@ -11,7 +11,7 @@ import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.role.dto.RoleDTO;
 import it.getinsight.module.role.service.RoleService;
-import it.getinsight.module.usuario.dto.UsuarioDTO;
+import it.getinsight.module.user.dto.UserDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -23,7 +23,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/v1/roles")
-@Tag(name = "Role", description = "Operações sobre roles.")
+@Tag(name = "Role", description = "Operations on roles.")
 @RequiredArgsConstructor
 public class RoleController {
 
@@ -31,34 +31,34 @@ public class RoleController {
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
-        summary = "Recupera a lista de roles",
-        description = "Recupera todos os roles",
+        summary = "Retrieve the list of roles",
+        description = "Retrieve all roles",
         responses = {
             @ApiResponse(responseCode = "200", content = {
                 @Content(schema = @Schema(implementation = RoleDTO[].class))
             })
         }
     )
-    public ResponseEntity<List<RoleDTO>> recuperarTodosRoles() {
+    public ResponseEntity<List<RoleDTO>> getAllRoles() {
         return ResponseEntity.ok(roleService.getAllRolesDynamicQuery());
     }
 
     @Operation(
-        summary = "Recupera a lista de roles paginada",
-        description = "Recupera uma lista de roles, com paginação, utilizando um filtro por nome",
+        summary = "Retrieve the paginated list of roles",
+        description = "Retrieve a list of roles, with pagination, using a filter by name",
         responses = {
             @ApiResponse(responseCode = "200", content = {
                 @Content(schema = @Schema(implementation = PageableResponseModel.class))
             })
         }
     )
-    @Parameter(name = "nome", description = "Filtro por nome", in = ParameterIn.QUERY, schema = @Schema(type = "string"))
+    @Parameter(name = "name", description = "Filter by firstname", in = ParameterIn.QUERY, schema = @Schema(type = "string"))
     @Parameter(name = "filter", hidden = true)
-    @GetMapping(path = "/paginado", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PageableResponseModel<RoleDTO>> recuperarTodosPaginado(
+    @GetMapping(path = "/paginated", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PageableResponseModel<RoleDTO>> getAllPaginated(
         @RequestParam(defaultValue = "0") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
-        @RequestParam(defaultValue = "nome") String sortField,
+        @RequestParam(defaultValue = "name") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
         RoleDTO filter
     ) {
@@ -67,19 +67,19 @@ public class RoleController {
     }
 
     @Operation(
-        summary = "Recupera a lista de roles paginada",
-        description = "Recupera uma lista de roles, com paginação, utilizando um filtro por nome",
+        summary = "Retrieve the paginated list of roles",
+        description = "Retrieve a list of roles, with pagination, using a filter by name",
         responses = {
             @ApiResponse(responseCode = "200", content = {
                 @Content(schema = @Schema(implementation = PageableResponseModel.class))
             })
         }
     )
-    @GetMapping(path = "/paginado-por-nome", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PageableResponseModel<RoleDTO>> recuperarTodosPaginado(
+    @GetMapping(path = "/paginated-by-name", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PageableResponseModel<RoleDTO>> getAllPaginatedByName(
         @RequestParam(defaultValue = "0") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
-        @RequestParam(defaultValue = "nome") String sortField,
+        @RequestParam(defaultValue = "name") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
         @RequestParam(required = false) String filter
     ) {
@@ -88,8 +88,8 @@ public class RoleController {
     }
 
     @Operation(
-        summary = "Recupera um role por ID",
-        description = "Recupera um role por ID",
+        summary = "Retrieve a role by ID",
+        description = "Retrieve a role by ID",
         responses = {
             @ApiResponse(responseCode = "200", content = {
                 @Content(schema = @Schema(implementation = RoleDTO.class))
@@ -97,30 +97,28 @@ public class RoleController {
         }
     )
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<RoleDTO> recuperarPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(roleService.recuperarPorId(id));
+    public ResponseEntity<RoleDTO> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(roleService.getById(id));
     }
 
-
     @Operation(
-        summary = "Recupera a lista de usuarios por ID da role",
-        description = "Recupera a lista de usuarios por ID da role",
+        summary = "Retrieve the list of users by role ID",
+        description = "Retrieve the list of users by role ID",
         responses = {
             @ApiResponse(responseCode = "200", content = {
                 @Content(schema = @Schema(implementation = RoleDTO.class))
             })
         }
     )
-    @GetMapping(value = "/{id}/aprovadores", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<UsuarioDTO>> recuperarOuImportarAprovadoresPorIdRole(@PathVariable Long id) {
-        return ResponseEntity.ok(roleService.recuperarOuImportarAprovadoresPorIdRole(id));
+    @GetMapping(value = "/{id}/approves", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<UserDTO>> getOrImportApprovesByRoleId(@PathVariable Long id) {
+        return ResponseEntity.ok(roleService.getOrImportApprovesByRoleId(id));
     }
 
-
     @PostMapping("/synchronize")
-    @Operation(summary = "synchronize roles com IDP", description = "synchronize roles com IDP")
-    public ResponseEntity<Void> synchronizeRoles() {
-        roleService.synchronizationRoles();
+    @Operation(summary = "Synchronize roles with IDP", description = "Synchronize roles with IDP")
+    public ResponseEntity<Void> synchronizeRoles(@RequestBody List<String> clientIds) {
+        roleService.synchronizeRoles(clientIds);
         return ResponseEntity.noContent().build();
     }
 

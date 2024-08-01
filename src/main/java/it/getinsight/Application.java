@@ -3,7 +3,7 @@ package it.getinsight;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.camunda.zeebe.spring.client.annotation.Deployment;
 import it.getinsight.core.GetInsightSpringBootApp;
-import it.getinsight.module.solicitacao.process.SolicitacaoProcess;
+import it.getinsight.module.request.process.RequestProcess;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
@@ -23,8 +23,8 @@ public class Application extends GetInsightSpringBootApp {
 
     @Bean
     @Lazy(false)
-    public SolicitacaoProcess SolicitacaoProcess() {
-        return new SolicitacaoProcess();
+    public RequestProcess SolicitacaoProcess() {
+        return new RequestProcess();
     }
 
     @Bean

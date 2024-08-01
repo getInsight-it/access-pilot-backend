@@ -2,7 +2,7 @@ package it.getinsight.module.role.entity;
 
 
 import it.getinsight.core.model.jpa.entity.BaseEntity;
-import it.getinsight.module.client.entity.ClienteEntity;
+import it.getinsight.module.client.entity.ClientEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,23 +11,23 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "TB_ROLE")
-@SequenceGenerator(name = "ClienteEntity.sq", sequenceName = "SQ_ROLE", allocationSize = 1)
+@SequenceGenerator(name = "ClientEntity.sq", sequenceName = "SQ_ROLE", allocationSize = 1)
 public class RoleEntity extends BaseEntity<Long> {
 
     @Id
     @Column(name = "ID")
-    @GeneratedValue(generator = "ClienteEntity.sq", strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(generator = "ClientEntity.sq", strategy = GenerationType.SEQUENCE)
     private Long id;
 
     @Column(name = "ID_ROLE_EXTERNO")
-    private String idRoleExterno;
+    private String roleExternalId;
 
 
     @Column(name = "NOME")
-    private String nome;
+    private String name;
 
     @Column(name = "DESCRICAO")
-    private String descricao;
+    private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_ROLE_PARENT")
@@ -35,6 +35,6 @@ public class RoleEntity extends BaseEntity<Long> {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_CLIENTE")
-    private ClienteEntity cliente;
+    private ClientEntity client;
 
 }
