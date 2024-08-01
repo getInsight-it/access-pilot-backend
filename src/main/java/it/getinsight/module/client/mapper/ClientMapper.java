@@ -37,5 +37,9 @@ public interface ClientMapper extends BaseMapper<ClientEntity, ClientDTO>, BaseG
         target = "description",
         expression = "java(toString( value, 4 ))"
     )
+    @Mapping(
+        target = "baseUrl",
+        expression = "java(toString( value, 5 ))"
+    )
    ClientDTO toMap(Object value);
 }

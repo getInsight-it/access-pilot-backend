@@ -29,7 +29,6 @@ import java.util.List;
 public class ClientController {
 
     private final ClientService clientService;
-    private final MinioClient minioClient;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(

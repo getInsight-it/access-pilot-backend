@@ -22,5 +22,10 @@ public record ClientDTO(
 
     @NotEmpty
     @Size(min = 3, max = 100)
-    String description
+    String description,
+
+    @NotEmpty
+    @Size(min = 3, max = 255)
+    String baseUrl
+
 ) implements Serializable {}

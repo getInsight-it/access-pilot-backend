@@ -48,6 +48,9 @@
             <column name="DESCRICAO" type="VARCHAR(255)">
                 <constraints nullable="true"/>
             </column>
+            <column name="BASE_URL" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
         </createTable>
         <rollback>
             <dropTable tableName="TB_CLIENTE"/>
