@@ -92,6 +92,7 @@ public class ClientService {
             newEntity.setClientId(client.clientId());
             newEntity.setDescription(client.description());
             newEntity.setClientUUID(client.id());
+            newEntity.setBaseUrl(client.baseUrl());
             return clientRepository.save(newEntity);
         });
         entity.setDescription(client.description());

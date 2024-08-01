@@ -25,9 +25,6 @@ public class RequestProcess {
     @Autowired
     private RequestService requestService;
 
-    @Autowired
-    private MinioClient minioClient;
-
     @JobWorker(type = "task-save-request")
     public void handleSave(JobClient client, ActivatedJob job) {
         Map<String, Object> variables = job.getVariablesAsMap();

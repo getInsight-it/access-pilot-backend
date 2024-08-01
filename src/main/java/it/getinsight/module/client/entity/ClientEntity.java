@@ -29,4 +29,8 @@ public class ClientEntity extends BaseEntity<Long> {
 
     @Column(name = "DESCRICAO")
     private String description;
+
+    @Column(name = "BASE_URL")
+    private String baseUrl;
+
 }
