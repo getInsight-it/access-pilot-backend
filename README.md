@@ -174,7 +174,7 @@ mvn deploy
 
 1. **Clone o repositório:**
    ```bash
-   git clone <URL-do-repositório>
+   git clone https://github.com/camunda/camunda-platform
    cd camunda-platform
    ```
 
@@ -196,9 +196,9 @@ mvn deploy
 ## Importação do Arquivo BPMN
 
 1. **Baixe e instale o Camunda Desktop Modeler:** [Camunda Desktop Modeler](https://camunda.com/download/modeler/)
-2. **Abra o Desktop Modeler e importe o arquivo BPMN `solicitacao.bpmn` localizado na pasta `resource`.**
+2. **Abra o Desktop Modeler e importe o arquivo BPMN `request.bpmn` localizado na pasta `resource`.**
     - No Desktop Modeler, selecione a opção para importar um modelo.
-    - Navegue até a pasta `resource` e selecione o arquivo `solicitacao.bpmn`.
+    - Navegue até a pasta `resource` e selecione o arquivo `request.bpmn`.
 
 3. **Faça o deploy do modelo importado para o ambiente local Zeebe:**
     - Use as seguintes configurações:
