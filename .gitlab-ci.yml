@@ -8,8 +8,6 @@ build:
   tags:
     - docker
   image: registry.gitlab.com/getinsight.it/arquitetura/docker-base-images/builder/builder-java:21
-  before_script:
-    - curl -fsSL "https://gitlab.com/api/v4/projects/33054505/repository/files/maven-settings.xml/raw?ref=main&private_token=$GITLAB_API_TOKEN"  --output maven-settings.xml
   script:
     - mvn clean package -T $(nproc) -Dmaven.artifact.threads=$(nproc) -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -s maven-settings.xml
   cache:
