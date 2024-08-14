@@ -125,7 +125,7 @@ items:
           terminationMessagePolicy: File
         dnsPolicy: ClusterFirst
         imagePullSecrets:
-        - name: harbor
+        - name: gitlab
         restartPolicy: Always
         schedulerName: default-scheduler
         securityContext: {}
@@ -139,7 +139,15 @@ items:
             defaultMode: 420
             secretName: ${CI_PROJECT_NAME}
           name: vol-secret-${CI_PROJECT_NAME}
-
+#-------------REGISTRY PULL SECRET -----------
+- apiVersion: networking.k8s.io/v1
+  data:
+    .dockerconfigjson: ${K8S_PULL_SECRET}
+  kind: Secret
+  metadata:
+    name: gitlab
+    namespace: ${NAMESPACE}-${CI_ENVIRONMENT_NAME}
+  type: kubernetes.io/dockerconfigjson
 #-------------INGRESS------------
 - apiVersion: networking.k8s.io/v1
   kind: Ingress
