@@ -3,3 +3,5 @@ FROM registry.gitlab.com/getinsight.it/arquitetura/docker-base-images/runtime/ru
 ADD target/*.jar app.jar
 
 EXPOSE 8080
+
+CMD java -jar app.jar
