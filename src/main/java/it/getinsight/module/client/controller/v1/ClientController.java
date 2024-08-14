@@ -1,6 +1,6 @@
 package it.getinsight.module.client.controller.v1;
 
-import io.minio.MinioClient;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
