@@ -41,7 +41,8 @@ package:
     - docker
   image: registry.gitlab.com/getinsight.it/arquitetura/docker-base-images/kubernetes-manage:1.0.0
   before_script:
-    - echo $KUBE_CONFIG | base64 --decode > ./kube/config
+    - mkdir ~/.kube || true
+    - echo $KUBE_CONFIG | base64 --decode > ~/.kube/config
   script:
     - envsubst < ./k8s/deployment.yaml | kubectl apply -f - 
 
