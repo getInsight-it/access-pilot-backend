@@ -39,7 +39,7 @@ package:
   stage: deploy
   tags:
     - docker
-  image: bitnami/kubectl:latest
+  image: registry.gitlab.com/getinsight.it/arquitetura/docker-base-images/kubernetes-manage:1.0.0
   before_script:
     - echo $KUBE_CONFIG | base64 --decode > ./kube/config
   script:
