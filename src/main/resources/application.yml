@@ -59,7 +59,7 @@ spring:
           registration-keycloak:
             provider: keycloak
             client-id: ${jwt.auth.converter.resource-id}
-            client-secret: ANCgAlx8rvqXrWkosEMIdvmjEFspi9L0
+            client-secret: ${spring.security.oauth2.resourceserver.opaquetoken.client-secret}
             authorization-grant-type: client_credentials
 
   servlet:
