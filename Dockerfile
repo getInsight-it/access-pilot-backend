@@ -4,4 +4,4 @@ ADD target/*.jar app.jar
 
 EXPOSE 8080
 
-CMD java -jar app.jar
+CMD java ${JAVA_TOOL_OPTIONS} ${JAVA_EXTRA_OPTS} -jar app.jar
