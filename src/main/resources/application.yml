@@ -19,13 +19,6 @@ server:
   undertow:
     url-charset: UTF-8
 
-zeebe:
-  client:
-    broker:
-      gateway-address: localhost:26500
-    security:
-      plaintext: true
-
 jwt:
   auth:
     converter:
@@ -83,7 +76,7 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://localhost:5432/db_accesspilot_dev
     username: postgres
     password: postgres
     hikari:
