@@ -21,7 +21,7 @@ items:
 # ----------- SECRET -------------
 - apiVersion: v1
   data:
-    SPRING_DATASOURCE_PASSWAORD: ${DATABASE_PASSWORD}
+    SPRING_DATASOURCE_PASSWORD: ${DATABASE_PASSWORD}
   kind: Secret
   metadata:
     name: ${CI_PROJECT_NAME}
