@@ -1,8 +1,5 @@
 package it.getinsight.module.request.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.camunda.zeebe.client.ZeebeClient;
 import it.getinsight.module.client.dto.ClientDTO;
 import it.getinsight.module.client.mapper.ClientMapper;
 import it.getinsight.module.keycloak.client.KeycloakClient;
@@ -52,7 +49,6 @@ public class RequestService {
 
     private final RequestRepository requestRepository;
     private final RequestMapper requestMapper;
-    private final ZeebeClient client;
     private final KeycloakClient keycloakClient;
     private final ErrorService errorService;
     private final UserRepository userRepository;
@@ -82,18 +78,12 @@ public class RequestService {
             return userRepository.save(userEntity);
         });
         entity.setRequestingUser(user);
-        entity.setStatus(RequestStatus.CREATED);
         entity.setRole(roleEntity);
-        requestRepository.save(entity);
 
-        var requestSavedDTO = new RequestDTO(entity.getId(), entity.getStatus(), user.getId().toString(), entity.getRole().getId().toString());
-        client.newCreateInstanceCommand()
-            .bpmnProcessId("request")
-            .latestVersion()
-            .variables(new ObjectMapper().convertValue(requestSavedDTO, new TypeReference<Map<String, Object>>() {
-            }))
-            .send().join();
-        return requestSavedDTO;
+        entity.setStatus(RequestStatus.APPROVES_SENT);
+        sendApproves(entity.getId());
+        requestRepository.save(entity);
+        return requestMapper.toDto(entity);
     }
     @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
     public void updateRequest(Long id, String status) {
@@ -120,19 +110,11 @@ public class RequestService {
             throw APPROVE_NOT_AUTHORIZED.accessForbiddenException();
         }
         var approvingUserEntity = userRepository.findById(approvingUserDTO.id()).orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
-        publishUpdateRequestEvent(id, status, approvingUserDTO.id());
         requestEntity.setStatus(RequestStatus.valueOf(status));
         requestEntity.setApprovingUser(approvingUserEntity);
         requestRepository.save(requestEntity);
     }
 
-    private void publishUpdateRequestEvent(Long id, String status, Long approverId) {
-        client.newPublishMessageCommand()
-            .messageName("updateRequestEvent")
-            .correlationKey(String.valueOf(id))
-            .variables(Map.of("status", RequestStatus.valueOf(status).name(), "approvingUserId", approverId))
-            .send().join();
-    }
 
     @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
     public void confirmRoles(Long id) {
@@ -202,6 +184,7 @@ public class RequestService {
             .forEach(emailService::sendMail);
         requestEntity.setStatus(RequestStatus.APPROVES_SENT);
         requestRepository.save(requestEntity);
+        sendNotificationToUser(requestId);
     }
 
     private Map<String, Object> getVariables(UserDTO requestingUserDTO, UserDTO approvingUserDTO, RequestDTO requestDTO, RoleDTO roleDTO, ClientDTO clientDTO) {

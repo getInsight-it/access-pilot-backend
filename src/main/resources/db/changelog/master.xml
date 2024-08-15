@@ -199,48 +199,5 @@
                                  baseTableName="TB_SOLICITACAO" baseColumnNames="ID_USUARIO_APROVADOR"
                                  referencedTableName="TB_USUARIO" referencedColumnNames="ID"/>
     </changeSet>
-    <changeSet id="007" author="luan.rodrigues">
-        <createTable tableName="TB_STORAGE_FILE">
-            <column name="ID" type="BIGINT">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="EXCLUDED" type="BOOLEAN">
-                <constraints nullable="false"/>
-            </column>
-            <column name="ORIGINAL_FILENAME" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="FILESIZE" type="BIGINT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="MIME_TYPE" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="BUCKET" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="IS_PUBLIC" type="BOOLEAN">
-                <constraints nullable="false"/>
-            </column>
-            <column name="EPHEMERAL" type="BOOLEAN">
-                <constraints nullable="false"/>
-            </column>
-            <column name="DOWNLOAD_COUNT" type="INT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="FILE_ID" type="UUID">
-                <constraints nullable="false"/>
-            </column>
-            <column name="OWNER_ID" type="BIGINT">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-
-        <addForeignKeyConstraint baseTableName="TB_STORAGE_FILE"
-                                 baseColumnNames="OWNER_ID"
-                                 constraintName="FK_STORAGE_FILE_OWNER"
-                                 referencedTableName="TB_USUARIO"
-                                 referencedColumnNames="ID"/>
-    </changeSet>
 
 </databaseChangeLog>
