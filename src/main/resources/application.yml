@@ -25,6 +25,11 @@ jwt:
       resource-id: app-backend-number-one
       principal-attribute: preferred_username
 
+feign:
+  client:
+    keycloak:
+      url: http://localhost:9080/admin/realms/accesspilot
+
 spring:
   application:
     name: ${app.name:backend-accesspilot}
