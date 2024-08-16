@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@FeignClient(name = "keycloakClient", url = "http://localhost:9080/admin/realms/accesspilot", configuration = FeignConfiguration.FeignConfigurationToken.class)
+@FeignClient(name = "keycloakClient", url = "${feign.client.keycloak.url}", configuration = FeignConfiguration.FeignConfigurationToken.class)
 public interface KeycloakClient {
 
     @GetMapping("/users/{id}")
