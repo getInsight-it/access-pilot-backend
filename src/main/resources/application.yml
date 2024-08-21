@@ -19,20 +19,29 @@ server:
   undertow:
     url-charset: UTF-8
 
+provider:
+  keycloak:
+    url: http://localhost:9080
+    realm: access-pilot
+    client-id: app-backend-number-one
+    client-secret: ANCgAlx8rvqXrWkosEMIdvmjEFspi9L0
+
 jwt:
   auth:
     converter:
-      resource-id: app-backend-number-one
+      resource-id: ${provider.keycloak.client-id}
       principal-attribute: preferred_username
+
+
 
 feign:
   client:
     keycloak:
-      url: http://localhost:9080/admin/realms/accesspilot
+      url: ${provider.keycloak.url}/admin/realms/${provider.keycloak.realm}
 
 spring:
   application:
-    name: ${app.name:backend-accesspilot}
+    name: ${app.name:accesspilot-backend}
 
   main:
     lazy-initialization: true
@@ -49,11 +58,11 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:9080/realms/accesspilot
+          issuer-uri: ${provider.keycloak.url}/realms/${provider.keycloak.realm}
           jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
         opaquetoken:
           client-id: ${jwt.auth.converter.resource-id}
-          client-secret: ANCgAlx8rvqXrWkosEMIdvmjEFspi9L0
+          client-secret: ${provider.keycloak.client-secret}
           introspection-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/token/introspect
       client:
         provider:
