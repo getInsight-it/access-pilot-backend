@@ -54,6 +54,10 @@
             <artifactId>spring-boot-core-jpa</artifactId>
             <version>${spring-boot-core-jpa.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>it.getinsight</groupId>
