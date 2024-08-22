@@ -10,9 +10,13 @@
 <p>Você recebeu um novo status da solicitação de aprovação de perfil.</p>
 <p>Detalhes do status da solicitação:</p>
 <ul>
-    <li><strong>Nome do aprovador:</strong> <span th:text="${aprovador.username}"></span></li>
-    <li><strong>Nome do solicitante:</strong> <span th:text="${solicitante.username}"></span></li>
-    <li><strong>Perfil:</strong> <span th:text="${perfil}"></span></li>
+    <li th:if="${approvingUser != null}">
+        <strong>Nome do aprovador:</strong> <span th:text="${approvingUser.username}"></span>
+    </li>
+    <li th:if="${requestingUser != null}">
+        <strong>Nome do solicitante:</strong> <span th:text="${requestingUser.username}"></span>
+    </li>
+    <li><strong>Perfil:</strong> <span th:text="${role.name}"></span></li>
     <li><strong>Status:</strong> <span th:text="${status}"></span></li>
 </ul>
 <p>Obrigado,</p>

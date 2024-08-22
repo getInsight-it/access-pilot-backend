@@ -16,7 +16,7 @@ public record RequestDTO(
     @NotBlank
     String userId,
     @NotBlank
-    String roleId
+    Long roleId
 ) implements Serializable {
 
     @Serial
