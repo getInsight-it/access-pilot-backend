@@ -48,11 +48,19 @@ public class RoleService {
 
     public PageableResponseModel<RoleDTO> getAllRolesPageable(PageableRequestModel<RoleDTO> configPage) {
         final var model = new RoleEntity();
+        configPage
+            .getFilter()
+            .ifPresent( o -> {
+                model.setName(o.name());
+                model.setClient(new ClientEntity());
+                model.getClient().setId(o.idClient());
+            });
 
         final var matcher = ExampleMatcher
             .matchingAll()
             .withIgnoreNullValues()
-            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains);
+            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher("client.id", ExampleMatcher.GenericPropertyMatcher::exact);
 
         final var example = Example.of(model, matcher);
 
@@ -118,5 +126,16 @@ public class RoleService {
                 userService.findOrImportByExternalId(user.id())
             )
             .toList();
+    }
+
+    @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
+    public void updateRoles(List<RoleDTO> roles) {
+        for (RoleDTO role : roles) {
+            final var entity = roleRepository.findById(role.id()).orElseThrow(() -> new ResourceNotFoundException("Role not found"));
+            roleMapper.fromDto(role, entity);
+            final var roleEntityParent = role.idRoleParent() != null ? roleRepository.findById(role.idRoleParent()).orElseThrow(() -> new ResourceNotFoundException("Role parent not found")) : null;
+            entity.setRole(roleEntityParent);
+            roleRepository.save(entity);
+        }
     }
 }

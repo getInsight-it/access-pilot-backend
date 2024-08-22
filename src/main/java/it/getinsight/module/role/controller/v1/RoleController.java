@@ -53,7 +53,7 @@ public class RoleController {
         }
     )
     @Parameter(name = "name", description = "Filter by firstname", in = ParameterIn.QUERY, schema = @Schema(type = "string"))
-    @Parameter(name = "filter", hidden = true)
+    @Parameter(name = "idClient", description = "Filter by client id", in = ParameterIn.QUERY, schema = @Schema(type = "long"))
     @GetMapping(path = "/paginated", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<RoleDTO>> getAllPaginated(
         @RequestParam(defaultValue = "0") Integer pageIndex,
@@ -119,6 +119,19 @@ public class RoleController {
     @Operation(summary = "Synchronize roles with IDP", description = "Synchronize roles with IDP")
     public ResponseEntity<Void> synchronizeRoles(@RequestBody List<String> clientIds) {
         roleService.synchronizeRoles(clientIds);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping
+    @Operation(
+        summary = "Update roles",
+        description = "Update roles",
+        responses = {
+            @ApiResponse(responseCode = "204")
+        }
+    )
+    public ResponseEntity<Void> updateRoles(@RequestBody List<RoleDTO> roles) {
+        roleService.updateRoles(roles);
         return ResponseEntity.noContent().build();
     }
 

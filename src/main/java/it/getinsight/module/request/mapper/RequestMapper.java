@@ -32,7 +32,7 @@ public interface RequestMapper extends BaseMapper<RequestEntity, RequestDTO>, Ba
     )
     @Mapping(
         target = "roleId",
-        expression = "java(toString(value, 3))"
+        expression = "java(toLong(value, 3))"
     )
     RequestDTO toMap(Object value);
 
