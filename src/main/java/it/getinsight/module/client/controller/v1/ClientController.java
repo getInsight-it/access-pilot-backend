@@ -14,7 +14,6 @@ import it.getinsight.module.client.dto.ClientDTO;
 import it.getinsight.module.client.service.ClientService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,12 +32,7 @@ public class ClientController {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
         summary = "Retrieve the list of clients",
-        description = "Retrieve all clients",
-        responses = {
-            @ApiResponse(responseCode = "200", content = {
-                @Content(schema = @Schema(implementation = ClientDTO[].class))
-            })
-        }
+        description = "Retrieve all clients"
     )
     public ResponseEntity<List<ClientDTO>> getAllClients() {
         return ResponseEntity.ok(clientService.getAllClientsDynamicQuery());
@@ -46,12 +40,7 @@ public class ClientController {
 
     @Operation(
         summary = "Retrieve the paginated list of clients",
-        description = "Retrieve a list of clients, with pagination, using a name filter",
-        responses = {
-            @ApiResponse(responseCode = "200", content = {
-                @Content(schema = @Schema(implementation = PageableResponseModel.class))
-            })
-        }
+        description = "Retrieve a list of clients, with pagination, using a name filter"
     )
     @Parameter(name = "name", description = "Filter by name", in = ParameterIn.QUERY, schema = @Schema(type = "string"))
     @Parameter(name = "filter", hidden = true)
@@ -69,12 +58,7 @@ public class ClientController {
 
     @Operation(
         summary = "Retrieve the paginated list of clients",
-        description = "Retrieve a list of clients, with pagination, using a name filter",
-        responses = {
-            @ApiResponse(responseCode = "200", content = {
-                @Content(schema = @Schema(implementation = PageableResponseModel.class))
-            })
-        }
+        description = "Retrieve a list of clients, with pagination, using a name filter"
     )
     @GetMapping(path = "/paginated-by-name", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<ClientDTO>> getAllClientsPaginatedByName(
@@ -90,12 +74,7 @@ public class ClientController {
 
     @Operation(
         summary = "Retrieve a client by ID",
-        description = "Retrieve a client by ID",
-        responses = {
-            @ApiResponse(responseCode = "200", content = {
-                @Content(schema = @Schema(implementation = ClientDTO.class))
-            })
-        }
+        description = "Retrieve a client by ID"
     )
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ClientDTO> getClientById(@PathVariable Long id) {
@@ -104,12 +83,7 @@ public class ClientController {
 
     @Operation(
         summary = "Synchronize clients",
-        description = "Synchronize clients",
-        responses = {
-            @ApiResponse(responseCode = "200", content = {
-                @Content(schema = @Schema(implementation = ClientDTO.class))
-            })
-        }
+        description = "Synchronize clients"
     )
     @PostMapping(value = "/synchronize", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ClientDTO> synchronize(@RequestBody List<Long> clientIds) {
@@ -119,12 +93,7 @@ public class ClientController {
 
     @Operation(
         summary = "Create a new client",
-        description = "Create a new client",
-        responses = {
-            @ApiResponse(responseCode = "200", content = {
-                @Content(schema = @Schema(implementation = ClientDTO.class))
-            })
-        }
+        description = "Create a new client"
     )
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ClientDTO> create(@RequestBody ClientDTO clientDTO) {
@@ -133,12 +102,7 @@ public class ClientController {
 
     @Operation(
         summary = "Update client management",
-        description = "Update client management",
-        responses = {
-            @ApiResponse(responseCode = "200", content = {
-                @Content(schema = @Schema(implementation = ClientDTO.class))
-            })
-        }
+        description = "Update client management"
     )
     @PutMapping(value = "{id}/management", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ClientDTO> synchronize(@PathVariable Long id, @RequestBody ClientDTO clientDTO) {
