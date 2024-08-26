@@ -32,12 +32,7 @@ public class UserController {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
         summary = "Retrieve the list of users",
-        description = "Retrieve all users",
-        responses = {
-            @ApiResponse(responseCode = "200", content = {
-                @Content(schema = @Schema(implementation = UserDTO[].class))
-            })
-        }
+        description = "Retrieve all users"
     )
     public ResponseEntity<List<UserDTO>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsersDynamicQuery());
@@ -45,12 +40,7 @@ public class UserController {
 
     @Operation(
         summary = "Retrieve the paginated list of users",
-        description = "Retrieve a list of users with pagination, using filters by name, status, quantity, and/or value",
-        responses = {
-            @ApiResponse(responseCode = "200", content = {
-                @Content(schema = @Schema(implementation = PageableResponseModel.class))
-            })
-        }
+        description = "Retrieve a list of users with pagination, using filters by name, status, quantity, and/or value"
     )
     @Parameter(name = "name", description = "Filter by name", in = ParameterIn.QUERY, schema = @Schema(type = "string"))
     @Parameter(name = "status", description = "Filter by status", in = ParameterIn.QUERY, schema = @Schema(type = "boolean"))
@@ -71,12 +61,7 @@ public class UserController {
 
     @Operation(
         summary = "Retrieve the paginated list of users",
-        description = "Retrieve a list of users with pagination, using a filter by name",
-        responses = {
-            @ApiResponse(responseCode = "200", content = {
-                @Content(schema = @Schema(implementation = PageableResponseModel.class))
-            })
-        }
+        description = "Retrieve a list of users with pagination, using a filter by name"
     )
     @GetMapping(path = "/paginated-by-name", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<UserDTO>> getAllUsersPaginatedByName(
@@ -112,12 +97,7 @@ public class UserController {
               "longitude": 0
             }
             ```
-            """,
-        responses = {
-            @ApiResponse(responseCode = "200", content = {
-                @Content(schema = @Schema(implementation = UserDTO.class))
-            })
-        }
+            """
     )
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {

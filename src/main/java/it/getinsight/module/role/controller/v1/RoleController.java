@@ -32,12 +32,7 @@ public class RoleController {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
         summary = "Retrieve the list of roles",
-        description = "Retrieve all roles",
-        responses = {
-            @ApiResponse(responseCode = "200", content = {
-                @Content(schema = @Schema(implementation = RoleDTO[].class))
-            })
-        }
+        description = "Retrieve all roles"
     )
     public ResponseEntity<List<RoleDTO>> getAllRoles() {
         return ResponseEntity.ok(roleService.getAllRolesDynamicQuery());
@@ -45,12 +40,7 @@ public class RoleController {
 
     @Operation(
         summary = "Retrieve the paginated list of roles",
-        description = "Retrieve a list of roles, with pagination, using a filter by name",
-        responses = {
-            @ApiResponse(responseCode = "200", content = {
-                @Content(schema = @Schema(implementation = PageableResponseModel.class))
-            })
-        }
+        description = "Retrieve a list of roles, with pagination, using a filter by name"
     )
     @Parameter(name = "name", description = "Filter by firstname", in = ParameterIn.QUERY, schema = @Schema(type = "string"))
     @Parameter(name = "idClient", description = "Filter by client id", in = ParameterIn.QUERY, schema = @Schema(type = "long"))
@@ -68,12 +58,7 @@ public class RoleController {
 
     @Operation(
         summary = "Retrieve the paginated list of roles",
-        description = "Retrieve a list of roles, with pagination, using a filter by name",
-        responses = {
-            @ApiResponse(responseCode = "200", content = {
-                @Content(schema = @Schema(implementation = PageableResponseModel.class))
-            })
-        }
+        description = "Retrieve a list of roles, with pagination, using a filter by name"
     )
     @GetMapping(path = "/paginated-by-name", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<RoleDTO>> getAllPaginatedByName(
@@ -89,12 +74,7 @@ public class RoleController {
 
     @Operation(
         summary = "Retrieve a role by ID",
-        description = "Retrieve a role by ID",
-        responses = {
-            @ApiResponse(responseCode = "200", content = {
-                @Content(schema = @Schema(implementation = RoleDTO.class))
-            })
-        }
+        description = "Retrieve a role by ID"
     )
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<RoleDTO> getById(@PathVariable Long id) {
@@ -103,12 +83,7 @@ public class RoleController {
 
     @Operation(
         summary = "Retrieve the list of users by role ID",
-        description = "Retrieve the list of users by role ID",
-        responses = {
-            @ApiResponse(responseCode = "200", content = {
-                @Content(schema = @Schema(implementation = RoleDTO.class))
-            })
-        }
+        description = "Retrieve the list of users by role ID"
     )
     @GetMapping(value = "/{id}/approves", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<UserDTO>> getOrImportApprovesByRoleId(@PathVariable Long id) {

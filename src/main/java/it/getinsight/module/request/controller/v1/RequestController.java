@@ -1,5 +1,7 @@
 package it.getinsight.module.request.controller.v1;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
@@ -21,6 +23,9 @@ public class RequestController {
     private final RequestService requestService;
 
     @PostMapping
+    @Operation(summary = "Creates a new request.",
+        description = "Creates a new request with the given requestDTO"
+    )
     public ResponseEntity<Void> create(@RequestBody RequestDTO requestDTO){
         var uri = ServletUriComponentsBuilder.fromCurrentRequest().path(
             "/{id}").buildAndExpand(requestService.createRequest(requestDTO).id()).toUri();
@@ -28,12 +33,19 @@ public class RequestController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Updates a request.",
+        description = "Updates a request with the given id and requestDTO"
+    )
     public ResponseEntity<Void> publishRequestUpdateEvent(@PathVariable Long id, @RequestBody String status) {
         requestService.publishRequestUpdateEvent(id, status);
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 
     @GetMapping(path = "/me/paginated-by-name", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(
+        summary = "Retrieve the paginated list of requests associated with the authenticated user",
+        description = "Retrieve a list of requests, with pagination, using a filter by name"
+    )
     public ResponseEntity<PageableResponseModel<RequestDTO>> findAllPaginated(
         @RequestParam(defaultValue = "0") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
