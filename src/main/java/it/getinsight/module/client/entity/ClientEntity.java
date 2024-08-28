@@ -5,10 +5,12 @@ import it.getinsight.core.model.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.envers.Audited;
 
 @Getter
 @Setter
 @Entity
+@Audited
 @Table(name = "TB_CLIENTE")
 @SequenceGenerator(name = "ClientEntity.sq", sequenceName = "SQ_CLIENTE", allocationSize = 1)
 public class ClientEntity extends BaseEntity<Long> {

@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.envers.Audited;
 
 import java.io.Serial;
 
@@ -15,6 +16,7 @@ import java.io.Serial;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@Audited
 @Table(name = "TB_USUARIO")
 @SequenceGenerator(name = "UserEntity.sq", sequenceName = "SQ_USUARIO", allocationSize = 1)
 public class UserEntity extends BaseEntity<Long> {

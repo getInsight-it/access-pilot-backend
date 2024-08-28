@@ -1,7 +1,9 @@
 package it.getinsight.module.email.entity;
 
+import it.getinsight.core.model.jpa.entity.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.envers.Audited;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
@@ -15,8 +17,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Audited
 @Table(name = "TB_EMAIL_SENT")
-public class EmailSent implements Serializable {
+public class EmailSent extends AuditableEntity<Long, String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

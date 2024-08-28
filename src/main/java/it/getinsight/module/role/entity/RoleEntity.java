@@ -1,18 +1,21 @@
 package it.getinsight.module.role.entity;
 
 
+import it.getinsight.core.model.jpa.entity.AuditableEntity;
 import it.getinsight.core.model.jpa.entity.BaseEntity;
 import it.getinsight.module.client.entity.ClientEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.envers.Audited;
 
 @Getter
 @Setter
 @Entity
+@Audited
 @Table(name = "TB_ROLE")
 @SequenceGenerator(name = "ClientEntity.sq", sequenceName = "SQ_ROLE", allocationSize = 1)
-public class RoleEntity extends BaseEntity<Long> {
+public class RoleEntity extends AuditableEntity<Long, String> {
 
     @Id
     @Column(name = "ID")
