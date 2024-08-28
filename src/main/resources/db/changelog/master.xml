@@ -18,10 +18,11 @@
             <column name="SOBRENOME" type="varchar(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
             <column name="DATA_CRIACAO" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
             <column name="DATA_ATUALIZACAO" type="TIMESTAMP" />
         </createTable>
         <rollback>
@@ -51,6 +52,12 @@
             <column name="BASE_URL" type="VARCHAR(255)">
                 <constraints nullable="true"/>
             </column>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_CRIACAO" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP" />
         </createTable>
         <rollback>
             <dropTable tableName="TB_CLIENTE"/>
@@ -78,6 +85,12 @@
             <column name="ID_CLIENTE" type="BIGINT">
                 <constraints nullable="true"/>
             </column>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_CRIACAO" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP" />
         </createTable>
         <addForeignKeyConstraint constraintName="FK_ROLE_ROLE" baseTableName="TB_ROLE" baseColumnNames="ID_ROLE_PARENT" referencedTableName="TB_ROLE" referencedColumnNames="ID"/>
         <addForeignKeyConstraint constraintName="FK_ROLE_CLIENTE" baseTableName="TB_ROLE" baseColumnNames="ID_CLIENTE" referencedTableName="TB_CLIENTE" referencedColumnNames="ID"/>
@@ -113,13 +126,11 @@
             <column name="LOG_LEVEL" type="INTEGER"/>
             <column name="MAX_ID_TOKEN_IAT_OFFSET_ALLOWED_IN_SECONDS" type="INTEGER"/>
             <column name="HISTORY_CLEANUP_OFF" type="BOOLEAN"/>
-            <column name="CRIADO_POR" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
             <column name="DATA_CRIACAO" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
             <column name="DATA_ATUALIZACAO" type="TIMESTAMP" />
         </createTable>
         <rollback>
@@ -127,50 +138,8 @@
             <dropSequence sequenceName="SQ_CONFIGURATION"/>
         </rollback>
     </changeSet>
-    <changeSet id="005" author="luan.rodrigues">
-        <insert tableName="TB_CONFIGURATION">
-            <column name="NAME" value="Aplicação Client One Plus" />
-            <column name="DESCRIPTION" value="Aplicação de exemplo para testar o Keycloak" />
-            <column name="ICON" value="fas fa-yin-yang" />
-            <column name="AUTHORITY" value="http://localhost:9080/realms/accesspilot" />
-            <column name="REDIRECT_URL" value="http://localhost:4200" />
-            <column name="CLIENT_ID" value="app-frontend-number-one" />
-            <column name="RESPONSE_TYPE" value="code" />
-            <column name="SCOPE" value="openid profile" />
-            <column name="POST_LOGOUT_REDIRECT_URI" value="http://localhost:4200" />
-            <column name="START_CHECKSESSION" valueBoolean="false" />
-            <column name="SILENT_RENEW" valueBoolean="true" />
-            <column name="STARTUP_ROUTE" value="/client/detail" />
-            <column name="FORBIDDEN_ROUTE" value="/forbidden" />
-            <column name="UNAUTHORIZED_ROUTE" value="/unauthorized" />
-            <column name="LOG_LEVEL" valueNumeric="1" />
-            <column name="MAX_ID_TOKEN_IAT_OFFSET_ALLOWED_IN_SECONDS" valueNumeric="600" />
-            <column name="HISTORY_CLEANUP_OFF" valueBoolean="true" />
-            <column name="CRIADO_POR" value="luan.analiseinfo" />
-        </insert>
-        <insert tableName="TB_CONFIGURATION">
-            <column name="NAME" value="Aplicação Client Two XPTO" />
-            <column name="DESCRIPTION" value="Aplicação de exemplo para testar o Keycloak" />
-            <column name="ICON" value="fas fa-wine-bottle" />
-            <column name="AUTHORITY" value="http://localhost:9080/realms/accesspilot" />
-            <column name="REDIRECT_URL" value="http://localhost:4200" />
-            <column name="CLIENT_ID" value="app-frontend-number-two" />
-            <column name="RESPONSE_TYPE" value="code" />
-            <column name="SCOPE" value="openid profile" />
-            <column name="POST_LOGOUT_REDIRECT_URI" value="http://localhost:4200" />
-            <column name="START_CHECKSESSION" valueBoolean="false" />
-            <column name="SILENT_RENEW" valueBoolean="true" />
-            <column name="STARTUP_ROUTE" value="/client/detail" />
-            <column name="FORBIDDEN_ROUTE" value="/forbidden" />
-            <column name="UNAUTHORIZED_ROUTE" value="/unauthorized" />
-            <column name="LOG_LEVEL" valueNumeric="1" />
-            <column name="MAX_ID_TOKEN_IAT_OFFSET_ALLOWED_IN_SECONDS" valueNumeric="600" />
-            <column name="HISTORY_CLEANUP_OFF" valueBoolean="true" />
-            <column name="CRIADO_POR" value="luan.analiseinfo" />
-        </insert>
-    </changeSet>
 
-    <changeSet id="006" author="luan.rodrigues">
+    <changeSet id="005" author="luan.rodrigues">
         <createSequence sequenceName="SQ_SOLICITACAO" minValue="1" incrementBy="1" startValue="1"/>
         <createTable tableName="TB_SOLICITACAO">
             <column name="ID" type="bigint" autoIncrement="true">
@@ -188,6 +157,12 @@
             <column name="ID_USUARIO_APROVADOR" type="bigint">
                 <constraints nullable="true"/>
             </column>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_CRIACAO" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP" />
         </createTable>
         <addForeignKeyConstraint constraintName="fk_role"
                                  baseTableName="TB_SOLICITACAO" baseColumnNames="ID_ROLE"

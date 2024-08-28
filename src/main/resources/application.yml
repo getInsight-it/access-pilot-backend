@@ -127,6 +127,12 @@ spring:
         show_sql: true
         format_sql: true
         use_sql_comments: true
+        envers:
+          audit_table_suffix: _AUD
+          store_data_at_delete: true
+          revision_field_name: REV
+          revision_type_field_name: REVTYPE
+
 
   liquibase:
     enabled: true

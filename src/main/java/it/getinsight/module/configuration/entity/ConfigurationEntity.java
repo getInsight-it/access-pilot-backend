@@ -4,12 +4,14 @@ import it.getinsight.core.model.jpa.entity.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.envers.Audited;
 
 import java.io.Serial;
 
 @Getter
 @Setter
 @Entity
+@Audited
 @Table(name = "TB_CONFIGURATION")
 @SequenceGenerator(name = "ConfigurationEntity.sq", sequenceName = "SQ_CONFIGURATION", allocationSize = 1)
 public class ConfigurationEntity extends AuditableEntity<Long, String> {
