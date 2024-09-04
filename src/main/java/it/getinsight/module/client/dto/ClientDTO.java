@@ -2,9 +2,11 @@ package it.getinsight.module.client.dto;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 
 import java.io.Serializable;
 
+@Builder
 public record ClientDTO(
 
     Long id,

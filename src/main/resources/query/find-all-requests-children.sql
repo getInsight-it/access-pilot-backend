@@ -1,4 +1,4 @@
-SELECT s.id, s.status, s.id_role, s.id_usuario_solicitante, s.id_usuario_aprovador
+SELECT s.id, s.status, s.descricao, s.id_role, s.id_usuario_solicitante, s.id_usuario_aprovador
 FROM TB_SOLICITACAO s
 WHERE status = :status
     AND

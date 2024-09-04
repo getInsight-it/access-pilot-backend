@@ -1,7 +1,9 @@
-SELECT ID,
+SELECT r.ID,
        ID_ROLE_EXTERNO,
        NOME,
-       DESCRICAO,
+       r.DESCRICAO,
        ID_ROLE_PARENT,
-       ID_CLIENTE
-FROM TB_ROLE
+       ID_CLIENTE,
+       CLIENT_ID
+FROM TB_ROLE as r
+         inner join TB_CLIENTE as c on r.ID_CLIENTE = c.ID

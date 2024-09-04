@@ -148,6 +148,9 @@
             <column name="STATUS" type="varchar(255)">
                 <constraints nullable="false"/>
             </column>
+<!--            <column name="DESCRICAO" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>-->
             <column name="ID_ROLE" type="bigint">
                 <constraints nullable="false"/>
             </column>

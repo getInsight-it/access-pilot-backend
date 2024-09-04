@@ -4,9 +4,7 @@ package it.getinsight.module.client.controller.v1;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
@@ -86,7 +84,7 @@ public class ClientController {
         description = "Synchronize clients"
     )
     @PostMapping(value = "/synchronize", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ClientDTO> synchronize(@RequestBody List<Long> clientIds) {
+    public ResponseEntity<ClientDTO> synchronize(@RequestBody List<String> clientIds) {
         clientService.synchronizationClients(clientIds);
         return ResponseEntity.noContent().build();
     }

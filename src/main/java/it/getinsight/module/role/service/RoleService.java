@@ -1,14 +1,14 @@
 package it.getinsight.module.role.service;
 
 
-import it.getinsight.module.client.entity.ClientEntity;
-import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
+import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.client.repository.ClientRepository;
+import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
 import it.getinsight.module.role.dto.RoleDTO;

@@ -41,5 +41,9 @@ public interface RoleMapper extends BaseMapper<RoleEntity, RoleDTO>, BaseGeneric
        target = "idClient",
        expression = "java(toLong( value, 5 ))"
    )
+    @Mapping(
+         target = "clientName",
+         expression = "java(toString( value, 6 ))"
+    )
    RoleDTO toMap(Object value);
 }

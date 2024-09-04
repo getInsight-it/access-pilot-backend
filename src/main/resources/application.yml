@@ -25,6 +25,13 @@ provider:
     realm: access-pilot
     client-id: app-backend-number-one
     client-secret: ANCgAlx8rvqXrWkosEMIdvmjEFspi9L0
+    ignore-clients:
+      - realm-management
+      - broker
+      - security-admin-console
+      - account
+      - admin-cli
+      - account-console
 
 jwt:
   auth:
@@ -177,7 +184,7 @@ springdoc:
     oauth:
       client-id: ${jwt.auth.converter.resource-id}
       client-secret: ${spring.security.oauth2.resourceserver.opaquetoken.client-secret}
-      realm: getInsight
+      realm: ${provider.keycloak.realm}
       scopes:
         - openid
     csrf:

@@ -1,7 +1,5 @@
 package it.getinsight.module.keycloak.dto;
 
-import it.getinsight.module.keycloak.dto.FederatedIdentityRepresentationDTO;
-
 import java.util.List;
 import java.util.Map;
 

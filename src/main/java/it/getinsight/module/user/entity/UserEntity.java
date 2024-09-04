@@ -1,7 +1,7 @@
 package it.getinsight.module.user.entity;
 
 
-import it.getinsight.core.model.jpa.entity.BaseEntity;
+import it.getinsight.core.model.jpa.entity.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,7 +19,8 @@ import java.io.Serial;
 @Audited
 @Table(name = "TB_USUARIO")
 @SequenceGenerator(name = "UserEntity.sq", sequenceName = "SQ_USUARIO", allocationSize = 1)
-public class UserEntity extends BaseEntity<Long> {
+public class UserEntity extends AuditableEntity<Long, String>{
+
     @Serial
     private static final long serialVersionUID = 5287296228628658948L;
 
