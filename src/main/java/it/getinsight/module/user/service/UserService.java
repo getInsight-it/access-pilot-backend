@@ -1,11 +1,11 @@
 package it.getinsight.module.user.service;
 
-import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
+import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.user.dto.UserDTO;
 import it.getinsight.module.user.entity.UserEntity;
 import it.getinsight.module.user.mapper.UserMapper;

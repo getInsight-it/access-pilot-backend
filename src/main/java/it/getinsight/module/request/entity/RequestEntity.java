@@ -1,7 +1,6 @@
 package it.getinsight.module.request.entity;
 
 import it.getinsight.core.model.jpa.entity.AuditableEntity;
-import it.getinsight.core.model.jpa.entity.BaseEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.user.entity.UserEntity;
@@ -33,15 +32,18 @@ public class RequestEntity extends AuditableEntity<Long, String> {
     @Enumerated(EnumType.STRING)
     private RequestStatus status = RequestStatus.CREATED;
 
-    @ManyToOne
+    @Column(name = "DESCRICAO")
+    private String description;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_ROLE", referencedColumnName = "ID")
     private RoleEntity role;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_USUARIO_SOLICITANTE", referencedColumnName = "ID")
     private UserEntity requestingUser;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_USUARIO_APROVADOR", referencedColumnName = "ID")
     private UserEntity approvingUser;
 

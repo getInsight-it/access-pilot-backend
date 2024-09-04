@@ -1,7 +1,7 @@
 package it.getinsight.module.client.service;
 
 
-import it.getinsight.module.keycloak.client.KeycloakClient;
+import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
@@ -11,6 +11,8 @@ import it.getinsight.module.client.dto.ClientDTO;
 import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.client.mapper.ClientMapper;
 import it.getinsight.module.client.repository.ClientRepository;
+import it.getinsight.module.keycloak.client.KeycloakClient;
+import it.getinsight.module.keycloak.config.KeycloakProperties;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Example;
@@ -32,8 +34,9 @@ public class ClientService {
     private final ClientRepository clientRepository;
     private final ClientMapper clientMapper;
     private final KeycloakClient keycloakClient;
-
     private static final String NAME_QUERY_FIND_ALL_CLIENTS = "find-all-clients";
+    private final KeycloakProperties keycloakProperties;
+
 
     public List<ClientDTO> getAllClientsDynamicQuery() {
         final var parameters = DynamicParameters.get();
@@ -77,8 +80,10 @@ public class ClientService {
 
 
     @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
-    public void synchronizationClients(List<Long> clientIds) {
-        var clientEntities = clientRepository.findAllByIdIn(clientIds);
+    public void synchronizationClients(List<String> clientIds) {
+        if (CollectionUtils.isEmpty(clientIds))return;
+        final var searchableClientIds = clientIds.stream().map(String::trim).map(String::toLowerCase).filter( o -> !keycloakProperties.getIgnoreClients().contains(o)).toList();
+        var clientEntities = clientRepository.findAllByClientIdIn(searchableClientIds);
         var clients = keycloakClient.getClients().stream()
             .filter(client -> client.attributes().containsKey(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED) && client.attributes().get(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED).equals("true"))
             .filter( obj ->  clientEntities.stream().anyMatch( c -> Objects.equals(c.getClientId(), obj.clientId()))).toList();
@@ -104,6 +109,7 @@ public class ClientService {
     @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
     public ClientDTO create(ClientDTO dto) {
         var entity = clientMapper.toEntity(dto);
+        entity.setClientId(dto.clientId().toLowerCase());
         return clientMapper.toDto(clientRepository.save(entity));
     }
 

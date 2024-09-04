@@ -23,7 +23,7 @@ public class ClientEntity extends BaseEntity<Long> {
     @Column(name = "CLIENT_UUID")
     private String clientUUID;
 
-    @Column(name = "CLIENT_ID")
+    @Column(name = "CLIENT_ID", unique = true, nullable = false)
     private String clientId;
 
     @Column(name = "MANAGED")

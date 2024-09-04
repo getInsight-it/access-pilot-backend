@@ -12,9 +12,15 @@ public record RequestDTO(
     @Size(min = 1, max = 100)
     @NotBlank
     Long id,
+
     RequestStatus status,
+
+    @Size(max = 255)
+    String description,
+
     @NotBlank
-    String userId,
+    Long userId,
+
     @NotBlank
     Long roleId
 ) implements Serializable {

@@ -1,17 +1,17 @@
 package it.getinsight.module.request.service;
 
 
-import it.getinsight.module.client.entity.ClientEntity;
-import it.getinsight.module.client.mapper.ClientMapper;
-import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.exception.BusinessException;
 import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
+import it.getinsight.module.client.entity.ClientEntity;
+import it.getinsight.module.client.mapper.ClientMapper;
 import it.getinsight.module.email.dto.EmailDTO;
 import it.getinsight.module.email.service.EmailService;
+import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.request.config.EmailNotificationProperties;
 import it.getinsight.module.request.dto.RequestDTO;
 import it.getinsight.module.request.entity.RequestEntity;
@@ -22,8 +22,9 @@ import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.mapper.RoleMapper;
 import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.role.service.RoleService;
-import it.getinsight.module.user.mapper.UserMapper;
+import it.getinsight.module.storage.service.StorageFileService;
 import it.getinsight.module.user.entity.UserEntity;
+import it.getinsight.module.user.mapper.UserMapper;
 import it.getinsight.module.user.repository.UserRepository;
 import it.getinsight.module.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -55,20 +57,24 @@ public class RequestService {
     private final RoleService roleService;
     private final UserService userService;
     private final EmailService emailService;
+    private final StorageFileService storageFileService;
 
     private static final String NAME_QUERY_FIND_ALL_REQUESTS_ME = "find-all-requests-children";
+    private static final String NAME_QUERY_FIND_ALL_REQUESTS_IN_ROLES = "find-all-requests-in-roles";
+    private static final String NAME_QUERY_FIND_ALL_REQUESTS = "find-all-requests";
+    public static final String PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET = "private-getinsight-accesspilot-docs";
     private final UserMapper userMapper;
     private final RoleMapper roleMapper;
     private final ClientMapper clientMapper;
     private final EmailNotificationProperties emailNotificationProperties;
 
     @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
-    public RequestDTO createRequest(final RequestDTO dto) {
+    public RequestDTO createRequest(final RequestDTO requestDTO, List<MultipartFile> attachments) {
         Jwt principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userId = principal.getSubject();
         String username = principal.getClaimAsString("preferred_username");
-        var roleEntity = roleRepository.findById(dto.roleId()).orElseThrow(ResourceNotFoundException::new);
-        final var entity = requestMapper.toEntity(dto);
+        var roleEntity = roleRepository.findById(requestDTO.roleId()).orElseThrow(ResourceNotFoundException::new);
+        final var entity = requestMapper.toEntity(requestDTO);
         var user = userRepository.findByExternalId(userId).orElseGet(() -> {
             var userEntity = new UserEntity();
             userEntity.setExternalId(userId);
@@ -80,9 +86,9 @@ public class RequestService {
         });
         entity.setRequestingUser(user);
         entity.setRole(roleEntity);
-
         sendApproves(entity);
         requestRepository.save(entity);
+        storageFileService.save(attachments, PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET, false, false, entity.getId());
         return requestMapper.toDto(entity);
     }
 
@@ -115,7 +121,7 @@ public class RequestService {
         var roleEntity = roleRepository.findById(entity.getRole().getId()).orElseThrow(ResourceNotFoundException::new);
         var role = keycloakClient.getRoleByNameAndClientUUID(roleEntity.getName(), roleEntity.getClient().getClientUUID());
         try {
-            keycloakClient.getUsersByClientUUIDAndRoleName(roleEntity.getClient().getClientUUID(), role.name());
+            keycloakClient.assignRoles(entity.getRequestingUser().getExternalId(), roleEntity.getClient().getClientUUID(), List.of(role));
         } catch (Exception e) {
             entity.setStatus(RequestStatus.ROLES_NOT_ASSIGNED);
             requestRepository.save(entity);
@@ -135,6 +141,16 @@ public class RequestService {
         return requestRepository.findAllNative(NAME_QUERY_FIND_ALL_REQUESTS_ME, parameters,PaginationHelper.toPageable(configPage), requestMapper);
     }
 
+    public PageableResponseModel<RequestDTO> getAllRequestsByRolesDynamicQuery(PageableRequestModel<String> configPage) {
+        var roles = configPage.getFilter().filter(StringUtils::isNotBlank).orElse(null);
+        if (StringUtils.isNotBlank(roles)) {
+            DynamicParameters parameters = DynamicParameters.get().append("roles", List.of(roles.split(",")));
+            return requestRepository.findAllNative(NAME_QUERY_FIND_ALL_REQUESTS_IN_ROLES, parameters,PaginationHelper.toPageable(configPage), requestMapper);
+        }else {
+            return requestRepository.findAllNative(NAME_QUERY_FIND_ALL_REQUESTS, DynamicParameters.get(),PaginationHelper.toPageable(configPage), requestMapper);
+        }
+    }
+
     private Set<String> extractRoles(Map<String, Object> resourceAccess) {
         return resourceAccess.values().stream()
             .flatMap(this::extractRolesFromClientAccess)
@@ -151,7 +167,8 @@ public class RequestService {
 
     private void sendApproves(RequestEntity requestEntity) {
         requestEntity.setStatus(RequestStatus.CREATED);
-        var approvals = keycloakClient.getUsersByClientUUIDAndRoleName(requestEntity.getRole().getClient().getClientUUID(), requestEntity.getRole().getName()).stream()
+        var roleEntity = Optional.ofNullable(requestEntity.getRole().getRole()).orElseThrow(() -> new BusinessException("Role parent não encontrada"));
+        var approvals = keycloakClient.getUsersByClientUUIDAndRoleName(roleEntity.getClient().getClientUUID(), roleEntity.getName()).stream()
             .map(user ->
                 userService.findOrImportByExternalId(user.id())
             ).toList();
