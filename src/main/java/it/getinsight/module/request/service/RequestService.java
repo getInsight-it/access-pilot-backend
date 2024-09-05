@@ -32,7 +32,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -62,13 +61,13 @@ public class RequestService {
     private static final String NAME_QUERY_FIND_ALL_REQUESTS_ME = "find-all-requests-children";
     private static final String NAME_QUERY_FIND_ALL_REQUESTS_IN_ROLES = "find-all-requests-in-roles";
     private static final String NAME_QUERY_FIND_ALL_REQUESTS = "find-all-requests";
-    public static final String PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET = "private-getinsight-accesspilot-docs";
+    public static final String  PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET = "private-getinsight-accesspilot-docs";
     private final UserMapper userMapper;
     private final RoleMapper roleMapper;
     private final ClientMapper clientMapper;
     private final EmailNotificationProperties emailNotificationProperties;
 
-    @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.REQUIRED)
     public RequestDTO createRequest(final RequestDTO requestDTO, List<MultipartFile> attachments) {
         Jwt principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userId = principal.getSubject();
@@ -92,7 +91,7 @@ public class RequestService {
         return requestMapper.toDto(entity);
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.REQUIRED)
     public void publishRequestUpdateEvent(Long id, String status) {
         var principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         var approvingUserDTO = userService.findOrImportByExternalId(principal.getSubject());
@@ -175,6 +174,7 @@ public class RequestService {
         approvals.stream()
             .map(approvedDTO -> EmailDTO.builder()
                 .to(approvedDTO.email())
+                .userId(approvedDTO.id())
                 .subject(emailNotificationProperties.getApprover().getSubject())
                 .templateName("request.html")
                 .variables(getVariables(requestEntity.getRequestingUser(),userMapper.toEntity(approvedDTO), requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient()))
@@ -208,6 +208,7 @@ public class RequestService {
             .to(requestingUserDTO.email())
             .subject(emailNotificationProperties.getStatusRequest().getSubject())
             .templateName("status-request.html")
+            .userId(requestingUserDTO.id())
             .variables(variables)
             .isHtml(true)
             .build());
