@@ -18,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,7 +78,7 @@ public class ClientService {
     }
 
 
-    @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.REQUIRED)
     public void synchronizationClients(List<String> clientIds) {
         if (CollectionUtils.isEmpty(clientIds))return;
         final var searchableClientIds = clientIds.stream().map(String::trim).map(String::toLowerCase).filter( o -> !keycloakProperties.getIgnoreClients().contains(o)).toList();
@@ -90,7 +89,7 @@ public class ClientService {
         clients.forEach(this::synchronize);
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.REQUIRED)
     public void synchronize(ClientRepresentationDTO client) {
         var entity = clientRepository.findByClientId(client.clientId()).orElseGet(() -> {
             var newEntity = new ClientEntity();
@@ -106,7 +105,7 @@ public class ClientService {
         clientRepository.save(entity);
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.REQUIRED)
     public ClientDTO create(ClientDTO dto) {
         var entity = clientMapper.toEntity(dto);
         entity.setClientId(dto.clientId().toLowerCase());
