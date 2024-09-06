@@ -22,17 +22,22 @@ class AccessPilotSentryUserProvider implements SentryUserProvider {
             final var securityContext = SecurityContextHolder.getContext();
             final var user = new User();
             Optional.ofNullable(securityContext.getAuthentication()).ifPresent(authentication -> {
-                final var principal = (JwtAuthenticationToken) authentication.getPrincipal();
+                final var principal = authentication.getPrincipal();
 
-                user.setId(principal.getToken().getId());
-                user.setName(principal.getToken().getClaimAsString("name"));
-                user.setEmail(principal.getToken().getClaimAsString("email"));
-                user.setUsername(principal.getToken().getClaimAsString("preferred_username"));
-                user.setUnknown(principal.getTokenAttributes());
+                if (principal instanceof JwtAuthenticationToken jwt) {
+                    user.setId(jwt.getToken().getId());
+                    user.setName(jwt.getToken().getClaimAsString("name"));
+                    user.setEmail(jwt.getToken().getClaimAsString("email"));
+                    user.setUsername(jwt.getToken().getClaimAsString("preferred_username"));
+                    user.setUnknown(jwt.getTokenAttributes());
+                }else if (principal instanceof String str) {
+                    user.setName(str);
+                }
+
             });
             return user;
         }catch (Exception e) {
-            log.warn("Não foi possível identificar usuário para o Sentry.", e);
+            log.warn("Não foi possível identificar usuário para o Sentry.");
             return null;
         }
     }
