@@ -9,7 +9,7 @@ build:
     - docker
   image: registry.gitlab.com/getinsight.it/arquitetura/docker-base-images/builder/builder-java:21
   script:
-    - mvn clean package -T $(nproc) -Dmaven.artifact.threads=$(nproc) -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -s maven-settings.xml
+    - mvn clean package -P sentry -T $(nproc) -Dmaven.artifact.threads=$(nproc) -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -s maven-settings.xml
   cache:
     when: on_success
     paths:
@@ -44,14 +44,14 @@ package:
     - mkdir ~/.kube || true
     - echo $KUBE_CONFIG | base64 --decode > ~/.kube/config
   script:
-    - envsubst < ./k8s/deployment.yaml | kubectl apply -f - 
+    - envsubst < ./k8s/deployment.yaml | kubectl apply -f -
 
 deploy-dev:
   variables:
     KUBE_CONFIG: ${KUBE_CONFIG_NONPROD}
   extends: .deploy
   environment: dev
-  
+
 deploy-prd:
   variables:
     KUBE_CONFIG: ${KUBE_CONFIG_PROD}

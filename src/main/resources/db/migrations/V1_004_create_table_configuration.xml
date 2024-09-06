@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_004" author="luan.rodrigues@getinsight.it">
+        <createSequence sequenceName="SQ_CONFIGURATION" minValue="1" incrementBy="1" startValue="1"/>
+
+        <createTable tableName="TB_CONFIGURATION">
+            <column name="ID" type="BIGINT" defaultValueSequenceNext="SQ_CONFIGURATION">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DESCRIPTION" type="VARCHAR(255)"/>
+            <column name="ICON" type="VARCHAR(255)"/>
+            <column name="AUTHORITY" type="VARCHAR(255)"/>
+            <column name="REDIRECT_URL" type="VARCHAR(255)"/>
+            <column name="CLIENT_ID" type="VARCHAR(255)"/>
+            <column name="RESPONSE_TYPE" type="VARCHAR(255)"/>
+            <column name="SCOPE" type="VARCHAR(255)"/>
+            <column name="POST_LOGOUT_REDIRECT_URI" type="VARCHAR(255)"/>
+            <column name="START_CHECKSESSION" type="BOOLEAN"/>
+            <column name="SILENT_RENEW" type="BOOLEAN"/>
+            <column name="STARTUP_ROUTE" type="VARCHAR(255)"/>
+            <column name="FORBIDDEN_ROUTE" type="VARCHAR(255)"/>
+            <column name="UNAUTHORIZED_ROUTE" type="VARCHAR(255)"/>
+            <column name="LOG_LEVEL" type="INTEGER"/>
+            <column name="MAX_ID_TOKEN_IAT_OFFSET_ALLOWED_IN_SECONDS" type="INTEGER"/>
+            <column name="HISTORY_CLEANUP_OFF" type="BOOLEAN"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_CRIACAO" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP" />
+        </createTable>
+
+        <rollback>
+            <dropTable tableName="TB_CONFIGURATION"/>
+            <dropSequence sequenceName="SQ_CONFIGURATION"/>
+        </rollback>
+
+    </changeSet>
+
+</databaseChangeLog>

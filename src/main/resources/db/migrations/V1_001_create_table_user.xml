@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+
+    <changeSet id="V1_001" author="pedro.figueiredo@getinsight.it">
+        <createSequence sequenceName="SQ_USUARIO" minValue="1" incrementBy="1" startValue="1"/>
+
+        <createTable tableName="TB_USUARIO">
+            <column name="ID" type="BIGINT" defaultValueSequenceNext="SQ_USUARIO">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="ID_USUARIO_EXTERNO" type="VARCHAR(255)"/>
+            <column name="EMAIL" type="VARCHAR(255)"/>
+            <column name="USERNAME" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NOME" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SOBRENOME" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_CRIACAO" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP" />
+        </createTable>
+
+        <rollback>
+            <dropTable tableName="TB_USUARIO"/>
+            <dropSequence sequenceName="SQ_USUARIO"/>
+        </rollback>
+
+    </changeSet>
+
+</databaseChangeLog>

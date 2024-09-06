@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+
+    <changeSet id="V1_011" author="pedro.figueiredo@getinsight.it">
+        <createTable tableName="tb_configuration_aud">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rev" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="revtype" type="SMALLINT"/>
+            <column name="authority" type="VARCHAR(255)"/>
+            <column name="client_id" type="VARCHAR(255)"/>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="forbidden_route" type="VARCHAR(255)"/>
+            <column name="history_cleanup_off" type="BOOLEAN"/>
+            <column name="icon" type="VARCHAR(255)"/>
+            <column name="log_level" type="INTEGER"/>
+            <column name="max_id_token_iat_offset_allowed_in_seconds" type="INTEGER"/>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="post_logout_redirect_uri" type="VARCHAR(255)"/>
+            <column name="redirect_url" type="VARCHAR(255)"/>
+            <column name="response_type" type="VARCHAR(255)"/>
+            <column name="scope" type="VARCHAR(255)"/>
+            <column name="silent_renew" type="BOOLEAN"/>
+            <column name="start_checksession" type="BOOLEAN"/>
+            <column name="startup_route" type="VARCHAR(255)"/>
+            <column name="unauthorized_route" type="VARCHAR(255)"/>
+        </createTable>
+
+        <addPrimaryKey columnNames="rev, id" constraintName="tb_configuration_aud_pkey"
+                       tableName="tb_configuration_aud"/>
+
+        <addForeignKeyConstraint baseColumnNames="rev" baseTableName="tb_configuration_aud"
+                                 constraintName="fkd6wxh5cfs57evmxukua6cp6nj" deferrable="false"
+                                 initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+                                 referencedColumnNames="rev" referencedTableName="revinfo" validate="true"/>
+
+        <rollback>
+            <dropForeignKeyConstraint baseTableName="tb_configuration_aud"
+                                      constraintName="fkd6wxh5cfs57evmxukua6cp6nj" />
+            <dropTable tableName="tb_configuration_aud" />
+        </rollback>
+
+    </changeSet>
+
+</databaseChangeLog>

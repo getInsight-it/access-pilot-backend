@@ -2,7 +2,7 @@
 
 # Projeto Backend - SpringBoot
 
-![java](https://badgen.net/badge/Java/17/red?scale=1.2) ![spring-boot](https://badgen.net/badge/SpringBoot/3.1/green?scale=1.2) ![maven](https://badgen.net/badge/Maven/3.9.4/blue?scale=1.2)
+![java](https://badgen.net/badge/Java/21/red?scale=1.2) ![spring-boot](https://badgen.net/badge/SpringBoot/3.3.3/green?scale=1.2) ![maven](https://badgen.net/badge/Maven/3.9.9/blue?scale=1.2)
 
 > “Fear is the path to the dark side. Fear leads to anger. Anger leads to hate. Hate leads to suffering.” — Yoda
 
