@@ -2,9 +2,16 @@ package it.getinsight.module.email.service;
 
 
 import it.getinsight.core.exception.InfraException;
+import it.getinsight.core.exception.ResourceNotFoundException;
+import it.getinsight.core.helper.PaginationHelper;
+import it.getinsight.core.pagination.PageableRequestModel;
+import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.email.dto.EmailDTO;
 import it.getinsight.module.email.entity.EmailSent;
+import it.getinsight.module.email.entity.EmailStatus;
+import it.getinsight.module.email.mapper.EmailMapper;
 import it.getinsight.module.email.repository.EmailRepository;
+import it.getinsight.module.user.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
@@ -15,6 +22,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
@@ -32,18 +41,22 @@ public class EmailService {
 
     private final JavaMailSender emailSender;
     private final EmailRepository emailRepository;
+    private final UserRepository userRepository;
     private final TemplateEngine templateEngine;
+    private final EmailMapper emailMapper;
 
     @Value("${spring.mail.properties.mail.from}")
     private String emailFrom;
 
      public void sendMail(EmailDTO emailDTO){
-         final var content = emailDTO.isHtml() ? processContentByTemplate(emailDTO.templateName(), emailDTO.variables()) : emailDTO.text();
+         final var content = emailDTO.isHtml() ? processContentByTemplate(emailDTO.templateName(), emailDTO.variables()) : emailDTO.content();
+         final var userEntity = userRepository.findById(emailDTO.userId()).orElseThrow(ResourceNotFoundException::new);
          final var emailSent = EmailSent.builder()
                  .to(emailDTO.to())
                  .from(emailFrom)
                  .subject(emailDTO.subject())
                  .isHtml(emailDTO.isHtml())
+                 .user(userEntity)
                  .content(content)
                  .build();
 
@@ -59,6 +72,7 @@ public class EmailService {
             emailSender.send(message);
 
             emailSent.setSuccess(true);
+            emailSent.setStatus(EmailStatus.SENT);
             emailRepository.save(emailSent);
             log.info("EmailDTO sent successfully: {} - {}", emailSent.getTo(), emailSent.getSubject());
         }catch (Exception e){
@@ -113,7 +127,6 @@ public class EmailService {
         }
     }
 
-
     private String processContentByTemplate(final String templateName, final Map<String, Object> variables){
         try {
             var context = new Context(Locale.getDefault(), variables);
@@ -121,6 +134,24 @@ public class EmailService {
         } catch (Exception e) {
             throw new InfraException("build.template.error");
         }
+    }
+
+    public PageableResponseModel<EmailDTO> getNotifications(PageableRequestModel<EmailDTO> configPage) {
+        final var page = emailRepository.findAll(PaginationHelper.toPageable(configPage));
+        return PaginationHelper.toPageResponse(emailMapper.toDto(page.getContent()), page.getTotalElements());
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void updateEmail(Long emailId, EmailDTO emailDTO) {
+        final var emailSent = emailRepository.findById(emailId).orElseThrow(ResourceNotFoundException::new);
+        emailMapper.fromDto(emailDTO, emailSent);
+        emailRepository.save(emailSent);
+    }
+
+
+    public EmailDTO getEmailById(Long emailId) {
+        final var emailSent = emailRepository.findById(emailId).orElseThrow(ResourceNotFoundException::new);
+        return emailMapper.toDto(emailSent);
     }
 
 }

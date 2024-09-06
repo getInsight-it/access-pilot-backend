@@ -21,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -89,7 +88,7 @@ public class RoleService {
         return roleMapper.toDto(entity);
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.REQUIRED)
     public void synchronizeRoles(List<String> clientIds) {
         var clients = keycloakClient.getClients().stream()
             .filter(client -> client.attributes().containsKey("acl.client.managed") && client.attributes().get("acl.client.managed").equals("true"))
@@ -116,7 +115,7 @@ public class RoleService {
         }
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.REQUIRED)
     public List<UserDTO> getOrImportApprovesByRoleId(Long id) {
         var roleEntity = roleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Role not found"));
         var roleParent = Optional.ofNullable(roleEntity.getRole()).orElseThrow(() -> new ResourceNotFoundException("Role has no parent role"));
@@ -128,7 +127,7 @@ public class RoleService {
             .toList();
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.REQUIRED)
     public void updateRoles(List<RoleDTO> roles) {
         for (RoleDTO role : roles) {
             final var entity = roleRepository.findById(role.id()).orElseThrow(() -> new ResourceNotFoundException("Role not found"));
