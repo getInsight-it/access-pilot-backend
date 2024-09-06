@@ -15,12 +15,12 @@ import org.hibernate.envers.Audited;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@SequenceGenerator(name = "ClientEntity.sq", sequenceName = "SQ_ROLE", allocationSize = 1)
+@SequenceGenerator(name = "RoleEntity.sq", sequenceName = "SQ_ROLE", allocationSize = 1)
 public class RoleEntity extends AuditableEntity<Long, String> {
 
     @Id
     @Column(name = "ID")
-    @GeneratedValue(generator = "ClientEntity.sq", strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(generator = "RoleEntity.sq", strategy = GenerationType.SEQUENCE)
     private Long id;
 
     @Column(name = "ID_ROLE_EXTERNO")
