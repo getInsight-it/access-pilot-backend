@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+
+    <changeSet id="V1_006" author="pedro.figueiredo@getinsight.it">
+        <createSequence sequenceName="SQ_EMAIL_SENT" minValue="1" incrementBy="1" startValue="1" />
+
+        <createTable tableName="TB_EMAIL_SENT">
+            <column name="EMAIL_ID" type="BIGINT" defaultValueSequenceNext="SQ_EMAIL_SENT">
+                <constraints nullable="false" primaryKey="true" />
+            </column>
+            <column name="DATA_CRIACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="ANONYMOUS_COPY" type="VARCHAR(255)"/>
+            <column name="APP_NAME" type="VARCHAR(255)"/>
+            <column name="ATTACHMENT_ID" type="UUID"/>
+            <column name="CONTENT" type="VARCHAR(1000)"/>
+            <column name="COPY" type="VARCHAR(255)"/>
+            <column name="CREATED_DATE" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="EMAIL_FROM" type="VARCHAR(255)"/>
+            <column name="HTML_FLAG" type="BOOLEAN"/>
+            <column name="SUBJECT" type="VARCHAR(255)"/>
+            <column name="SUCCESS_FLG" type="BOOLEAN"/>
+            <column name="EMAIL_TO" type="VARCHAR(255)"/>
+            <column name="UPDATED_DATE" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </createTable>
+
+        <rollback>
+            <dropTable tableName="TB_EMAIL_SENT" />
+            <dropSequence sequenceName="SQ_EMAIL_SENT" />
+        </rollback>
+
+    </changeSet>
+
+</databaseChangeLog>

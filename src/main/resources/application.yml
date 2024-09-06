@@ -21,10 +21,10 @@ server:
 
 provider:
   keycloak:
-    url: http://localhost:9080
+    url: http://localhost:7080
     realm: access-pilot
-    client-id: app-backend-number-one
-    client-secret: ANCgAlx8rvqXrWkosEMIdvmjEFspi9L0
+    client-id: accesspilot-backend
+    client-secret: b0h3gPFmK79ZwcZcvZkKQPHfjNerywqV
     ignore-clients:
       - realm-management
       - broker
@@ -38,8 +38,6 @@ jwt:
     converter:
       resource-id: ${provider.keycloak.client-id}
       principal-attribute: preferred_username
-
-
 
 feign:
   client:
@@ -84,7 +82,7 @@ spring:
         provider:
           keycloak:
             issuer-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}
-            jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}
+            user-name-attribute: ${jwt.auth.converter.principal-attribute}
         registration:
           registration-keycloak:
             provider: keycloak
@@ -107,13 +105,13 @@ spring:
   datasource:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://localhost:5432/db_accesspilot_dev
-    username: postgres
-    password: postgres
+    username: db_accesspilot_user
+    password: db_accesspilot_user_pw
     hikari:
       auto-commit: false
       connection-init-sql: SELECT 1;
       connection-test-query: SELECT 1;
-      minimum-idle: 0
+      minimum-idle: 1
       maximum-pool-size: 10
       connection-timeout: 30000
       idle-timeout: 60000
@@ -122,12 +120,12 @@ spring:
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
-    generate-ddl: true
-    open-in-view: false
+    generate-ddl: false
+    open-in-view: true
     hibernate:
       ddl-auto: none
       naming:
-        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
         implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl
     properties:
       hibernate:
@@ -140,10 +138,9 @@ spring:
           revision_field_name: REV
           revision_type_field_name: REVTYPE
 
-
   liquibase:
     enabled: true
-    change-log: classpath:db/changelog/master.xml
+    change-log: classpath:db/changelog-master.xml
     url: ${spring.datasource.url}
     user: ${spring.datasource.username}
     password: ${spring.datasource.password}
@@ -170,9 +167,21 @@ minio:
 
 
 sentry:
-  dsn: https://bad955d8e5204ba2b802d4b0feb75d15@o4504299478188032.ingest.sentry.io/4505352505917440
+  enabled: true
+  environment: localhost
+  dsn: https://9f4bb7a60c929d10934cb1734f7bf2d5@sentry.getinsight.tech/4
   traces-sample-rate: 1.0
   enable-uncaught-exception-handler: true
+  attach-stacktrace: true
+  attach-server-name: true
+  attach-threads: true
+  enable-deduplication: true
+  enable-app-start-profiling: true
+  enable-metrics: true
+  enable-tracing: true
+  logging:
+    enabled: true
+
 
 springdoc:
   swagger-ui:

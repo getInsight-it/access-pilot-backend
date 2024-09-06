@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+
+    <changeSet id="V1_013" author="pedro.figueiredo@getinsight.it">
+        <createTable tableName="tb_role_aud">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rev" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="revtype" type="SMALLINT"/>
+            <column name="descricao" type="VARCHAR(255)"/>
+            <column name="nome" type="VARCHAR(255)"/>
+            <column name="id_role_externo" type="VARCHAR(255)"/>
+            <column name="id_cliente" type="BIGINT"/>
+            <column name="id_role_parent" type="BIGINT"/>
+        </createTable>
+
+        <addPrimaryKey columnNames="rev, id" constraintName="tb_role_aud_pkey" tableName="tb_role_aud"/>
+
+        <addForeignKeyConstraint baseColumnNames="rev" baseTableName="tb_role_aud"
+                                 constraintName="fkfepexsulusf13qo7m16yvak3b" deferrable="false"
+                                 initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+                                 referencedColumnNames="rev" referencedTableName="revinfo" validate="true"/>
+
+        <rollback>
+            <dropForeignKeyConstraint baseTableName="tb_role_aud"
+                                      constraintName="fkfepexsulusf13qo7m16yvak3b" />
+
+            <dropTable tableName="tb_role_aud" />
+        </rollback>
+
+    </changeSet>
+
+
+</databaseChangeLog>

@@ -6,16 +6,14 @@
     <parent>
         <groupId>it.getinsight</groupId>
         <artifactId>spring-boot-bom</artifactId>
-        <version>2.1.0</version>
+        <version>2.1.1</version>
     </parent>
 
-    <artifactId>backend-accesspilot</artifactId>
+    <artifactId>accesspilot-backend</artifactId>
+    <version>1.0.0</version>
 
-    <groupId>it.getinsight</groupId>
-    <version>1.0.0-SNAPSHOT</version>
-
-    <name>getInsight - Aplicação Exemplo Backend Spring Boot</name>
-    <description>Projeto de Exemplo da Arquitetura da getInsight</description>
+    <name>getInsight - Access Pilot Backend</name>
+    <description>Backend do Access Pilot</description>
 
     <organization>
         <name>getInsight</name>
@@ -24,22 +22,59 @@
 
     <scm>
         <url>https://gitlab.com/getinsight.it/arquitetura/spring-boot/backend-accesspilot</url>
-        <connection>scm:git:https://gitlab.com/getinsight.it/arquitetura/spring-boot/backend-accesspilot.git
-        </connection>
-        <developerConnection>scm:git:https://gitlab.com/getinsight.it/arquitetura/spring-boot/backend-accesspilot.git
-        </developerConnection>
+        <connection>scm:git:https://gitlab.com/getinsight.it/arquitetura/spring-boot/backend-accesspilot.git</connection>
+        <developerConnection>scm:git:https://gitlab.com/getinsight.it/arquitetura/spring-boot/backend-accesspilot.git</developerConnection>
     </scm>
 
     <issueManagement>
         <system>GitLab Issues</system>
-        <url>https://gitlab.com/getinsight.it/arquitetura/spring-boot/backend-accesspilot/-/issues</url>
+        <url>https://gitlab.com/getinsight.it/produtos/access-pilot/access-pilot-docs/-/boards</url>
     </issueManagement>
 
+    <developers>
+        <developer>
+            <id>bruno</id>
+            <name>Bruno Matos dos Santos Ferreira</name>
+            <email>bruno@getinsight.it</email>
+            <url>https://gitlab.com/web.brunomatos</url>
+            <roles>
+                <role>Arquiteto de Software</role>
+            </roles>
+        </developer>
+        <developer>
+            <id>paulo</id>
+            <name>Paulo Antonio de Faria Filho</name>
+            <email>paulo@getinsight.it</email>
+            <url>https://gitlab.com/engpaulofaria</url>
+            <roles>
+                <role>Arquiteto de Software</role>
+            </roles>
+        </developer>
+        <developer>
+            <id>pedro.figueiredo</id>
+            <name>Pedro Henrique Ferreira Figueiredo</name>
+            <email>pedro.figueiredo@getinsight.it</email>
+            <url>https://gitlab.com/intellitour</url>
+            <roles>
+                <role>Arquiteto de Software</role>
+            </roles>
+        </developer>
+        <developer>
+            <id>luan.rodrigues</id>
+            <name>Luan Lucas Rodrigues</name>
+            <email>luan.rodrigues@getinsight.it</email>
+            <url>https://gitlab.com/luan.rodrigues1</url>
+            <roles>
+                <role>Arquiteto de Software</role>
+                <role>Desenvolvedor</role>
+            </roles>
+        </developer>
+    </developers>
+
     <properties>
-        <spring-boot-core.version>2.1.0</spring-boot-core.version>
-        <spring-boot-core-jpa.version>2.1.0</spring-boot-core-jpa.version>
-        <spring-boot-core-dynamic-query.version>1.2.0</spring-boot-core-dynamic-query.version>
-        <zeebe.version>8.3.0</zeebe.version>
+        <spring-boot-core.version>2.1.1</spring-boot-core.version>
+        <spring-boot-core-jpa.version>2.1.1</spring-boot-core-jpa.version>
+        <spring-boot-core-dynamic-query.version>1.2.1</spring-boot-core-dynamic-query.version>
     </properties>
 
     <dependencies>
@@ -224,10 +259,39 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>sentry</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.sentry</groupId>
+                        <artifactId>sentry-maven-plugin</artifactId>
+                        <version>0.0.8</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <debugSentryCli>true</debugSentryCli>
+                            <org>get</org>
+                            <project>accesspilot-backend</project>
+                            <authToken>${env.SENTRY_AUTH_TOKEN}</authToken>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>uploadSourceBundle</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <repositories>
         <repository>
             <id>gitlab-maven</id>
-            <url>https://gitlab.com/api/v4/projects/33054505/packages/maven</url>
+            <url>https://gitlab.com/api/v4/groups/11578756/-/packages/maven</url>
         </repository>
     </repositories>
 

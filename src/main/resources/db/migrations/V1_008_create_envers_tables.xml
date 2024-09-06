@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+
+    <changeSet id="V1_008" author="pedro.figueiredo@getinsight.it">
+
+        <createSequence sequenceName="REVINFO_SEQ" dataType="BIGINT" incrementBy="50" cacheSize="1" minValue="1" startValue="1"/>
+
+        <createTable tableName="REVINFO">
+            <column name="rev" type="BIGINT" defaultValueSequenceNext="REVINFO_SEQ">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="REVINFO_PKEY"/>
+            </column>
+            <column name="REVTSTMP" type="BIGINT"/>
+        </createTable>
+
+        <rollback>
+            <dropTable tableName="REVINFO" />
+            <dropSequence sequenceName="REVINFO_SEQ" />
+        </rollback>
+
+    </changeSet>
+
+</databaseChangeLog>

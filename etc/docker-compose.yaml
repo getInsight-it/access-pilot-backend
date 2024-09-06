@@ -109,7 +109,7 @@ services:
 
   keycloak:
     container_name: getInsight_Keycloak
-    image: quay.io/keycloak/keycloak:24.0
+    image: quay.io/keycloak/keycloak:25.0
     hostname: keycloak
     restart: unless-stopped
     depends_on:
@@ -121,7 +121,7 @@ services:
         condition: service_started
     volumes:
       - type: bind
-        source: ./realm-export.json
+        source: ./accesspilot.json
         target: /opt/keycloak/data/import/realm-export.json
         read_only: true
         consistency: consistent
@@ -131,7 +131,7 @@ services:
           cpus: "2"
           memory: 2G
     healthcheck:
-      test: curl --head -fsS http://localhost:8080/health/ready
+      test: /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080/ --realm master --user admin --password 123456
       interval: 10s
       timeout: 3s
       retries: 6

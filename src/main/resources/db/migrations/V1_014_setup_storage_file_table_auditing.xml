@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_014" author="pedro.figueiredo@getinsight.it">
+        <createTable tableName="tb_storage_file_aud">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rev" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="revtype" type="SMALLINT"/>
+            <column name="bucket" type="VARCHAR(255)"/>
+            <column name="download_count" type="BIGINT"/>
+            <column name="ephemeral" type="BOOLEAN"/>
+            <column name="excluded" type="BOOLEAN"/>
+            <column name="file_id" type="UUID"/>
+            <column name="filesize" type="BIGINT"/>
+            <column name="is_public" type="BOOLEAN"/>
+            <column name="mime_type" type="VARCHAR(255)"/>
+            <column name="original_filename" type="VARCHAR(255)"/>
+            <column name="request_id" type="BIGINT"/>
+        </createTable>
+
+        <addPrimaryKey columnNames="rev, id" constraintName="tb_storage_file_aud_pkey" tableName="tb_storage_file_aud"/>
+
+        <addForeignKeyConstraint baseColumnNames="rev" baseTableName="tb_storage_file_aud"
+                                 constraintName="fkk1fgt71qy1i7s0w2atukwa8v3" deferrable="false"
+                                 initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+                                 referencedColumnNames="rev" referencedTableName="revinfo" validate="true"/>
+
+        <rollback>
+            <dropForeignKeyConstraint baseTableName="tb_storage_file_aud"
+                                      constraintName="fkk1fgt71qy1i7s0w2atukwa8v3" />
+
+            <dropTable tableName="tb_storage_file_aud" />
+        </rollback>
+
+    </changeSet>
+
+
+</databaseChangeLog>

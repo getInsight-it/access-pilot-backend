@@ -1,94 +1,79 @@
 package it.getinsight.config;
 
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import org.springframework.core.env.Environment;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.thymeleaf.templateresolver.ITemplateResolver;
 
+import java.nio.charset.StandardCharsets;
+
 @Configuration
-public class SpringMailConfig implements ApplicationContextAware, EnvironmentAware {
+public class SpringMailConfig {
 
-
-    private ApplicationContext applicationContext;
-    private Environment environment;
 
     @Bean
-    public TemplateEngine emailTemplateEngine() {
-        final SpringTemplateEngine templateEngine = new SpringTemplateEngine();
-        templateEngine.addTemplateResolver(textTemplateResolver());
-        templateEngine.addTemplateResolver(htmlTemplateResolver());
-        templateEngine.addTemplateResolver(stringTemplateResolver());
-        templateEngine.setTemplateEngineMessageSource(emailMessageSource());
-        return templateEngine;
+    ClassLoaderTemplateResolver classLoaderTemplateResolver() {
+        return new ClassLoaderTemplateResolver();
     }
 
 
     @Bean
-    public ResourceBundleMessageSource emailMessageSource() {
+    ResourceBundleMessageSource emailMessageSource() {
         final ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
         messageSource.setBasename("mail/MailMessages");
         return messageSource;
     }
 
-        @Bean
-        public ITemplateResolver emailTemplateResolver() {
-            final var templateResolver = new ClassLoaderTemplateResolver();
-            templateResolver.setPrefix("mail/templates/");
-            templateResolver.setSuffix(".html");
-            templateResolver.setTemplateMode(TemplateMode.HTML);
-            templateResolver.setCharacterEncoding("UTF-8");
-            templateResolver.setOrder(1);
-            return templateResolver;
-        }
-
-        @Bean
-        public ITemplateResolver textTemplateResolver() {
-            final var templateResolver = new ClassLoaderTemplateResolver();
-            templateResolver.setPrefix("mail/templates/");
-            templateResolver.setSuffix(".txt");
-            templateResolver.setTemplateMode(TemplateMode.TEXT);
-            templateResolver.setCharacterEncoding("UTF-8");
-            templateResolver.setOrder(2);
-            return templateResolver;
-        }
-
-        @Bean
-        public ITemplateResolver stringTemplateResolver() {
-            final var templateResolver = new ClassLoaderTemplateResolver();
-            templateResolver.setTemplateMode("LEGACYHTML5");
-            templateResolver.setCharacterEncoding("UTF-8");
-            templateResolver.setOrder(3);
-            return templateResolver;
-        }
-
-        @Bean
-        public ITemplateResolver htmlTemplateResolver() {
-            final var templateResolver = new ClassLoaderTemplateResolver();
-            templateResolver.setTemplateMode(TemplateMode.HTML);
-            templateResolver.setCharacterEncoding("UTF-8");
-            templateResolver.setOrder(4);
-            return templateResolver;
-        }
-
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
+    @Bean
+    ITemplateResolver emailTemplateResolver(ClassLoaderTemplateResolver templateResolver) {
+        templateResolver.setPrefix("mail/templates/");
+        templateResolver.setSuffix(".html");
+        templateResolver.setTemplateMode(TemplateMode.HTML);
+        templateResolver.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        templateResolver.setOrder(1);
+        return templateResolver;
     }
 
-    @Override
-    public void setEnvironment(Environment environment) {
-        this.environment = environment;
+    @Bean
+    ITemplateResolver textTemplateResolver(ClassLoaderTemplateResolver templateResolver) {
+        templateResolver.setPrefix("mail/templates/");
+        templateResolver.setSuffix(".txt");
+        templateResolver.setTemplateMode(TemplateMode.TEXT);
+        templateResolver.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        templateResolver.setOrder(2);
+        return templateResolver;
     }
+
+    @Bean
+    ITemplateResolver stringTemplateResolver(ClassLoaderTemplateResolver templateResolver) {
+        templateResolver.setTemplateMode(TemplateMode.RAW);
+        templateResolver.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        templateResolver.setOrder(3);
+        return templateResolver;
+    }
+
+    @Bean
+    ITemplateResolver htmlTemplateResolver(ClassLoaderTemplateResolver templateResolver) {
+        templateResolver.setTemplateMode(TemplateMode.HTML);
+        templateResolver.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        templateResolver.setOrder(4);
+        return templateResolver;
+    }
+
+    @Bean
+    TemplateEngine emailTemplateEngine(ITemplateResolver textTemplateResolver, ITemplateResolver htmlTemplateResolver, ITemplateResolver stringTemplateResolver, ResourceBundleMessageSource emailMessageSource) {
+        final SpringTemplateEngine templateEngine = new SpringTemplateEngine();
+        templateEngine.addTemplateResolver(textTemplateResolver);
+        templateEngine.addTemplateResolver(htmlTemplateResolver);
+        templateEngine.addTemplateResolver(stringTemplateResolver);
+        templateEngine.setTemplateEngineMessageSource(emailMessageSource);
+        return templateEngine;
+    }
+
 }
 
 

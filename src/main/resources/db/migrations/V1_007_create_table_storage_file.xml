@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_007" author="pedro.figueiredo@getinsight.it">
+        <createSequence sequenceName="SQ_STORAGE_FILE" minValue="1" incrementBy="1" startValue="1" />
+
+        <createTable tableName="TB_STORAGE_FILE">
+            <column name="ID" type="BIGINT" defaultValueSequenceNext="SQ_STORAGE_FILE">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="TB_STORAGE_FILE_PKEY"/>
+            </column>
+            <column name="DATA_CRIACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="BUCKET" type="VARCHAR(255)"/>
+            <column name="DOWNLOAD_COUNT" type="BIGINT"/>
+            <column name="EPHEMERAL" type="BOOLEAN"/>
+            <column name="EXCLUDED" type="BOOLEAN"/>
+            <column name="FILE_ID" type="UUID"/>
+            <column name="FILESIZE" type="BIGINT"/>
+            <column name="IS_PUBLIC" type="BOOLEAN"/>
+            <column name="MIME_TYPE" type="VARCHAR(255)"/>
+            <column name="ORIGINAL_FILENAME" type="VARCHAR(255)"/>
+            <column name="REQUEST_ID" type="BIGINT"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            constraintName="FK_STORAGE_FILE_REQUIEST"
+            baseColumnNames="REQUEST_ID" baseTableName="TB_STORAGE_FILE"
+            referencedColumnNames="ID" referencedTableName="TB_SOLICITACAO" />
+
+        <rollback>
+
+            <dropForeignKeyConstraint constraintName="FK_STORAGE_FILE_REQUIEST"
+                                      baseTableName="TB_STORAGE_FILE" />
+
+            <dropTable tableName="TB_STORAGE_FILE" />
+
+            <dropSequence sequenceName="SQ_STORAGE_FILE" />
+
+        </rollback>
+
+    </changeSet>
+
+</databaseChangeLog>
