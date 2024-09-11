@@ -29,6 +29,7 @@ import it.getinsight.module.user.repository.UserRepository;
 import it.getinsight.module.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Example;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -212,5 +213,10 @@ public class RequestService {
             .variables(variables)
             .isHtml(true)
             .build());
+    }
+
+    public Long getTotalRequestsByStatus(RequestStatus status) {
+        Example<RequestEntity> example = Example.of(RequestEntity.builder().status(RequestStatus.APPROVED).build());
+        return requestRepository.count(example);
     }
 }

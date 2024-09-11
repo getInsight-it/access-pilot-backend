@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.storage.dto.StorageFileDTO;
@@ -23,6 +24,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/v1/storages")
+@Tag(name = "Storage", description = "Operations on storage files.")
 @RequiredArgsConstructor
 public class StorageFileController {
 

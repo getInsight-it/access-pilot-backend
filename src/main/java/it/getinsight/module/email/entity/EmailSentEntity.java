@@ -19,7 +19,7 @@ import java.util.UUID;
 @Builder
 @Audited
 @Table(name = "TB_EMAIL_SENT")
-public class EmailSent extends AuditableEntity<Long, String> {
+public class EmailSentEntity extends AuditableEntity<Long, String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

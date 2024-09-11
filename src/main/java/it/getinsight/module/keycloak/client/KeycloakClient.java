@@ -41,8 +41,13 @@ public interface KeycloakClient {
     @GetMapping("/clients")
     List<ClientRepresentationDTO> getClientsByClientId(@RequestParam String clientId);
 
+    @GetMapping("/users/count")
+    Long getTotalUsersByEnabled(@RequestParam Boolean enabled);
 
     @PutMapping("/clients/{clientUUID}")
     void updateClient(@PathVariable String clientUUID, @RequestBody ClientRepresentationDTO clientRepresentationDTO);
+
+    @PostMapping("/clients")
+    void createClient(@RequestBody ClientRepresentationDTO clientRepresentationDTO);
 
 }
