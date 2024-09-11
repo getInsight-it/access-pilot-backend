@@ -1,8 +1,8 @@
 package it.getinsight.module.client.service;
 
-
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
+import it.getinsight.core.exception.BusinessException;
 import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
@@ -80,17 +80,17 @@ public class ClientService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void synchronizationClients(List<String> clientIds) {
-        if (CollectionUtils.isEmpty(clientIds))return;
-        final var searchableClientIds = clientIds.stream().map(String::trim).map(String::toLowerCase).filter( o -> !keycloakProperties.getIgnoreClients().contains(o)).toList();
+        if (CollectionUtils.isEmpty(clientIds)) return;
+        final var searchableClientIds = clientIds.stream().map(String::trim).map(String::toLowerCase).filter(o -> !keycloakProperties.getIgnoreClients().contains(o)).toList();
         var clientEntities = clientRepository.findAllByClientIdIn(searchableClientIds);
         var clients = keycloakClient.getClients().stream()
             .filter(client -> client.attributes().containsKey(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED) && client.attributes().get(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED).equals("true"))
-            .filter( obj ->  clientEntities.stream().anyMatch( c -> Objects.equals(c.getClientId(), obj.clientId()))).toList();
+            .filter(obj -> clientEntities.stream().anyMatch(c -> Objects.equals(c.getClientId(), obj.clientId()))).toList();
         clients.forEach(this::synchronize);
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void synchronize(ClientRepresentationDTO client) {
+    public ClientEntity synchronize(ClientRepresentationDTO client) {
         var entity = clientRepository.findByClientId(client.clientId()).orElseGet(() -> {
             var newEntity = new ClientEntity();
             newEntity.setClientId(client.clientId());
@@ -102,13 +102,34 @@ public class ClientService {
         entity.setDescription(client.description());
         entity.setClientUUID(client.id());
         entity.setClientId(client.clientId());
-        clientRepository.save(entity);
+        return clientRepository.save(entity);
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
     public ClientDTO create(ClientDTO dto) {
         var entity = clientMapper.toEntity(dto);
         entity.setClientId(dto.clientId().toLowerCase());
+        if (clientRepository.existsByClientId(entity.getClientId())) {
+            throw new BusinessException("Client already exists");
+        }
+
+        if (Boolean.TRUE.equals(dto.managed())) {
+            return handleManagedClient(entity);
+        } else {
+            return clientMapper.toDto(clientRepository.save(entity));
+        }
+    }
+
+    private ClientDTO handleManagedClient(ClientEntity entity) {
+        var existingClients = keycloakClient.getClientsByClientId(entity.getClientId());
+        if (!existingClients.isEmpty()) {
+            var clientRepresentationDTO = existingClients.getFirst();
+            synchronize(clientRepresentationDTO);
+        } else {
+            var defaultClient = ClientRepresentationDTO.createDefault(entity.getClientId(), entity.getDescription(), entity.getBaseUrl());
+            keycloakClient.createClient(defaultClient);
+            synchronize(keycloakClient.getClientsByClientId(entity.getClientId()).getFirst());
+        }
         return clientMapper.toDto(clientRepository.save(entity));
     }
 
@@ -120,5 +141,9 @@ public class ClientService {
         keycloakClient.updateClient(client.id(), client);
         entity.setManaged(managed);
         clientRepository.save(entity);
+    }
+
+    public long getTotalClients() {
+        return clientRepository.count();
     }
 }

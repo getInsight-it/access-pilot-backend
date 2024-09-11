@@ -50,7 +50,7 @@ public class StorageFileEntity extends AuditableEntity<Long, String> {
     private UUID fileId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "REQUEST_ID")
+    @JoinColumn(name = "SOLICITACAO_ID")
     private RequestEntity request;
 
 }

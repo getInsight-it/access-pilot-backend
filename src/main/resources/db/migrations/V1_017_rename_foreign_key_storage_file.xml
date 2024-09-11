@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_017" author="luan.rodrigues@getinsight.it">
+
+        <dropForeignKeyConstraint baseTableName="TB_STORAGE_FILE" constraintName="FK_STORAGE_FILE_REQUIEST"/>
+
+        <addForeignKeyConstraint baseTableName="TB_STORAGE_FILE" baseColumnNames="REQUEST_ID"
+                                 constraintName="FK_STORAGE_FILE_REQUEST"
+                                 referencedTableName="TB_SOLICITACAO" referencedColumnNames="ID"/>
+    </changeSet>
+
+</databaseChangeLog>

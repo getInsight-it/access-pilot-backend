@@ -15,4 +15,6 @@ public interface ClientRepository extends JpaRepository<ClientEntity, Long>, Dyn
     Optional<ClientEntity> findByClientId(String clientId);
 
     List<ClientEntity> findAllByClientIdIn(List<String> ids);
+
+    boolean existsByClientId(String clientId);
 }

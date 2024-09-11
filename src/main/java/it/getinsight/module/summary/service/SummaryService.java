@@ -1,0 +1,41 @@
+package it.getinsight.module.summary.service;
+
+import it.getinsight.module.client.service.ClientService;
+import it.getinsight.module.email.service.EmailService;
+import it.getinsight.module.keycloak.client.KeycloakClient;
+import it.getinsight.module.request.enuns.RequestStatus;
+import it.getinsight.module.request.service.RequestService;
+import it.getinsight.module.role.service.RoleService;
+import it.getinsight.module.summary.SummaryDTO;
+import it.getinsight.module.user.service.UserService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class SummaryService {
+
+    private final ClientService clientService;
+    private final KeycloakClient keycloakClient;
+    private final RoleService roleService;
+    private final RequestService requestService;
+
+    public SummaryDTO getAllSummaries() {
+        return  SummaryDTO.builder()
+                .totalActiveUsers(keycloakClient.getTotalUsersByEnabled(true))
+                .totalRegisteredUsers(requestService.getTotalRequestsByStatus(RequestStatus.APPROVED))
+                .totalPendingUsers(requestService.getTotalRequestsByStatus(RequestStatus.PENDING))
+                .totalClients(clientService.getTotalClients())
+                .totalRoles(roleService.getTotalRoles())
+                .totalInactiveUsers(keycloakClient.getTotalUsersByEnabled(false))
+                .build();
+    }
+}

@@ -5,8 +5,7 @@ import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.user.entity.UserEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.envers.Audited;
 
 import java.io.Serial;
@@ -16,6 +15,9 @@ import java.io.Serial;
 @Setter
 @Entity
 @Audited
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "TB_SOLICITACAO")
 @SequenceGenerator(name = "RequestEntity.sq", sequenceName = "SQ_SOLICITACAO", allocationSize = 1)
 public class RequestEntity extends AuditableEntity<Long, String> {

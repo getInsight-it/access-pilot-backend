@@ -1,10 +1,12 @@
 package it.getinsight.module.keycloak.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
 
 import java.util.List;
 import java.util.Map;
 
+@Builder
 public record ClientRepresentationDTO(
     @JsonProperty("id") String id,
     @JsonProperty("name") String name,
@@ -50,4 +52,28 @@ public record ClientRepresentationDTO(
     @JsonProperty("access") Map<String, Boolean> access,
     @JsonProperty("origin") String origin
 ) {
+    public static ClientRepresentationDTO createDefault(String clientId, String description, String baseUrl) {
+        return ClientRepresentationDTO.builder()
+            .alwaysDisplayInConsole(false)
+            .attributes(Map.of(
+                "saml_idp_initiated_sso_url_name", "",
+                "oauth2.device.authorization.grant.enabled", "false",
+                "oidc.ciba.grant.enabled", "false",
+                "acl.client.managed", "true"
+            ))
+            .authorizationServicesEnabled(false)
+            .baseUrl(baseUrl)
+            .clientId(clientId)
+            .description(description)
+            .directAccessGrantsEnabled(true)
+            .frontchannelLogout(true)
+            .implicitFlowEnabled(false)
+            .name("")
+            .protocol("openid-connect")
+            .publicClient(true)
+            .rootUrl("")
+            .serviceAccountsEnabled(false)
+            .standardFlowEnabled(true)
+            .build();
+    }
 }

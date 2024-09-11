@@ -7,7 +7,7 @@ import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.email.dto.EmailDTO;
-import it.getinsight.module.email.entity.EmailSent;
+import it.getinsight.module.email.entity.EmailSentEntity;
 import it.getinsight.module.email.entity.EmailStatus;
 import it.getinsight.module.email.mapper.EmailMapper;
 import it.getinsight.module.email.repository.EmailRepository;
@@ -51,7 +51,7 @@ public class EmailService {
      public void sendMail(EmailDTO emailDTO){
          final var content = emailDTO.isHtml() ? processContentByTemplate(emailDTO.templateName(), emailDTO.variables()) : emailDTO.content();
          final var userEntity = userRepository.findById(emailDTO.userId()).orElseThrow(ResourceNotFoundException::new);
-         final var emailSent = EmailSent.builder()
+         final var emailSent = EmailSentEntity.builder()
                  .to(emailDTO.to())
                  .from(emailFrom)
                  .subject(emailDTO.subject())
@@ -63,30 +63,30 @@ public class EmailService {
          sendEmail(emailSent);
      }
 
-      private void sendEmail(EmailSent emailSent) {
+      private void sendEmail(EmailSentEntity emailSentEntity) {
         Map<String, File> attachments = null;
         try{
-            var mimeMessageMapPair = makeEmail(emailSent);
+            var mimeMessageMapPair = makeEmail(emailSentEntity);
             var message = mimeMessageMapPair.getLeft();
             attachments = mimeMessageMapPair.getRight();
             emailSender.send(message);
 
-            emailSent.setSuccess(true);
-            emailSent.setStatus(EmailStatus.SENT);
-            emailRepository.save(emailSent);
-            log.info("EmailDTO sent successfully: {} - {}", emailSent.getTo(), emailSent.getSubject());
+            emailSentEntity.setSuccess(true);
+            emailSentEntity.setStatus(EmailStatus.SENT);
+            emailRepository.save(emailSentEntity);
+            log.info("EmailDTO sent successfully: {} - {}", emailSentEntity.getTo(), emailSentEntity.getSubject());
         }catch (Exception e){
-            handleEmailError(e, emailSent);
+            handleEmailError(e, emailSentEntity);
         }finally {
             cleanupAttachments(attachments);
         }
 
     }
 
-    private void handleEmailError(Exception e, EmailSent emailSent) {
-        emailSent.setSuccess(false);
-        emailRepository.save(emailSent);
-        log.info("EmailDTO send error: {} - {}", emailSent.getTo(), emailSent.getSubject(), e);
+    private void handleEmailError(Exception e, EmailSentEntity emailSentEntity) {
+        emailSentEntity.setSuccess(false);
+        emailRepository.save(emailSentEntity);
+        log.info("EmailDTO send error: {} - {}", emailSentEntity.getTo(), emailSentEntity.getSubject(), e);
         throw new InfraException("sent.email.error");
     }
 
@@ -97,11 +97,11 @@ public class EmailService {
     }
 
 
-    private Pair<MimeMessage, Map<String, File>> makeEmail(EmailSent emailSent) throws MessagingException {
+    private Pair<MimeMessage, Map<String, File>> makeEmail(EmailSentEntity emailSentEntity) throws MessagingException {
         var mimeMessage = emailSender.createMimeMessage();
         var helper = createMimeMessageHelper(mimeMessage);
 
-        configureMimeMessageHelper(helper, emailSent);
+        configureMimeMessageHelper(helper, emailSentEntity);
 
         var attachments = new HashMap<String, File>();
 
@@ -112,18 +112,18 @@ public class EmailService {
         return new MimeMessageHelper(mimeMessage, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, StandardCharsets.UTF_8.name());
     }
 
-    private void configureMimeMessageHelper(MimeMessageHelper helper, EmailSent emailSent) throws MessagingException {
-        helper.setTo(emailSent.getTo().split(";"));
-        helper.setFrom(new InternetAddress(emailSent.getFrom()));
-        helper.setSubject(emailSent.getSubject());
-        helper.setText(emailSent.getContent(), emailSent.getIsHtml());
+    private void configureMimeMessageHelper(MimeMessageHelper helper, EmailSentEntity emailSentEntity) throws MessagingException {
+        helper.setTo(emailSentEntity.getTo().split(";"));
+        helper.setFrom(new InternetAddress(emailSentEntity.getFrom()));
+        helper.setSubject(emailSentEntity.getSubject());
+        helper.setText(emailSentEntity.getContent(), emailSentEntity.getIsHtml());
 
-        if(emailSent.getCopy() != null && !emailSent.getCopy().isEmpty()){
-            helper.setCc(emailSent.getCopy().split(";"));
+        if(emailSentEntity.getCopy() != null && !emailSentEntity.getCopy().isEmpty()){
+            helper.setCc(emailSentEntity.getCopy().split(";"));
         }
 
-        if(emailSent.getAnonymousCopy() != null && !emailSent.getAnonymousCopy().isEmpty()){
-            helper.setBcc(emailSent.getAnonymousCopy().split(";"));
+        if(emailSentEntity.getAnonymousCopy() != null && !emailSentEntity.getAnonymousCopy().isEmpty()){
+            helper.setBcc(emailSentEntity.getAnonymousCopy().split(";"));
         }
     }
 

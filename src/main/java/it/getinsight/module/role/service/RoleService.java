@@ -137,4 +137,8 @@ public class RoleService {
             roleRepository.save(entity);
         }
     }
+
+    public Long getTotalRoles() {
+        return roleRepository.count();
+    }
 }
