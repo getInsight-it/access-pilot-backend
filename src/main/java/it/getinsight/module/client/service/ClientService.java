@@ -10,6 +10,7 @@ import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.dto.ClientDTO;
 import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.client.mapper.ClientMapper;
+import it.getinsight.module.client.mapper.ClientRepresentationMapper;
 import it.getinsight.module.client.repository.ClientRepository;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.config.KeycloakProperties;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 
 @Service
@@ -32,6 +34,7 @@ public class ClientService {
     public static final String IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED = "acl.client.managed";
     private final ClientRepository clientRepository;
     private final ClientMapper clientMapper;
+    private final ClientRepresentationMapper clientRepresentationMapper;
     private final KeycloakClient keycloakClient;
     private static final String NAME_QUERY_FIND_ALL_CLIENTS = "find-all-clients";
     private final KeycloakProperties keycloakProperties;
@@ -51,9 +54,11 @@ public class ClientService {
             .withMatcher("clientId", ExampleMatcher.GenericPropertyMatcher::contains);
 
         final var example = Example.of(model, matcher);
-
         final var page = clientRepository.findAll(example, PaginationHelper.toPageable(configPage));
-        return PaginationHelper.toPageResponse(clientMapper.toDto(page.getContent()), page.getTotalElements());
+        final var clientsNotSynchronized = page.getContent().stream().filter(o -> o.getClientUUID() == null).map(clientMapper::toDto).toList();
+        final var clientsSynchronized = page.getContent().stream().filter(o -> o.getClientUUID() != null).map(o -> keycloakClient.getClientByClientUUID(o.getClientUUID())).map(obj -> clientRepresentationMapper.toDto(page.stream().filter(e -> Objects.equals(e.getClientUUID(), obj.id())).findFirst().orElse(null), obj)).toList();
+        final var dtos = Set.of(clientsNotSynchronized, clientsSynchronized).stream().flatMap(List::stream).toList();
+        return PaginationHelper.toPageResponse(dtos, page.getTotalElements());
     }
 
     public PageableResponseModel<ClientDTO> getAllClientsPageableByName(PageableRequestModel<String> configPage) {

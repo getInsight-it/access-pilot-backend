@@ -33,7 +33,7 @@ public interface KeycloakClient {
 
 
     @GetMapping("/clients/{clientUUID}")
-    ClientRepresentationDTO getClient(@PathVariable String clientUUID);
+    ClientRepresentationDTO getClientByClientUUID(@PathVariable String clientUUID);
 
     @GetMapping("/clients")
     List<ClientRepresentationDTO> getClients();
