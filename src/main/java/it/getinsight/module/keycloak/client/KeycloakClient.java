@@ -5,6 +5,7 @@ import it.getinsight.config.FeignConfiguration;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
 import it.getinsight.module.keycloak.dto.UserRepresentationDTO;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,12 +34,14 @@ public interface KeycloakClient {
 
 
     @GetMapping("/clients/{clientUUID}")
+    @Cacheable(value = "getClientByClientUUID", key = "#clientUUID")
     ClientRepresentationDTO getClientByClientUUID(@PathVariable String clientUUID);
 
     @GetMapping("/clients")
     List<ClientRepresentationDTO> getClients();
 
     @GetMapping("/clients")
+    @Cacheable(value = "getClientsByClientId", key = "#clientId")
     List<ClientRepresentationDTO> getClientsByClientId(@RequestParam String clientId);
 
     @GetMapping("/users/count")

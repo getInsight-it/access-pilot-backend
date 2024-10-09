@@ -158,6 +158,15 @@ spring:
             enable: false
     test-connection: true
 
+
+  cache:
+    type: redis
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: Xch9AwOrxM
+
 minio:
   endpoint: http://localhost:9000
   accessKey: admin

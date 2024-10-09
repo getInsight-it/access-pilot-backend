@@ -216,7 +216,7 @@ public class RequestService {
     }
 
     public Long getTotalRequestsByStatus(RequestStatus status) {
-        Example<RequestEntity> example = Example.of(RequestEntity.builder().status(RequestStatus.APPROVED).build());
+        Example<RequestEntity> example = Example.of(RequestEntity.builder().status(status).build());
         return requestRepository.count(example);
     }
 }
