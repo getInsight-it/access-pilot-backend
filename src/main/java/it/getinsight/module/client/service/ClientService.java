@@ -16,6 +16,8 @@ import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.config.KeycloakProperties;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.stereotype.Service;
@@ -24,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
+import java.util.stream.Stream;
 
 
 @Service
@@ -45,6 +47,7 @@ public class ClientService {
         return clientRepository.findAllNative(NAME_QUERY_FIND_ALL_CLIENTS, parameters, clientMapper);
     }
 
+    @Cacheable(value = "clients", key = "#configPage.toString()")
     public PageableResponseModel<ClientDTO> getAllClientsPageable(PageableRequestModel<ClientDTO> configPage) {
         final var model = new ClientEntity();
 
@@ -57,10 +60,11 @@ public class ClientService {
         final var page = clientRepository.findAll(example, PaginationHelper.toPageable(configPage));
         final var clientsNotSynchronized = page.getContent().stream().filter(o -> o.getClientUUID() == null).map(clientMapper::toDto).toList();
         final var clientsSynchronized = page.getContent().stream().filter(o -> o.getClientUUID() != null).map(o -> keycloakClient.getClientByClientUUID(o.getClientUUID())).map(obj -> clientRepresentationMapper.toDto(page.stream().filter(e -> Objects.equals(e.getClientUUID(), obj.id())).findFirst().orElse(null), obj)).toList();
-        final var dtos = Set.of(clientsNotSynchronized, clientsSynchronized).stream().flatMap(List::stream).toList();
+        final var dtos = Stream.concat(clientsNotSynchronized.stream(), clientsSynchronized.stream()).toList();
         return PaginationHelper.toPageResponse(dtos, page.getTotalElements());
     }
 
+    @Cacheable(value = "clients", key = "#configPage.toString()")
     public PageableResponseModel<ClientDTO> getAllClientsPageableByName(PageableRequestModel<String> configPage) {
         final var model = new ClientEntity();
         configPage.getFilter().ifPresent(model::setClientId);
@@ -77,6 +81,7 @@ public class ClientService {
         return PaginationHelper.toPageResponse(clientMapper.toDto(page.getContent()), page.getTotalElements());
     }
 
+    @Cacheable(value = "clients", key = "#id")
     public ClientDTO findById(Long id) {
         var entity = clientRepository.findById(id).orElseThrow(ResourceNotFoundException::new);
         return clientMapper.toDto(entity);
@@ -84,6 +89,7 @@ public class ClientService {
 
 
     @Transactional(propagation = Propagation.REQUIRED)
+    @CacheEvict(value = "clients", allEntries = true)
     public void synchronizationClients(List<String> clientIds) {
         if (CollectionUtils.isEmpty(clientIds)) return;
         final var searchableClientIds = clientIds.stream().map(String::trim).map(String::toLowerCase).filter(o -> !keycloakProperties.getIgnoreClients().contains(o)).toList();
@@ -95,18 +101,13 @@ public class ClientService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
+    @CacheEvict(value = "clients", allEntries = true)
     public ClientEntity synchronize(ClientRepresentationDTO client) {
-        var entity = clientRepository.findByClientId(client.clientId()).orElseGet(() -> {
-            var newEntity = new ClientEntity();
-            newEntity.setClientId(client.clientId());
-            newEntity.setDescription(client.description());
-            newEntity.setClientUUID(client.id());
-            newEntity.setBaseUrl(client.baseUrl());
-            return clientRepository.save(newEntity);
-        });
-        entity.setDescription(client.description());
+        var entity = clientRepository.findByClientId(client.clientId()).orElse(new ClientEntity());
         entity.setClientUUID(client.id());
+        entity.setDescription(client.description());
         entity.setClientId(client.clientId());
+        entity.setBaseUrl(client.baseUrl());
         return clientRepository.save(entity);
     }
 
@@ -129,16 +130,16 @@ public class ClientService {
         var existingClients = keycloakClient.getClientsByClientId(entity.getClientId());
         if (!existingClients.isEmpty()) {
             var clientRepresentationDTO = existingClients.getFirst();
-            synchronize(clientRepresentationDTO);
+            return clientMapper.toDto(synchronize(clientRepresentationDTO));
         } else {
             var defaultClient = ClientRepresentationDTO.createDefault(entity.getClientId(), entity.getDescription(), entity.getBaseUrl());
             keycloakClient.createClient(defaultClient);
-            synchronize(keycloakClient.getClientsByClientId(entity.getClientId()).getFirst());
+            return clientMapper.toDto(synchronize(keycloakClient.getClientsByClientId(entity.getClientId()).getFirst()));
         }
-        return clientMapper.toDto(clientRepository.save(entity));
     }
 
 
+    @CacheEvict(value = "clients", allEntries = true)
     public void updateManaged(Long id, Boolean managed) {
         var entity = clientRepository.findById(id).orElseThrow(ResourceNotFoundException::new);
         var client = keycloakClient.getClientsByClientId(entity.getClientId()).getFirst();
@@ -148,6 +149,7 @@ public class ClientService {
         clientRepository.save(entity);
     }
 
+    @Cacheable(value = "getTotalClients")
     public long getTotalClients() {
         return clientRepository.count();
     }
