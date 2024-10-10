@@ -152,8 +152,6 @@ spring:
     port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME}
     password: ${MAIL_PASSWORD}
-    from: ${MAIL_FROM:noreply@getinsight.it}
-    from-display-name: ${MAIL_FROM_DISPLAY_NAME:Access Pilot}
     properties:
       mail:
         smtp:
@@ -162,6 +160,7 @@ spring:
             enable: true
           ssl:
             enable: false
+        from: ${MAIL_FROM:noreply@getinsight.it}
     test-connection: true
 
   cache:
