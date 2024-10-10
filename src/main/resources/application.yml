@@ -105,8 +105,8 @@ spring:
   datasource:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://localhost:5432/db_accesspilot_dev
-    username: db_accesspilot_user
-    password: db_accesspilot_user_pw
+    username: postgres
+    password: postgres
     hikari:
       auto-commit: false
       connection-init-sql: SELECT 1;
@@ -145,19 +145,24 @@ spring:
     user: ${spring.datasource.username}
     password: ${spring.datasource.password}
 
+
   mail:
     protocol: ${MAIL_PROTOCOL:smtp}
-    port: ${MAIL_PORT:1025}
-    host: ${MAIL_HOST:localhost}
+    host: ${MAIL_HOST:smtp-legacy.office365.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    from: ${MAIL_FROM:noreply@getinsight.it}
+    from-display-name: ${MAIL_FROM_DISPLAY_NAME:Access Pilot}
     properties:
       mail:
-        from: ${MAIL_FROM:no-reply@localhost}
         smtp:
-          auth: false
+          auth: true
           starttls:
+            enable: true
+          ssl:
             enable: false
     test-connection: true
-
 
   cache:
     type: redis
