@@ -39,6 +39,13 @@ jwt:
       resource-id: ${provider.keycloak.client-id}
       principal-attribute: preferred_username
 
+cors:
+  allowed-headers: '*'
+  allowed-methods: 'GET, POST, PUT, PATCH, DELETE, OPTIONS'
+  allow-credentials: true
+  max-age: 3600
+  allowed-origin-pattern: 'http://localhost:*,localhost:*,https://exemplo-arquitetura.dev.getinsight.tech'
+
 feign:
   client:
     keycloak:
@@ -180,7 +187,7 @@ minio:
 
 
 sentry:
-  enabled: true
+  enabled: false
   environment: localhost
   dsn: https://9f4bb7a60c929d10934cb1734f7bf2d5@sentry.getinsight.tech/4
   traces-sample-rate: 1.0
