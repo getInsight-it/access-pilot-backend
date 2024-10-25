@@ -67,6 +67,9 @@ public class StorageFileService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void save(List<MultipartFile> attachments, String bucket, Boolean isPublic, Boolean ephemeral, Long requestId) {
+        if (attachments == null || attachments.isEmpty()) {
+            return;
+        }
         for (MultipartFile file : attachments) {
             try {
                 var requestEntity = requestId != null ? requestRepository.findById(requestId).orElseThrow(() -> new ResourceNotFoundException("Request not found")) : null;
