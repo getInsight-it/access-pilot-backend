@@ -16,7 +16,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
@@ -28,7 +27,6 @@ import java.util.List;
 public class RequestController {
 
     private final RequestService requestService;
-    private final ObjectMapper objectMapper;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Creates a new request.",
@@ -36,17 +34,18 @@ public class RequestController {
     )
     public ResponseEntity<Void> create(@RequestPart(name = "attachments", required = false)
                                        List<MultipartFile> attachments,
-                                       @RequestPart(name = "request")
-                                       @Parameter(schema = @Schema(implementation = RequestDTO.class))
-                                       String request) {
-        try {
-            final var requestDTO = objectMapper.readValue(request, RequestDTO.class);
+                                       @RequestPart(name = "roleId")
+                                       @Parameter(description = "Id da role que será vinculada ao usuario se aprovada", schema = @Schema(implementation = Long.class)) String roleId,
+                                       @RequestPart(name = "description")
+                                       @Parameter(description = "Descrição da motivação da solicitação", schema = @Schema(implementation = String.class)) String description
+    ){
+            var requestDTO = RequestDTO.builder()
+                .roleId(Long.parseLong(roleId))
+                .description(description)
+                .build();
             var uri = ServletUriComponentsBuilder.fromCurrentRequest().path(
                 "/{id}").buildAndExpand(requestService.createRequest(requestDTO, attachments).id()).toUri();
             return ResponseEntity.created(uri).build();
-        } catch (JsonProcessingException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "JSON mal formado", e);
-        }
     }
 
     @PutMapping("/{id}")
