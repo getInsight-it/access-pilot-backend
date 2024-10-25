@@ -24,7 +24,7 @@ public interface RequestMapper extends BaseMapper<RequestEntity, RequestDTO>, Ba
     )
     @Mapping(
         target = "status",
-        expression = "java(RequestStatus.valueOf(toString(value, 1 )))"
+        expression = "java(it.getinsight.module.request.enuns.RequestStatus.valueOf(toString(value, 1 )))"
     )
     @Mapping(
         target = "description",
