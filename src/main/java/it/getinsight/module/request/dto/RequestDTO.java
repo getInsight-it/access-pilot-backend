@@ -3,10 +3,12 @@ package it.getinsight.module.request.dto;
 import it.getinsight.module.request.enuns.RequestStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 
 import java.io.Serial;
 import java.io.Serializable;
 
+@Builder
 public record RequestDTO(
 
     @Size(min = 1, max = 100)

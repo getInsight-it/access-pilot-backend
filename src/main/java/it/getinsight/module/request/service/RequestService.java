@@ -4,7 +4,8 @@ package it.getinsight.module.request.service;
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.exception.BusinessException;
 import it.getinsight.core.exception.ResourceNotFoundException;
-import it.getinsight.core.helper.PaginationHelper;
+import it.getinsight.core.helper
+    .PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.entity.ClientEntity;
