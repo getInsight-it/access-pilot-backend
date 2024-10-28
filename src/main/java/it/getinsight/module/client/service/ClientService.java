@@ -49,12 +49,17 @@ public class ClientService {
 
     @Cacheable(value = "clients", key = "#configPage.toString()")
     public PageableResponseModel<ClientDTO> getAllClientsPageable(PageableRequestModel<ClientDTO> configPage) {
-        final var model = new ClientEntity();
+        final var model = configPage
+            .getFilter()
+            .map(clientMapper::toEntity)
+            .orElse(new ClientEntity());
 
         final var matcher = ExampleMatcher
             .matchingAll()
             .withIgnoreNullValues()
-            .withMatcher("clientId", ExampleMatcher.GenericPropertyMatcher::contains);
+            .withMatcher("clientId", ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher("managed", ExampleMatcher.GenericPropertyMatcher::exact)
+            .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains);
 
         final var example = Example.of(model, matcher);
         final var page = clientRepository.findAll(example, PaginationHelper.toPageable(configPage));

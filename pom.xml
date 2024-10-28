@@ -75,7 +75,7 @@
         <spring-boot-core.version>2.2.1</spring-boot-core.version>
         <spring-boot-core-jpa.version>2.1.1</spring-boot-core-jpa.version>
         <spring-boot-core-dynamic-query.version>1.2.2</spring-boot-core-dynamic-query.version>
-        <spring-boot-core-pagination.version>2.1.1</spring-boot-core-pagination.version>
+        <spring-boot-core-pagination.version>2.1.2</spring-boot-core-pagination.version>
     </properties>
 
     <dependencies>

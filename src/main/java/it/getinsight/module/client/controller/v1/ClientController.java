@@ -41,12 +41,12 @@ public class ClientController {
         description = "Retrieve a list of clients, with pagination, using a name filter"
     )
     @Parameter(name = "name", description = "Filter by name", in = ParameterIn.QUERY, schema = @Schema(type = "string"))
-    @Parameter(name = "filter", hidden = true)
+    @Parameter(name = "filter", hidden = false)
     @GetMapping(path = "/paginated", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<ClientDTO>> getAllClientsPaginated(
         @RequestParam(defaultValue = "0") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
-        @RequestParam(defaultValue = "name") String sortField,
+        @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
         ClientDTO filter
     ) {
