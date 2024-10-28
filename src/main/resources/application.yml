@@ -41,7 +41,7 @@ jwt:
 
 cors:
   allowed-headers: '*'
-  allowed-methods: 'GET, POST, PUT, PATCH, DELETE, OPTIONS'
+  allowed-methods: 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
   allow-credentials: true
   max-age: 3600
   allowed-origin-pattern: 'http://localhost:*,localhost:*,https://exemplo-arquitetura.dev.getinsight.tech'
