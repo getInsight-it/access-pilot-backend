@@ -187,7 +187,7 @@ minio:
 
 
 sentry:
-  enabled: false
+  enabled: ${SENTRY_ENABLED:true}
   environment: localhost
   dsn: https://9f4bb7a60c929d10934cb1734f7bf2d5@sentry.getinsight.tech/4
   traces-sample-rate: 1.0
