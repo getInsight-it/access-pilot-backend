@@ -1,7 +1,9 @@
 SELECT ID,
+       NAME,
        CLIENT_ID,
        CLIENT_UUID,
        MANAGED,
+       STATUS,
        DESCRICAO,
        BASE_URL
 FROM TB_CLIENTE

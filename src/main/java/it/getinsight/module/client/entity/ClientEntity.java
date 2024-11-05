@@ -20,14 +20,23 @@ public class ClientEntity extends BaseEntity<Long> {
     @GeneratedValue(generator = "ClientEntity.sq", strategy = GenerationType.SEQUENCE)
     private Long id;
 
+    @Column(name = "NAME")
+    private String name;
+
     @Column(name = "CLIENT_UUID")
     private String clientUUID;
+
 
     @Column(name = "CLIENT_ID", unique = true, nullable = false)
     private String clientId;
 
     @Column(name = "MANAGED")
     private Boolean managed;
+
+    @Column(name = "STATUS")
+    @Enumerated(EnumType.STRING)
+    private ClientStatus status;
+
 
     @Column(name = "DESCRICAO")
     private String description;

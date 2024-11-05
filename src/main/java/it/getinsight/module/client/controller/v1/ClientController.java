@@ -102,9 +102,10 @@ public class ClientController {
         summary = "Update client management",
         description = "Update client management"
     )
-    @PutMapping(value = "{id}/management", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ClientDTO> synchronize(@PathVariable Long id, @RequestBody ClientDTO clientDTO) {
-        clientService.updateManaged(id,clientDTO.managed());
+        clientService.updateManaged(id,clientDTO);
         return ResponseEntity.noContent().build();
     }
+
 }
