@@ -145,12 +145,12 @@ public class ClientService {
 
 
     @CacheEvict(value = "clients", allEntries = true)
-    public void updateManaged(Long id, Boolean managed) {
+    public void updateManaged(Long id, ClientDTO clientDTO) {
         var entity = clientRepository.findById(id).orElseThrow(ResourceNotFoundException::new);
         var client = keycloakClient.getClientsByClientId(entity.getClientId()).getFirst();
-        client.attributes().put(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED, managed.toString());
+        client.attributes().put(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED, clientDTO.managed().toString());
         keycloakClient.updateClient(client.id(), client);
-        entity.setManaged(managed);
+        clientMapper.fromDto(clientDTO, entity);
         clientRepository.save(entity);
     }
 

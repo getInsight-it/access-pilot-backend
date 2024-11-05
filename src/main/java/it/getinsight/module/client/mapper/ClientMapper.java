@@ -22,24 +22,32 @@ public interface ClientMapper extends BaseMapper<ClientEntity, ClientDTO>, BaseG
         expression = "java(toLong( value, 0 ))"
     )
    @Mapping(
-       target = "clientId",
+       target = "name",
        expression = "java(toString( value, 1 ))"
+   )
+   @Mapping(
+       target = "clientId",
+       expression = "java(toString( value, 2 ))"
    )
     @Mapping(
         target = "clientUUID",
-        expression = "java(toString( value, 2 ))"
+        expression = "java(toString( value, 3 ))"
     )
    @Mapping(
        target = "managed",
-       expression = "java(toBooleanFromString( value, 3, \"true\" ))"
+       expression = "java(toBooleanFromString( value, 4, \"true\" ))"
+    )
+   @Mapping(
+       target = "status",
+       expression = "java(toString( value, 5 ))"
     )
     @Mapping(
         target = "description",
-        expression = "java(toString( value, 4 ))"
+        expression = "java(toString( value, 6 ))"
     )
     @Mapping(
         target = "baseUrl",
-        expression = "java(toString( value, 5 ))"
+        expression = "java(toString( value, 7 ))"
     )
    ClientDTO toMap(Object value);
 }

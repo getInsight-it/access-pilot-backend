@@ -13,6 +13,10 @@ public record ClientDTO(
 
     @NotEmpty
     @Size(min = 3, max = 100)
+    String name,
+
+    @NotEmpty
+    @Size(min = 3, max = 100)
     String clientId,
 
     @NotEmpty
@@ -21,6 +25,8 @@ public record ClientDTO(
 
     @NotEmpty
     Boolean managed,
+
+    String status,
 
     @NotEmpty
     @Size(min = 3, max = 100)

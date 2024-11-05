@@ -18,9 +18,14 @@ public interface ClientRepresentationMapper extends BaseMapper<ClientRepresentat
     @InheritInverseConfiguration(name = "toMap")
     List<ClientDTO> toList(List<Object> value);
 
+
     @Mapping(
         source = "obj.clientId",
         target = "clientId"
+    )
+    @Mapping(
+        source = "entity.name",
+        target = "name"
     )
     @Mapping(
         source = "obj.id",
