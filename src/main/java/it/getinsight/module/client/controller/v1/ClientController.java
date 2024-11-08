@@ -62,7 +62,7 @@ public class ClientController {
     public ResponseEntity<PageableResponseModel<ClientDTO>> getAllClientsPaginatedByName(
         @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
-        @RequestParam(defaultValue = "name") String sortField,
+        @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
         @RequestParam(required = false) String filter
     ) {

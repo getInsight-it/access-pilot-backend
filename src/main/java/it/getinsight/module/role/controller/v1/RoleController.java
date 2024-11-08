@@ -48,7 +48,7 @@ public class RoleController {
     public ResponseEntity<PageableResponseModel<RoleDTO>> getAllPaginated(
         @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
-        @RequestParam(defaultValue = "name") String sortField,
+        @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
         RoleDTO filter
     ) {
@@ -64,7 +64,7 @@ public class RoleController {
     public ResponseEntity<PageableResponseModel<RoleDTO>> getAllPaginatedByName(
         @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
-        @RequestParam(defaultValue = "name") String sortField,
+        @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
         @RequestParam(required = false) String filter
     ) {
