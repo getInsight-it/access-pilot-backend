@@ -27,6 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+import static org.apache.commons.lang.StringUtils.isNotBlank;
+
 
 @Service
 @RequiredArgsConstructor
@@ -39,9 +41,14 @@ public class RoleService {
     private final UserService userService;
 
     private static final String NAME_QUERY_FIND_ALL_ROLES = "find-all-roles";
+    private static final String NAME_QUERY_FIND_ALL_ROLES_WHERE_ROLE_CLIENT_ID = "find-all-roles-where-role-client-id";
 
-    public List<RoleDTO> getAllRolesDynamicQuery() {
+    public List<RoleDTO> getAllRolesDynamicQuery(String filter) {
         final var parameters = DynamicParameters.get();
+        if (isNotBlank(filter)) {
+            parameters.append("clientId", filter);
+            return roleRepository.findAllNative(NAME_QUERY_FIND_ALL_ROLES_WHERE_ROLE_CLIENT_ID, parameters, roleMapper);
+        }
         return roleRepository.findAllNative(NAME_QUERY_FIND_ALL_ROLES, parameters, roleMapper);
     }
 

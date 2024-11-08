@@ -33,8 +33,9 @@ public class RoleController {
         summary = "Retrieve the list of roles",
         description = "Retrieve all roles"
     )
-    public ResponseEntity<List<RoleDTO>> getAllRoles() {
-        return ResponseEntity.ok(roleService.getAllRolesDynamicQuery());
+    @Parameter(name = "clientId", description = "Filter by client id", in = ParameterIn.QUERY, schema = @Schema(type = "string"))
+    public ResponseEntity<List<RoleDTO>> getAllRoles(@RequestParam String clientId) {
+        return ResponseEntity.ok(roleService.getAllRolesDynamicQuery(clientId));
     }
 
     @Operation(
