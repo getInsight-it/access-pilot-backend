@@ -41,7 +41,7 @@ public class EmailController {
         }
     )
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PageableResponseModel<EmailDTO>> getNotifications(@RequestParam(defaultValue = "0") Integer pageIndex,
+    public ResponseEntity<PageableResponseModel<EmailDTO>> getNotifications(@RequestParam(defaultValue = "1") Integer pageIndex,
                                                                                     @RequestParam(defaultValue = "10") Integer pageSize,
                                                                                     @RequestParam(defaultValue = "id") String sortField,
                                                                                     @RequestParam(defaultValue = "ASC") String sortType) {
