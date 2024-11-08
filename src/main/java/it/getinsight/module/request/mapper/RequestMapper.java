@@ -11,6 +11,9 @@ import java.util.List;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface RequestMapper extends BaseMapper<RequestEntity, RequestDTO>, BaseGenericObjectMapper<RequestDTO> {
 
+
+    RequestDTO toDto(RequestEntity entity);
+
     @InheritInverseConfiguration(name = "toDto")
     void fromDto(RequestDTO dto, @MappingTarget RequestEntity entity);
 
@@ -29,14 +32,6 @@ public interface RequestMapper extends BaseMapper<RequestEntity, RequestDTO>, Ba
     @Mapping(
         target = "description",
         expression = "java(toString(value, 2))"
-    )
-    @Mapping(
-        target = "roleId",
-        expression = "java(toLong(value, 3))"
-    )
-    @Mapping(
-        target = "userId",
-        expression = "java(toLong(value, 4))"
     )
     RequestDTO toMap(Object value);
 

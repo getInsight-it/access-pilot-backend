@@ -179,7 +179,7 @@ spring:
       password: Xch9AwOrxM
 
 minio:
-  endpoint: http://localhost:9000
+  endpoint: http://localhost:9002
   accessKey: admin
   secretKey: abc12345
   buckets:

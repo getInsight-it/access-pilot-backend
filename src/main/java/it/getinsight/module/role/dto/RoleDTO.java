@@ -1,5 +1,6 @@
 package it.getinsight.module.role.dto;
 
+import it.getinsight.module.client.dto.ClientDTO;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
@@ -25,5 +26,7 @@ public record RoleDTO(
 
     Long idClient,
 
-    String clientName
+    String clientName,
+
+    ClientDTO client
 ) implements Serializable {}

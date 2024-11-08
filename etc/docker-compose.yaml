@@ -68,7 +68,7 @@ services:
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=abc12345
     ports:
-      - "9000:9000"
+      - "9002:9000"
       - "9001:9001"
     command: server /data --console-address ":9001"
 
