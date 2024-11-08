@@ -8,8 +8,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
+import it.getinsight.module.request.dto.RequestCreateDTO;
 import it.getinsight.module.request.dto.RequestDTO;
+import it.getinsight.module.request.dto.RequestFilterDTO;
 import it.getinsight.module.request.service.RequestService;
+import it.getinsight.module.role.dto.RoleDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -37,10 +40,11 @@ public class RequestController {
     public ResponseEntity<Void> create(@RequestPart(name = "attachments", required = false)
                                        List<MultipartFile> attachments,
                                        @RequestPart(name = "request")
-                                       @Parameter(schema = @Schema(implementation = RequestDTO.class))
+                                       @Parameter(schema = @Schema(implementation = RequestCreateDTO.class))
                                        String request) {
         try {
-            final var requestDTO = objectMapper.readValue(request, RequestDTO.class);
+            final var requestCreateDTO = objectMapper.readValue(request, RequestCreateDTO.class);
+            RequestDTO requestDTO = RequestDTO.builder().description(requestCreateDTO.description()).role(RoleDTO.builder().id(requestCreateDTO.roleId()).build()).build();
             var uri = ServletUriComponentsBuilder.fromCurrentRequest().path(
                 "/{id}").buildAndExpand(requestService.createRequest(requestDTO, attachments).id()).toUri();
             return ResponseEntity.created(uri).build();
@@ -79,7 +83,7 @@ public class RequestController {
         summary = "Retrieve the paginated list of requests associated with the authenticated user",
         description = "Retrieve a list of requests, with pagination, using a filter by name"
     )
-    public ResponseEntity<PageableResponseModel<RequestDTO>> findAllPaginated(
+    public ResponseEntity<PageableResponseModel<RequestDTO>> findAllPaginatedByRole(
         @RequestParam(defaultValue = "0") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
@@ -90,4 +94,19 @@ public class RequestController {
         return ResponseEntity.ok(requestService.getAllRequestsByRolesDynamicQuery(pageRequest));
     }
 
+    @GetMapping(path = "/paginated", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(
+        summary = "Retrieve the paginated list of requests associated with the authenticated user",
+        description = "Retrieve a list of requests, with pagination, using a filter by name"
+    )
+    public ResponseEntity<PageableResponseModel<RequestDTO>> findAllPaginated(
+        @RequestParam(defaultValue = "1") Integer pageIndex,
+        @RequestParam(defaultValue = "10") Integer pageSize,
+        @RequestParam(defaultValue = "id") String sortField,
+        @RequestParam(defaultValue = "ASC") String sortType,
+        RequestFilterDTO filter
+    ) {
+        final var pageRequest = PageableRequestModel.of(pageIndex - 1, pageSize, sortType, sortField, filter);
+        return ResponseEntity.ok(requestService.getAllRequests(pageRequest));
+    }
 }

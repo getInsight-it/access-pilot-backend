@@ -4,8 +4,7 @@ package it.getinsight.module.request.service;
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.exception.BusinessException;
 import it.getinsight.core.exception.ResourceNotFoundException;
-import it.getinsight.core.helper
-    .PaginationHelper;
+import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.entity.ClientEntity;
@@ -15,8 +14,10 @@ import it.getinsight.module.email.service.EmailService;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.request.config.EmailNotificationProperties;
 import it.getinsight.module.request.dto.RequestDTO;
+import it.getinsight.module.request.dto.RequestFilterDTO;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
+import it.getinsight.module.request.mapper.RequestFilterMapper;
 import it.getinsight.module.request.mapper.RequestMapper;
 import it.getinsight.module.request.repository.RequestRepository;
 import it.getinsight.module.role.entity.RoleEntity;
@@ -31,6 +32,7 @@ import it.getinsight.module.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -52,6 +54,7 @@ public class RequestService {
 
     private final RequestRepository requestRepository;
     private final RequestMapper requestMapper;
+    private final RequestFilterMapper requestFilterMapper;
     private final KeycloakClient keycloakClient;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -74,7 +77,7 @@ public class RequestService {
         Jwt principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userId = principal.getSubject();
         String username = principal.getClaimAsString("preferred_username");
-        var roleEntity = roleRepository.findById(requestDTO.roleId()).orElseThrow(ResourceNotFoundException::new);
+        var roleEntity = roleRepository.findById(requestDTO.role().id()).orElseThrow(ResourceNotFoundException::new);
         final var entity = requestMapper.toEntity(requestDTO);
         var user = userRepository.findByExternalId(userId).orElseGet(() -> {
             var userEntity = new UserEntity();
@@ -150,6 +153,30 @@ public class RequestService {
         }else {
             return requestRepository.findAllNative(NAME_QUERY_FIND_ALL_REQUESTS, DynamicParameters.get(),PaginationHelper.toPageable(configPage), requestMapper);
         }
+    }
+
+
+    public PageableResponseModel<RequestDTO> getAllRequests(PageableRequestModel<RequestFilterDTO> configPage) {
+        final var model = configPage
+            .getFilter()
+            .map(requestFilterMapper::toDto)
+            .map(requestMapper::toEntity)
+            .orElse(new RequestEntity());
+
+
+        final var matcher = ExampleMatcher
+            .matchingAll()
+            .withIgnoreNullValues()
+            .withMatcher("role.name", ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher("role.client.name", ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher("role.client.clientId", ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher("status", ExampleMatcher.GenericPropertyMatcher::exact)
+            .withMatcher("managed", ExampleMatcher.GenericPropertyMatcher::exact)
+            .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains);
+
+        final var example = Example.of(model, matcher);
+        final var page = requestRepository.findAll(example, PaginationHelper.toPageable(configPage));
+        return PaginationHelper.toPageResponse(requestMapper.toDto(page.getContent()), page.getTotalElements());
     }
 
     private Set<String> extractRoles(Map<String, Object> resourceAccess) {
