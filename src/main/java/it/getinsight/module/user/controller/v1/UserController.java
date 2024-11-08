@@ -47,7 +47,7 @@ public class UserController {
     @Parameter(name = "filter", hidden = true)
     @GetMapping(path = "/paginated", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<UserDTO>> getAllUsersPaginated(
-        @RequestParam(defaultValue = "0") Integer pageIndex,
+        @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "name") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
@@ -63,7 +63,7 @@ public class UserController {
     )
     @GetMapping(path = "/paginated-by-name", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<UserDTO>> getAllUsersPaginatedByName(
-        @RequestParam(defaultValue = "0") Integer pageIndex,
+        @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "name") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,

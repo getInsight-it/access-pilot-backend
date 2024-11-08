@@ -46,7 +46,7 @@ public class RoleController {
     @Parameter(name = "idClient", description = "Filter by client id", in = ParameterIn.QUERY, schema = @Schema(type = "long"))
     @GetMapping(path = "/paginated", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<RoleDTO>> getAllPaginated(
-        @RequestParam(defaultValue = "0") Integer pageIndex,
+        @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "name") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
@@ -62,7 +62,7 @@ public class RoleController {
     )
     @GetMapping(path = "/paginated-by-name", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<RoleDTO>> getAllPaginatedByName(
-        @RequestParam(defaultValue = "0") Integer pageIndex,
+        @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "name") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,

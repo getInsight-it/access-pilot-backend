@@ -44,7 +44,7 @@ public class ClientController {
     @Parameter(name = "filter", hidden = false)
     @GetMapping(path = "/paginated", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<ClientDTO>> getAllClientsPaginated(
-        @RequestParam(defaultValue = "0") Integer pageIndex,
+        @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
@@ -60,7 +60,7 @@ public class ClientController {
     )
     @GetMapping(path = "/paginated-by-name", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<ClientDTO>> getAllClientsPaginatedByName(
-        @RequestParam(defaultValue = "0") Integer pageIndex,
+        @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "name") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,

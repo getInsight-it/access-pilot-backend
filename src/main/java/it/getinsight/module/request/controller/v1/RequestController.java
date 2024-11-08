@@ -68,7 +68,7 @@ public class RequestController {
         description = "Retrieve a list of requests, with pagination, using a filter by name"
     )
     public ResponseEntity<PageableResponseModel<RequestDTO>> findAllByMePaginated(
-        @RequestParam(defaultValue = "0") Integer pageIndex,
+        @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
@@ -84,7 +84,7 @@ public class RequestController {
         description = "Retrieve a list of requests, with pagination, using a filter by name"
     )
     public ResponseEntity<PageableResponseModel<RequestDTO>> findAllPaginatedByRole(
-        @RequestParam(defaultValue = "0") Integer pageIndex,
+        @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,

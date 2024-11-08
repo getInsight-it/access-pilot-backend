@@ -67,7 +67,7 @@ public class StorageFileController {
             @ApiResponse(responseCode = "200")
         }
     )
-    public ResponseEntity<PageableResponseModel<StorageFileDTO>> getFilesPaginated(  @RequestParam(defaultValue = "0") Integer pageIndex,
+    public ResponseEntity<PageableResponseModel<StorageFileDTO>> getFilesPaginated(  @RequestParam(defaultValue = "1") Integer pageIndex,
                                                                                      @RequestParam(defaultValue = "10") Integer pageSize,
                                                                                      @RequestParam(defaultValue = "name") String sortField,
                                                                                      @RequestParam(defaultValue = "ASC") String sortType,
