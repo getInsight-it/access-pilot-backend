@@ -69,7 +69,7 @@ public class StorageFileController {
     )
     public ResponseEntity<PageableResponseModel<StorageFileDTO>> getFilesPaginated(  @RequestParam(defaultValue = "1") Integer pageIndex,
                                                                                      @RequestParam(defaultValue = "10") Integer pageSize,
-                                                                                     @RequestParam(defaultValue = "name") String sortField,
+                                                                                     @RequestParam(defaultValue = "id") String sortField,
                                                                                      @RequestParam(defaultValue = "ASC") String sortType,
                                                                                      @RequestParam(required = false) String originalFilename
     ) {

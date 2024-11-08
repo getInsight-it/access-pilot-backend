@@ -49,7 +49,7 @@ public class UserController {
     public ResponseEntity<PageableResponseModel<UserDTO>> getAllUsersPaginated(
         @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
-        @RequestParam(defaultValue = "name") String sortField,
+        @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
         UserDTO filter
     ) {
@@ -65,7 +65,7 @@ public class UserController {
     public ResponseEntity<PageableResponseModel<UserDTO>> getAllUsersPaginatedByName(
         @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
-        @RequestParam(defaultValue = "name") String sortField,
+        @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
         @RequestParam(required = false) String filter
     ) {
