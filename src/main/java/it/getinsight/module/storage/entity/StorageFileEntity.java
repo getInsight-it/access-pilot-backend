@@ -30,7 +30,8 @@ public class StorageFileEntity extends AuditableEntity<Long, String> {
     private String originalFilename;
 
     @Column(name = "FILESIZE")
-    private long filesize;
+    private Long filesize;
+
     @Column(name = "MIME_TYPE")
     private String mimeType;
 

@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.storage.dto.StorageFileDTO;
+import it.getinsight.module.storage.dto.StorageFileFilterDTO;
 import it.getinsight.module.storage.service.StorageFileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
@@ -71,9 +72,9 @@ public class StorageFileController {
                                                                                      @RequestParam(defaultValue = "10") Integer pageSize,
                                                                                      @RequestParam(defaultValue = "id") String sortField,
                                                                                      @RequestParam(defaultValue = "ASC") String sortType,
-                                                                                     @RequestParam(required = false) String originalFilename
+                                                                                     StorageFileFilterDTO filter
     ) {
-        return ResponseEntity.ok(storageFileService.getFilesPaginated(PageableRequestModel.of(pageIndex, pageSize, sortType, sortField, originalFilename)));
+        return ResponseEntity.ok(storageFileService.getFilesPaginated(PageableRequestModel.of(pageIndex, pageSize, sortType, sortField, filter)));
     }
 
     @GetMapping("/name/{name}")
