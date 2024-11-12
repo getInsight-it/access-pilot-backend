@@ -8,7 +8,9 @@ import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.request.repository.RequestRepository;
 import it.getinsight.module.storage.dto.StorageFileDTO;
+import it.getinsight.module.storage.dto.StorageFileFilterDTO;
 import it.getinsight.module.storage.entity.StorageFileEntity;
+import it.getinsight.module.storage.mapper.StorageFileFilterMapper;
 import it.getinsight.module.storage.mapper.StorageFileMapper;
 import it.getinsight.module.storage.provider.StorageProvider;
 import it.getinsight.module.storage.repository.StorageFileRepository;
@@ -33,6 +35,7 @@ public class StorageFileService {
     private final RequestRepository requestRepository;
     private final StorageProvider storageProvider;
     private final StorageFileMapper storageFileMapper;
+    private final StorageFileFilterMapper storageFileFilterMapper;
 
     public StorageFileDTO findById(Long id) {
         var storageFileEntity = storageRepository.findById(id).orElseThrow(ResourceNotFoundException::new);
@@ -44,16 +47,18 @@ public class StorageFileService {
     }
 
 
-    public PageableResponseModel<StorageFileDTO> getFilesPaginated(PageableRequestModel<String> configPage) {
+    public PageableResponseModel<StorageFileDTO> getFilesPaginated(PageableRequestModel<StorageFileFilterDTO> configPage) {
         final var model = configPage
             .getFilter()
-            .map(o -> StorageFileEntity.builder().originalFilename(o).build())
+            .map(storageFileFilterMapper::toDto)
+            .map(storageFileMapper::toEntity)
             .orElse(new StorageFileEntity());
 
         final var matcher = ExampleMatcher
             .matchingAll()
             .withIgnoreNullValues()
-            .withMatcher("originalFilename", ExampleMatcher.GenericPropertyMatcher::contains);
+            .withMatcher("originalFilename", ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher("requestId", ExampleMatcher.GenericPropertyMatcher::exact);
 
             final var example = Example.of(model, matcher);
             final var page = storageRepository.findAll(example, PaginationHelper.toPageable(configPage));

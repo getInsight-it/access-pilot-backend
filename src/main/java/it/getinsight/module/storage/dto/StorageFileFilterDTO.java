@@ -7,16 +7,8 @@ import java.io.Serializable;
 import java.util.UUID;
 
 @Builder
-public record StorageFileDTO(
-    Long id,
-    Boolean excluded,
+public record StorageFileFilterDTO(
     String originalFilename,
-    Long filesize,
-    String mimeType,
-    String bucket,
-    Boolean isPublic,
-    Boolean ephemeral,
-    Long downloadCount,
     UUID fileId,
     Long requestId
 ) implements Serializable {}
