@@ -47,8 +47,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static it.getinsight.message.MessageProperty.APPROVE_NOT_AUTHORIZED;
-import static it.getinsight.message.MessageProperty.REQUEST_NOT_FOUND_ERROR;
+import static it.getinsight.message.MessageProperty.*;
 
 
 @Service
@@ -204,6 +203,9 @@ public class RequestService {
             .map(user ->
                 userService.findOrImportByExternalId(user.id())
             ).toList();
+        if (approvals.isEmpty()) {
+            throw APPROVERS_NOT_FOUND_ERROR.businessException();
+        }
         approvals.stream()
             .map(approvedDTO -> EmailDTO.builder()
                 .to(approvedDTO.email())
