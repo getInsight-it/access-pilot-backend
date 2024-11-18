@@ -11,6 +11,7 @@ import it.getinsight.module.user.entity.UserEntity;
 import it.getinsight.module.user.mapper.UserMapper;
 import it.getinsight.module.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,6 +26,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
@@ -81,6 +83,7 @@ public class UserService {
         var entity = userRepository.findByExternalId(externalId).orElseGet(() -> {
             final var userDTO = keycloakClient.getUsers(externalId);
             final var userEntity = new UserEntity(null, userDTO.username(), userDTO.firstName(), userDTO.lastName(), userDTO.email(), userDTO.id());
+            log.info("User imported from Keycloak: {}", userEntity);
             return userRepository.save(userEntity);
         });
         return userMapper.toDto(entity);

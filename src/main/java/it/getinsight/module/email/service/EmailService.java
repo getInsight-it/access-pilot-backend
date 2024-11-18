@@ -66,7 +66,6 @@ public class EmailService {
                  .user(userEntity)
                  .content(content)
                  .build();
-
          sendEmail(emailSent);
      }
 
@@ -76,6 +75,7 @@ public class EmailService {
             var mimeMessageMapPair = makeEmail(emailSentEntity);
             var message = mimeMessageMapPair.getLeft();
             attachments = mimeMessageMapPair.getRight();
+            log.info("Sending email: {} - {}", emailSentEntity.getTo(), emailSentEntity.getSubject());
             emailSender.send(message);
 
             emailSentEntity.setSuccess(true);

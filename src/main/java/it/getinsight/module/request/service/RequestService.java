@@ -30,7 +30,10 @@ import it.getinsight.module.user.mapper.UserMapper;
 import it.getinsight.module.user.repository.UserRepository;
 import it.getinsight.module.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -50,6 +53,7 @@ import static it.getinsight.message.MessageProperty.REQUEST_NOT_FOUND_ERROR;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RequestService {
 
     private final RequestRepository requestRepository;
@@ -210,6 +214,7 @@ public class RequestService {
                 .isHtml(true)
                 .build())
             .forEach(o -> {
+                log.info("Sending email to {}", o.to());
                 emailService.sendMail(o);
                 requestEntity.setStatus(RequestStatus.PENDING);
                 var variables = getVariables(requestEntity.getRequestingUser(),null, requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient());
