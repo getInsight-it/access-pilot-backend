@@ -33,6 +33,9 @@ public class RequestEntity extends AuditableEntity<Long, String> {
     @GeneratedValue(generator = "RequestEntity.sq", strategy = GenerationType.SEQUENCE)
     private Long id;
 
+    @Column(name = "UUID")
+    private UUID uuid;
+
     @Column(name = "PROTOCOL_CODE", unique = true, nullable = false)
     private String protocolCode;
 
@@ -60,6 +63,7 @@ public class RequestEntity extends AuditableEntity<Long, String> {
         if (this.protocolCode == null || this.protocolCode.isEmpty()) {
             this.protocolCode = generateUniqueProtocolCode();
         }
+        this.uuid = UUID.randomUUID();
     }
 
     private String generateUniqueProtocolCode() {

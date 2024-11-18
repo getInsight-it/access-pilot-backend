@@ -14,6 +14,7 @@ import it.getinsight.module.storage.dto.StorageFileDTO;
 import it.getinsight.module.storage.dto.StorageFileFilterDTO;
 import it.getinsight.module.storage.service.StorageFileService;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/storages")
@@ -72,9 +74,9 @@ public class StorageFileController {
                                                                                      @RequestParam(defaultValue = "10") Integer pageSize,
                                                                                      @RequestParam(defaultValue = "id") String sortField,
                                                                                      @RequestParam(defaultValue = "ASC") String sortType,
-                                                                                     StorageFileFilterDTO filter
+                                                                                     @ParameterObject StorageFileFilterDTO filter
     ) {
-        return ResponseEntity.ok(storageFileService.getFilesPaginated(PageableRequestModel.of(pageIndex, pageSize, sortType, sortField, filter)));
+        return ResponseEntity.ok(storageFileService.getFilesPaginated(PageableRequestModel.of(pageIndex - 1, pageSize, sortType, sortField, filter)));
     }
 
     @GetMapping("/name/{name}")
@@ -107,8 +109,8 @@ public class StorageFileController {
                                                 @RequestParam String bucket,
                                                 @RequestParam Boolean isPublic,
                                                 @RequestParam Boolean ephemeral,
-                                                @RequestParam(required = false) Long requestId) {
-        storageFileService.save(attachments, bucket, isPublic, ephemeral, requestId);
+                                                @RequestParam(required = false) UUID ownerId) {
+        storageFileService.save(attachments, bucket, isPublic, ephemeral, ownerId);
         return ResponseEntity.status(201).build();
     }
 

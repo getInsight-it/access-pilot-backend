@@ -20,6 +20,7 @@ public class EmailNotificationProperties {
     public static class Url {
         private String clientUrl;
         private String hint;
+        private String frontendUrl;
     }
 
     @Data

@@ -11,6 +11,7 @@ import it.getinsight.module.email.entity.EmailSentEntity;
 import it.getinsight.module.email.entity.EmailStatus;
 import it.getinsight.module.email.mapper.EmailMapper;
 import it.getinsight.module.email.repository.EmailRepository;
+import it.getinsight.module.storage.service.StorageFileService;
 import it.getinsight.module.user.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
@@ -27,11 +28,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
+import static org.apache.commons.lang3.BooleanUtils.isTrue;
 
 
 @Service
@@ -44,12 +48,15 @@ public class EmailService {
     private final UserRepository userRepository;
     private final TemplateEngine templateEngine;
     private final EmailMapper emailMapper;
+    private final StorageFileService storageFileService;
+
+    public static final String  PRIVATE_GETINSIGHT_ACCESSPILOT_EMAILS_BUCKET = "private-getinsight-accesspilot-emails";
 
     @Value("${spring.mail.properties.mail.from}")
     private String emailFrom;
 
      public void sendMail(EmailDTO emailDTO){
-         final var content = emailDTO.isHtml() ? processContentByTemplate(emailDTO.templateName(), emailDTO.variables()) : emailDTO.content();
+         final var content = isTrue(emailDTO.isHtml()) ? processContentByTemplate(emailDTO.templateName(), emailDTO.variables()) : emailDTO.content();
          final var userEntity = userRepository.findById(emailDTO.userId()).orElseThrow(ResourceNotFoundException::new);
          final var emailSent = EmailSentEntity.builder()
                  .to(emailDTO.to())
@@ -74,6 +81,11 @@ public class EmailService {
             emailSentEntity.setSuccess(true);
             emailSentEntity.setStatus(EmailStatus.SENT);
             emailRepository.save(emailSentEntity);
+            final var content = emailSentEntity.getContent();
+            storageFileService.upload(PRIVATE_GETINSIGHT_ACCESSPILOT_EMAILS_BUCKET,
+                false,
+                false,
+                emailSentEntity.getUuid(), "%s.html".formatted(emailSentEntity.getUuid()), "text/html", (long) content.getBytes().length, new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
             log.info("EmailDTO sent successfully: {} - {}", emailSentEntity.getTo(), emailSentEntity.getSubject());
         }catch (Exception e){
             handleEmailError(e, emailSentEntity);

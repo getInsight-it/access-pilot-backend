@@ -14,7 +14,8 @@ public enum MessageProperty implements IMessageProperty {
     EXAMPLE_ERROR_MESSAGE("example.of.error"),
     REQUEST_NOT_FOUND_ERROR("request.not.found"),
     EXAMPLE_MESSAGE_WITH_PARAMETER("example.of.error.with.parameter"),
-    APPROVE_NOT_AUTHORIZED("requester.approve.not.authorized");
+    APPROVE_NOT_AUTHORIZED("requester.approve.not.authorized"),
+    CLIENT_NOT_FOUND_ERROR("client.not.found");
 
     private final String key;
 

@@ -22,11 +22,7 @@ public record RoleDTO(
     @Size(min = 3, max = 100)
     String description,
 
-    Long idRoleParent,
-
-    Long idClient,
-
-    String clientName,
+    RoleDTO roleParent,
 
     ClientDTO client
 ) implements Serializable {}

@@ -1,12 +1,12 @@
 package it.getinsight.module.storage.service;
 
 
+import it.getinsight.core.exception.BusinessException;
 import it.getinsight.core.exception.InfraException;
 import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
-import it.getinsight.module.request.repository.RequestRepository;
 import it.getinsight.module.storage.dto.StorageFileDTO;
 import it.getinsight.module.storage.dto.StorageFileFilterDTO;
 import it.getinsight.module.storage.entity.StorageFileEntity;
@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,7 +33,6 @@ import java.util.UUID;
 public class StorageFileService {
 
     private final StorageFileRepository storageRepository;
-    private final RequestRepository requestRepository;
     private final StorageProvider storageProvider;
     private final StorageFileMapper storageFileMapper;
     private final StorageFileFilterMapper storageFileFilterMapper;
@@ -58,7 +58,7 @@ public class StorageFileService {
             .matchingAll()
             .withIgnoreNullValues()
             .withMatcher("originalFilename", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("requestId", ExampleMatcher.GenericPropertyMatcher::exact);
+            .withMatcher("ownerId", ExampleMatcher.GenericPropertyMatcher::exact);
 
             final var example = Example.of(model, matcher);
             final var page = storageRepository.findAll(example, PaginationHelper.toPageable(configPage));
@@ -71,33 +71,52 @@ public class StorageFileService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void save(List<MultipartFile> attachments, String bucket, Boolean isPublic, Boolean ephemeral, Long requestId) {
+    public void save(List<MultipartFile> attachments, String bucket, Boolean isPublic, Boolean ephemeral, UUID ownerId) {
         if (attachments == null || attachments.isEmpty()) {
             return;
         }
         for (MultipartFile file : attachments) {
             try {
-                var requestEntity = requestId != null ? requestRepository.findById(requestId).orElseThrow(() -> new ResourceNotFoundException("Request not found")) : null;
-                var storageFileEntity = StorageFileEntity.builder()
-                    .bucket(bucket)
-                    .excluded(false)
-                    .isPublic(isPublic)
-                    .ephemeral(ephemeral)
-                    .request(requestEntity)
-                    .downloadCount(0L)
-                    .originalFilename(file.getOriginalFilename())
-                    .mimeType(file.getContentType())
-                    .filesize(file.getSize())
-                    .fileId(UUID.randomUUID())
-                    .build();
-
-                storageFileEntity = storageRepository.save(storageFileEntity);
-
-                storageProvider.uploadFile(storageFileEntity, file.getInputStream());
+                upload(bucket, isPublic, ephemeral, ownerId, file.getOriginalFilename(), file.getContentType(), file.getSize(), file.getInputStream());
             } catch (IOException e) {
                 throw new InfraException("Erro ao salvar arquivo");
             }
         }
+    }
+    /**
+     * Sigo no accesspilot - dei uma pausa no front
+     * templates
+     * */
+
+    public void upload(String bucket,
+                        Boolean isPublic,
+                        Boolean ephemeral,
+                        UUID ownerId,
+                        String originalFilename,
+                        String contentType,
+                        Long size,
+                        InputStream inputStream) {
+
+        if (ownerId == null){
+            throw new BusinessException("OwnerId não informada");
+        }
+        var storageFileEntity = StorageFileEntity.builder()
+            .bucket(bucket)
+            .excluded(false)
+            .isPublic(isPublic)
+            .ephemeral(ephemeral)
+            .ownerId(ownerId)
+            .downloadCount(0L)
+            .originalFilename(originalFilename)
+            .mimeType(contentType)
+            .filesize(size)
+            .fileId(UUID.randomUUID())
+            .build();
+
+        storageFileEntity = storageRepository.save(storageFileEntity);
+
+        storageProvider.uploadFile(storageFileEntity, inputStream);
+
     }
 
     @Transactional(propagation = Propagation.REQUIRED)

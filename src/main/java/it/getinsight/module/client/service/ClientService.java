@@ -3,12 +3,12 @@ package it.getinsight.module.client.service;
 import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.exception.BusinessException;
-import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.dto.ClientDTO;
 import it.getinsight.module.client.entity.ClientEntity;
+import it.getinsight.module.client.entity.ClientStatus;
 import it.getinsight.module.client.mapper.ClientMapper;
 import it.getinsight.module.client.mapper.ClientRepresentationMapper;
 import it.getinsight.module.client.repository.ClientRepository;
@@ -16,6 +16,8 @@ import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.config.KeycloakProperties;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Example;
@@ -24,9 +26,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
+
+import static it.getinsight.message.MessageProperty.CLIENT_NOT_FOUND_ERROR;
 
 
 @Service
@@ -88,7 +93,7 @@ public class ClientService {
 
     @Cacheable(value = "clients", key = "#id")
     public ClientDTO findById(Long id) {
-        var entity = clientRepository.findById(id).orElseThrow(ResourceNotFoundException::new);
+        var entity = clientRepository.findById(id).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
         return clientMapper.toDto(entity);
     }
 
@@ -146,7 +151,7 @@ public class ClientService {
 
     @CacheEvict(value = "clients", allEntries = true)
     public void updateManaged(Long id, ClientDTO clientDTO) {
-        var entity = clientRepository.findById(id).orElseThrow(ResourceNotFoundException::new);
+        var entity = clientRepository.findById(id).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
         var client = keycloakClient.getClientsByClientId(entity.getClientId()).getFirst();
         client.attributes().put(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED, clientDTO.managed().toString());
         keycloakClient.updateClient(client.id(), client);
@@ -157,5 +162,25 @@ public class ClientService {
     @Cacheable(value = "getTotalClients")
     public long getTotalClients() {
         return clientRepository.count();
+    }
+
+    @CacheEvict(value = "clients", allEntries = true)
+    public ClientDTO update(Long id, String status) {
+        var entity = clientRepository.findById(id).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
+        validateStatus(entity, status);
+        entity.setStatus(ClientStatus.valueOf(status));
+        return clientMapper.toDto(clientRepository.save(entity));
+    }
+
+    private static void validateStatus( ClientEntity entity, String status) {
+        if (Arrays.stream(ClientStatus.values()).noneMatch(o -> StringUtils.equalsIgnoreCase(o.name(), status))) {
+            throw new BusinessException("Invalid status");
+        }
+        if (entity.getStatus().name().equalsIgnoreCase(status)) {
+            throw new BusinessException("Client already %s" .formatted(status));
+        }
+        if(BooleanUtils.isFalse(entity.getManaged()) && ClientStatus.PUBLISHED.name().equals(status)){
+            throw new BusinessException("Managed clients cannot be published");
+        }
     }
 }

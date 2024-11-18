@@ -2,20 +2,95 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Nova Solicitação de Aprovação de Perfil</title>
+    <title>Nova Solicitação de Acesso</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: "Mulish";
+        }
+
+        img {
+            width: 200px;
+        }
+
+        h1 {
+            font-size: 1.5em;
+        }
+        .ap-container {
+            padding: 20px;
+        }
+        ul {
+            list-style: none;
+            padding-left: 0px;
+
+        }
+        ul li {
+            margin-top: 10px;
+
+        }
+        .detalhes {
+            background: black;
+            color: white;
+            max-width: 720px;
+            width: 100%;
+            padding: 10px 20px;
+        }
+        .titulo {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+        }
+        img.key-icon {
+            width: 24px;
+            height: 24px;
+            margin-left: 10px;
+        }
+    </style>
+
 </head>
 <body>
-<h1>Nova Solicitação de Aprovação de Perfil</h1>
-<p>Olá,</p>
-<p>Você recebeu uma nova solicitação de aprovação de perfil.</p>
-<p>Detalhes da solicitação:</p>
-<ul>
-    <li><strong>Nome do solicitante:</strong> <span th:text="${requestingUser.username}"></span></li>
-    <li><strong>Perfil:</strong> <span th:text="${role.name}"></span></li>
-    <li><strong>Sistema:</strong> <span th:text="${client.clientId}"></span></li>
-</ul>
-<p>Por favor, <a th:href="${link.address}" th:placeholder="${link.hint}" target="_blank">acesse o sistema</a> para aprovar ou rejeitar a solicitação.</p>
-<p>Obrigado,</p>
-<p>Sua Equipe</p>
+<div class="ap-container">
+    <img th:src="${link.assetUrl + '/accesspilot.svg'}" />
+    <div class="titulo">
+        <h1>
+            Nova Solicitação de Acesso
+        </h1>
+        <img class="key-icon" th:src="${link.assetUrl + '/key.svg'}" />
+
+    </div>
+    <div class="">
+        <p>
+            Olá,
+            <br />
+            Você recebeu uma nova solicitação de acesso.
+        </p>
+        <p>Detalhes:</p>
+    </div>
+    <div class="detalhes">
+        <ul>
+            <li>
+                <strong>Nome do solicitante:</strong>
+                <span th:text="${requestingUser.username}"></span>
+            </li>
+            <li>
+                <strong>Perfil:</strong>
+                <span th:text="${role.name}"></span>
+            </li>
+            <li>
+                <strong>Sistema:</strong>
+                <span th:text="${client.clientId}"></span>
+            </li>
+        </ul>
+    </div>
+    <p>
+        Por favor, <a th:href="${link.address}" th:placeholder="${link.hint}" target="_blank">acesse o sistema</a> para aprovar ou rejeitar a solicitação.
+        <br />
+        Obrigado,
+    </p>
+    <p>Accesspilot</p>
+</div>
 </body>
 </html>

@@ -9,6 +9,7 @@ import java.util.Map;
 @Builder
 public record EmailDTO(
      Long id,
+     String uuid,
      String from,
      String to,
      String subject,

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_028" author="luan.rodrigues@getinsight.it">
+
+        <dropColumn tableName="TB_STORAGE_FILE_AUD" columnName="SOLICITACAO_ID"/>
+        <dropColumn tableName="TB_STORAGE_FILE_AUD" columnName="REQUEST_ID"/>
+
+        <addColumn tableName="TB_STORAGE_FILE_AUD">
+            <column name="OWNER_ID" type="uuid" valueComputed="gen_random_uuid()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <rollback>
+            <addColumn tableName="TB_STORAGE_FILE_AUD">
+                <column name="SOLICITACAO_ID" type="bigint"/>
+            </addColumn>
+
+            <dropColumn tableName="TB_STORAGE_FILE_AUD" columnName="OWNER_ID"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
