@@ -59,6 +59,7 @@ email-notification:
   url:
     hint: AccessPilot frontend
     client-url: http://localhost:8080/swagger-ui.html
+    frontend-url: http://localhost:9080
 
 spring:
   application:
@@ -184,6 +185,7 @@ minio:
   secretKey: abc12345
   buckets:
     - private-getinsight-accesspilot-docs
+    - private-getinsight-accesspilot-emails
 
 
 sentry:

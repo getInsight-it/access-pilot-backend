@@ -17,14 +17,20 @@ public interface RoleMapper extends BaseMapper<RoleEntity, RoleDTO>, BaseGeneric
     @InheritInverseConfiguration(name = "toMap")
     List<RoleDTO> toList(List<Object> value);
 
-   @Mapping(
+    @Mapping(
+        target = "roleParent",
+        source = "role"
+    )
+    RoleDTO toDto(RoleEntity entity);
+
+    @Mapping(
         target = "id",
         expression = "java(toLong( value, 0 ))"
     )
-   @Mapping(
-       target = "roleExternalId",
-       expression = "java(toString( value, 1 ))"
-   )
+    @Mapping(
+        target = "roleExternalId",
+        expression = "java(toString( value, 1 ))"
+    )
     @Mapping(
         target = "name",
         expression = "java(toString( value, 2 ))"
@@ -32,18 +38,6 @@ public interface RoleMapper extends BaseMapper<RoleEntity, RoleDTO>, BaseGeneric
     @Mapping(
         target = "description",
         expression = "java(toString( value, 3 ))"
-    )
-   @Mapping(
-       target = "idRoleParent",
-       expression = "java(toLong( value, 4 ))"
-   )
-   @Mapping(
-       target = "idClient",
-       expression = "java(toLong( value, 5 ))"
-   )
-    @Mapping(
-         target = "clientName",
-         expression = "java(toString( value, 6 ))"
     )
    RoleDTO toMap(Object value);
 }

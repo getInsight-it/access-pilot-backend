@@ -14,6 +14,7 @@ import it.getinsight.module.request.dto.RequestFilterDTO;
 import it.getinsight.module.request.service.RequestService;
 import it.getinsight.module.role.dto.RoleDTO;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -62,7 +63,7 @@ public class RequestController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 
-    @GetMapping(path = "/me/paginated-by-name", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(path = "/me/paginated-by-status", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
         summary = "Retrieve the paginated list of requests associated with the authenticated user",
         description = "Retrieve a list of requests, with pagination, using a filter by name"
@@ -78,7 +79,7 @@ public class RequestController {
         return ResponseEntity.ok(requestService.getAllRequestsByStatusDynamicQuery(pageRequest));
     }
 
-    @GetMapping(path = "/paginated-by-name", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(path = "/paginated-by-roles", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
         summary = "Retrieve the paginated list of requests associated with the authenticated user",
         description = "Retrieve a list of requests, with pagination, using a filter by name"
@@ -104,7 +105,7 @@ public class RequestController {
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
-        RequestFilterDTO filter
+        @ParameterObject RequestFilterDTO filter
     ) {
         final var pageRequest = PageableRequestModel.of(pageIndex - 1, pageSize, sortType, sortField, filter);
         return ResponseEntity.ok(requestService.getAllRequests(pageRequest));

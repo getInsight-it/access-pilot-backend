@@ -92,7 +92,7 @@ public class RequestService {
         entity.setRole(roleEntity);
         sendApproves(entity);
         requestRepository.save(entity);
-        storageFileService.save(attachments, PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET, false, false, entity.getId());
+        storageFileService.save(attachments, PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET, false, false, entity.getUuid());
         return requestMapper.toDto(entity);
     }
 
@@ -113,9 +113,9 @@ public class RequestService {
         var variables = getVariables(requestEntity.getRequestingUser(), approvingUserEntity, requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient());
         if (RequestStatus.APPROVED.equals(requestEntity.getStatus())) {
             confirmRoles(requestEntity);
-            sendNotificationToUser(requestEntity, variables);
+            sendNotificationStatusToUser(requestEntity, variables);
         }else if (RequestStatus.REJECTED.equals(requestEntity.getStatus())) {
-            sendNotificationToUser(requestEntity, variables);
+            sendNotificationStatusToUser(requestEntity, variables);
             requestRepository.save(requestEntity);
         }
     }
@@ -137,7 +137,7 @@ public class RequestService {
         configPage.getFilter().filter(StringUtils::isNotBlank).ifPresent(o -> model.setStatus(RequestStatus.valueOf(o)));
         var principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Map<String, Object> resourceAccess = principal.getClaim("resource_access");
-        Set<String> roles = extractRoles(resourceAccess);
+        var roles = extractRoles(resourceAccess);
 
         final var parameters = DynamicParameters.get()
             .append("status", model.getStatus().name())
@@ -186,8 +186,8 @@ public class RequestService {
     }
 
     private Stream<String> extractRolesFromClientAccess(Object clientAccess) {
-        Map<String, Object> clientAccessMap = (Map<String, Object>) clientAccess;
-        List<String> roles = (List<String>) clientAccessMap.get("roles");
+        final var clientAccessMap = (Map<String, Object>) clientAccess;
+        final var  roles = (List<String>) clientAccessMap.get("roles");
         return roles.stream();
     }
 
@@ -213,7 +213,7 @@ public class RequestService {
                 emailService.sendMail(o);
                 requestEntity.setStatus(RequestStatus.PENDING);
                 var variables = getVariables(requestEntity.getRequestingUser(),null, requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient());
-                sendNotificationToUser(requestEntity, variables);
+                sendNotificationStatusToUser(requestEntity, variables);
                 requestRepository.save(requestEntity);
             });
     }
@@ -221,7 +221,7 @@ public class RequestService {
     private Map<String, Object> getVariables(UserEntity requestingUserEntity, UserEntity approvingUserEntity, RequestEntity requestEntity, RoleEntity roleEntity, ClientEntity clientEntity) {
         Map<String, Object> variables = new HashMap<>();
         var url = emailNotificationProperties.getUrl();
-        variables.put("link", Map.of("address", url.getClientUrl(), "hint", url.getHint()));
+        variables.put("link", Map.of("address", url.getClientUrl(), "hint", url.getHint(), "frontendUrl", url.getFrontendUrl()));
         variables.put("approvingUser", userMapper.toDto(approvingUserEntity));
         variables.put("requestingUser", userMapper.toDto(requestingUserEntity));
         variables.put("request", requestMapper.toDto(requestEntity));
@@ -231,7 +231,7 @@ public class RequestService {
         return variables;
     }
 
-    public void sendNotificationToUser(RequestEntity requestEntity, Map<String, Object> variables) {
+    public void sendNotificationStatusToUser(RequestEntity requestEntity, Map<String, Object> variables) {
         var requestingUserDTO = Optional.of(requestEntity.getRequestingUser()).map(userMapper::toDto).orElseThrow(() -> new BusinessException("Não foi possivel converter o usuário"));
         emailService.sendMail(EmailDTO.builder()
             .to(requestingUserDTO.email())

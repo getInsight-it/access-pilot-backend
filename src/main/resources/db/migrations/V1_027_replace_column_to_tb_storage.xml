@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_027" author="luan.rodrigues@getinsight.it">
+
+        <dropForeignKeyConstraint baseTableName="TB_STORAGE_FILE" constraintName="FK_STORAGE_FILE_SOLICITACAO"/>
+
+        <dropColumn tableName="TB_STORAGE_FILE" columnName="SOLICITACAO_ID"/>
+
+        <addColumn tableName="TB_STORAGE_FILE">
+            <column name="OWNER_ID" type="uuid" valueComputed="gen_random_uuid()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <rollback>
+            <addColumn tableName="TB_STORAGE_FILE">
+                <column name="SOLICITACAO_ID" type="bigint" />
+            </addColumn>
+
+            <addForeignKeyConstraint constraintName="FK_STORAGE_FILE_SOLICITACAO"
+                                     baseTableName="TB_STORAGE_FILE" baseColumnNames="SOLICITACAO_ID"
+                                     referencedTableName="TB_SOLICITACAO" referencedColumnNames="ID"/>
+
+            <dropColumn tableName="TB_STORAGE_FILE" columnName="UUID"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

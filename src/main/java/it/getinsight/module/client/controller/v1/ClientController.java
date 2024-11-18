@@ -2,16 +2,15 @@ package it.getinsight.module.client.controller.v1;
 
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.dto.ClientDTO;
+import it.getinsight.module.client.dto.ClientStatusUpdateDTO;
 import it.getinsight.module.client.service.ClientService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -40,15 +39,13 @@ public class ClientController {
         summary = "Retrieve the paginated list of clients",
         description = "Retrieve a list of clients, with pagination, using a name filter"
     )
-    @Parameter(name = "name", description = "Filter by name", in = ParameterIn.QUERY, schema = @Schema(type = "string"))
-    @Parameter(name = "filter", hidden = false)
     @GetMapping(path = "/paginated", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<ClientDTO>> getAllClientsPaginated(
         @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
-        ClientDTO filter
+        @ParameterObject ClientDTO filter
     ) {
         final var pageRequest = PageableRequestModel.of(pageIndex, pageSize, sortType, sortField, filter);
         return ResponseEntity.ok(clientService.getAllClientsPageable(pageRequest));
@@ -83,8 +80,8 @@ public class ClientController {
         summary = "Synchronize clients",
         description = "Synchronize clients"
     )
-    @PostMapping(value = "/synchronize", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ClientDTO> synchronize(@RequestBody List<String> clientIds) {
+    @PostMapping(value = "/synchronous", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ClientDTO> synchronous(@RequestBody List<String> clientIds) {
         clientService.synchronizationClients(clientIds);
         return ResponseEntity.noContent().build();
     }
@@ -103,9 +100,19 @@ public class ClientController {
         description = "Update client management"
     )
     @PutMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ClientDTO> synchronize(@PathVariable Long id, @RequestBody ClientDTO clientDTO) {
+    public ResponseEntity<ClientDTO> synchronous(@PathVariable Long id, @RequestBody ClientDTO clientDTO) {
         clientService.updateManaged(id,clientDTO);
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(
+        summary = "Update status",
+        description = "Update status"
+    )
+    @PatchMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ClientDTO> updateStatus(@PathVariable Long id, @RequestBody ClientStatusUpdateDTO statusUpdateDTO) {
+        return ResponseEntity.ok(clientService.update(id, statusUpdateDTO.status()));
+    }
+
 
 }

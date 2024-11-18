@@ -1,7 +1,6 @@
 package it.getinsight.module.storage.entity;
 
 import it.getinsight.core.model.jpa.entity.AuditableEntity;
-import it.getinsight.module.request.entity.RequestEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
@@ -50,8 +49,7 @@ public class StorageFileEntity extends AuditableEntity<Long, String> {
     @Column(name = "FILE_ID")
     private UUID fileId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "SOLICITACAO_ID")
-    private RequestEntity request;
+    @Column(name = "OWNER_ID")
+    private UUID ownerId;
 
 }

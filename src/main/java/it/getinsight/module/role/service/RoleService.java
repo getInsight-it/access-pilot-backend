@@ -6,13 +6,14 @@ import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
-import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.client.repository.ClientRepository;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
 import it.getinsight.module.role.dto.RoleDTO;
+import it.getinsight.module.role.dto.RoleFilterDTO;
 import it.getinsight.module.role.entity.RoleEntity;
+import it.getinsight.module.role.mapper.RoleFilterMapper;
 import it.getinsight.module.role.mapper.RoleMapper;
 import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.user.dto.UserDTO;
@@ -37,6 +38,7 @@ public class RoleService {
     private final RoleRepository roleRepository;
     private final ClientRepository clientRepository;
     private final RoleMapper roleMapper;
+    private final RoleFilterMapper roleFilterMapper;
     private final KeycloakClient keycloakClient;
     private final UserService userService;
 
@@ -52,15 +54,11 @@ public class RoleService {
         return roleRepository.findAllNative(NAME_QUERY_FIND_ALL_ROLES, parameters, roleMapper);
     }
 
-    public PageableResponseModel<RoleDTO> getAllRolesPageable(PageableRequestModel<RoleDTO> configPage) {
-        final var model = new RoleEntity();
-        configPage
+    public PageableResponseModel<RoleDTO> getAllRolesPageable(PageableRequestModel<RoleFilterDTO> configPage) {
+        final var model = configPage
             .getFilter()
-            .ifPresent( o -> {
-                model.setName(o.name());
-                model.setClient(new ClientEntity());
-                model.getClient().setId(o.idClient());
-            });
+            .map(roleFilterMapper::toDto)
+            .map(roleMapper::toEntity).orElse(new RoleEntity());
 
         final var matcher = ExampleMatcher
             .matchingAll()
@@ -125,7 +123,7 @@ public class RoleService {
     @Transactional(propagation = Propagation.REQUIRED)
     public List<UserDTO> getOrImportApprovesByRoleId(Long id) {
         var roleEntity = roleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Role not found"));
-        var roleParent = Optional.ofNullable(roleEntity.getRole()).orElseThrow(() -> new ResourceNotFoundException("Role has no parent role"));
+        var roleParent = Optional.ofNullable(roleEntity.getRole()).orElseThrow(() -> new ResourceNotFoundException("Role has no parent roleParent"));
         var role = keycloakClient.getRoleByNameAndClientUUID(roleParent.getName(), roleEntity.getClient().getClientUUID());
         return keycloakClient.getUsersByClientUUIDAndRoleName(roleEntity.getClient().getClientUUID(), role.name()).stream()
             .map(user ->
@@ -139,7 +137,7 @@ public class RoleService {
         for (RoleDTO role : roles) {
             final var entity = roleRepository.findById(role.id()).orElseThrow(() -> new ResourceNotFoundException("Role not found"));
             roleMapper.fromDto(role, entity);
-            final var roleEntityParent = role.idRoleParent() != null ? roleRepository.findById(role.idRoleParent()).orElseThrow(() -> new ResourceNotFoundException("Role parent not found")) : null;
+            final var roleEntityParent = role.roleParent() != null ? roleRepository.findById(role.roleParent().id()).orElseThrow(() -> new ResourceNotFoundException("Role parent not found")) : null;
             entity.setRole(roleEntityParent);
             roleRepository.save(entity);
         }

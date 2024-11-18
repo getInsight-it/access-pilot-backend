@@ -17,6 +17,6 @@ public record StorageFileDTO(
     Boolean isPublic,
     Boolean ephemeral,
     Long downloadCount,
-    UUID fileId,
-    Long requestId
+    UUID ownerId,
+    UUID fileId
 ) implements Serializable {}

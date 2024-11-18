@@ -11,6 +11,7 @@ import lombok.Builder;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.UUID;
 
 @Builder
 public record RequestDTO(
@@ -18,6 +19,8 @@ public record RequestDTO(
     @Size(min = 1, max = 100)
     @NotBlank
     Long id,
+
+    UUID uuid,
 
     RequestStatus status,
 

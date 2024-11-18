@@ -11,16 +11,9 @@ import java.util.List;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface StorageFileMapper extends BaseMapper<StorageFileEntity, StorageFileDTO>, BaseGenericObjectMapper<StorageFileDTO> {
 
-    @Mapping(
-        target = "requestId",
-        source = "request.id"
-    )
     StorageFileDTO toDto(StorageFileEntity entity);
 
-    @Mapping(
-        source = "requestId",
-        target = "request.id"
-    )
+
     StorageFileEntity toEntity(StorageFileDTO dto);
 
     @InheritInverseConfiguration(name = "toDto")
@@ -71,8 +64,8 @@ public interface StorageFileMapper extends BaseMapper<StorageFileEntity, Storage
         expression = "java(java.util.UUID.fromString(toString(value, 9)))"
     )
     @Mapping(
-        target = "requestId",
-        expression = "java(toLong(value, 10))"
+        target = "ownerId",
+        expression = "java(java.util.UUID.fromString(toString(value, 10)))"
     )
    StorageFileDTO toMap(Object value);
 }

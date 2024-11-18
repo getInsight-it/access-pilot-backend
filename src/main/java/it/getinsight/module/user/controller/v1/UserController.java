@@ -11,6 +11,7 @@ import it.getinsight.module.user.dto.UserDTO;
 import it.getinsight.module.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -51,7 +52,7 @@ public class UserController {
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
-        UserDTO filter
+        @ParameterObject UserDTO filter
     ) {
         final var pageRequest = PageableRequestModel.of(pageIndex, pageSize, sortType, sortField, filter);
         return ResponseEntity.ok(userService.getAllUsersPageable(pageRequest));

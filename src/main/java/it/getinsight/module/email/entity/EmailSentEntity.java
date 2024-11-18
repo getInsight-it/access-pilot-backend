@@ -26,6 +26,9 @@ public class EmailSentEntity extends AuditableEntity<Long, String> {
     @Column(name = "EMAIL_ID")
     private Long id;
 
+    @Column(name = "UUID")
+    private UUID uuid;
+
     @Column(name = "EMAIL_TO")
     private String to;
 
@@ -41,7 +44,7 @@ public class EmailSentEntity extends AuditableEntity<Long, String> {
     @Column(name = "SUBJECT")
     private String subject;
 
-    @Column(name = "CONTENT", length = 1000)
+    @Transient
     private String content;
 
     @Column(name = "HTML_FLAG")
@@ -71,5 +74,10 @@ public class EmailSentEntity extends AuditableEntity<Long, String> {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "USER_ID")
     private UserEntity user;
+
+    @PrePersist
+    public void prePersist() {
+        this.uuid = UUID.randomUUID();
+    }
 
 }
