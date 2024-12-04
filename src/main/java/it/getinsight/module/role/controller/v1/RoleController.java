@@ -18,6 +18,7 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
 
@@ -35,9 +36,9 @@ public class RoleController {
         summary = "Retrieve the list of roles",
         description = "Retrieve all roles"
     )
-    @Parameter(name = "clientId", description = "Filter by client id", required = false, in = ParameterIn.QUERY, schema = @Schema(type = "string"))
-    public ResponseEntity<List<RoleDTO>> getAllRoles(@RequestParam String clientId) {
-        return ResponseEntity.ok(roleService.getAllRolesDynamicQuery(clientId));
+    @Parameter(name = "clientId", description = "Filter by client id", in = ParameterIn.QUERY, schema = @Schema(type = "string"))
+    public ResponseEntity<List<RoleDTO>> getAllRoles(@RequestParam(required = false) String clientId) {
+        return ResponseEntity.ok(roleService.getAllRoles(clientId));
     }
 
     @Operation(
@@ -90,7 +91,7 @@ public class RoleController {
         return ResponseEntity.ok(roleService.getOrImportApprovesByRoleId(id));
     }
 
-    @PostMapping("/synchronize")
+    @PostMapping("/synchronous")
     @Operation(summary = "Synchronize roles with IDP", description = "Synchronize roles with IDP")
     public ResponseEntity<Void> synchronizeRoles(@RequestBody List<String> clientIds) {
         roleService.synchronizeRoles(clientIds);
@@ -107,6 +108,37 @@ public class RoleController {
     )
     public ResponseEntity<Void> updateRoles(@RequestBody List<RoleDTO> roles) {
         roleService.updateRoles(roles);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping
+    @Operation(
+        summary = "Create a new roleParent",
+        description = "Create a new roleParent"
+    )
+    public ResponseEntity<RoleDTO> create(@RequestBody RoleDTO roleDTO) {
+        final var roleSavedDTO = roleService.createRole(roleDTO);
+        var location = ServletUriComponentsBuilder.fromCurrentRequest().path(
+            "/{id}").buildAndExpand(roleSavedDTO.name()).toUri();
+        return ResponseEntity.created(location).body(roleSavedDTO);
+    }
+
+    @PutMapping("/{id}")
+    @Operation(
+        summary = "Update a role",
+        description = "Update a role"
+    )
+    public ResponseEntity<RoleDTO> update(@PathVariable Long id, @RequestBody RoleDTO roleDTO) {
+        return ResponseEntity.ok(roleService.update(id, roleDTO));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(
+        summary = "Delete a role",
+        description = "Delete a role"
+    )
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        roleService.delete(id);
         return ResponseEntity.noContent().build();
     }
 

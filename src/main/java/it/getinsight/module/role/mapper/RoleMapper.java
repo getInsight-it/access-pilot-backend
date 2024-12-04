@@ -21,6 +21,7 @@ public interface RoleMapper extends BaseMapper<RoleEntity, RoleDTO>, BaseGeneric
         target = "roleParent",
         source = "role"
     )
+    @Mapping(target = "roleParent.roleParent", ignore = true)
     RoleDTO toDto(RoleEntity entity);
 
     @Mapping(

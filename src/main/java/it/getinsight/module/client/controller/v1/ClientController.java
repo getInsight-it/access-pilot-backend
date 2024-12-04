@@ -52,19 +52,12 @@ public class ClientController {
     }
 
     @Operation(
-        summary = "Retrieve the paginated list of clients",
-        description = "Retrieve a list of clients, with pagination, using a name filter"
+        summary = "Retrieve a client by client ID",
+        description = "Retrieve a client by client ID"
     )
-    @GetMapping(path = "/paginated-by-name", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PageableResponseModel<ClientDTO>> getAllClientsPaginatedByName(
-        @RequestParam(defaultValue = "1") Integer pageIndex,
-        @RequestParam(defaultValue = "10") Integer pageSize,
-        @RequestParam(defaultValue = "id") String sortField,
-        @RequestParam(defaultValue = "ASC") String sortType,
-        @RequestParam(required = false) String filter
-    ) {
-        final var pageRequest = PageableRequestModel.of(pageIndex, pageSize, sortType, sortField, filter);
-        return ResponseEntity.ok(clientService.getAllClientsPageableByName(pageRequest));
+    @GetMapping(path = "/client-id/{clientId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ClientDTO> getByClientId(@PathVariable String clientId) {
+        return ResponseEntity.ok(clientService.findByClientId(clientId));
     }
 
     @Operation(

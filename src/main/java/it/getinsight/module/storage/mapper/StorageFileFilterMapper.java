@@ -4,7 +4,8 @@ import it.getinsight.core.dynamicquery.model.mapper.BaseGenericObjectMapper;
 import it.getinsight.core.model.mapper.BaseMapper;
 import it.getinsight.module.storage.dto.StorageFileDTO;
 import it.getinsight.module.storage.dto.StorageFileFilterDTO;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface StorageFileFilterMapper extends BaseMapper<StorageFileFilterDTO, StorageFileDTO>, BaseGenericObjectMapper<StorageFileDTO> {

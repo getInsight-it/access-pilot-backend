@@ -15,6 +15,7 @@ import it.getinsight.module.client.repository.ClientRepository;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.config.KeycloakProperties;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
+import it.getinsight.module.role.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -41,6 +43,7 @@ public class ClientService {
     public static final String IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED = "acl.client.managed";
     private final ClientRepository clientRepository;
     private final ClientMapper clientMapper;
+    private final RoleService roleService;
     private final ClientRepresentationMapper clientRepresentationMapper;
     private final KeycloakClient keycloakClient;
     private static final String NAME_QUERY_FIND_ALL_CLIENTS = "find-all-clients";
@@ -97,6 +100,12 @@ public class ClientService {
         return clientMapper.toDto(entity);
     }
 
+    @Cacheable(value = "clients", key = "#clientId")
+    public ClientDTO findByClientId(String clientId) {
+        var entity = clientRepository.findByClientId(clientId).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
+        return clientMapper.toDto(entity);
+    }
+
 
     @Transactional(propagation = Propagation.REQUIRED)
     @CacheEvict(value = "clients", allEntries = true)
@@ -118,6 +127,7 @@ public class ClientService {
         entity.setDescription(client.description());
         entity.setClientId(client.clientId());
         entity.setBaseUrl(client.baseUrl());
+        roleService.synchronizeRoles(Collections.singletonList(client.clientId()));
         return clientRepository.save(entity);
     }
 
