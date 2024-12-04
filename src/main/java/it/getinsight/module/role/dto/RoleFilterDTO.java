@@ -11,6 +11,8 @@ public record RoleFilterDTO(
 
     String description,
 
-    String clientName
+    String clientName,
+
+    String clientId
 
 ) implements Serializable {}

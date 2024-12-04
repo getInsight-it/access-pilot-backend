@@ -1,10 +1,12 @@
 package it.getinsight.module.keycloak.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
 
 import java.util.List;
 import java.util.Map;
 
+@Builder
 public record RoleRepresentationDTO(
     @JsonProperty("id") String id,
     @JsonProperty("name") String name,

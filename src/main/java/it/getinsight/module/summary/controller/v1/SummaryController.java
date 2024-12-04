@@ -1,20 +1,15 @@
 package it.getinsight.module.summary.controller.v1;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import it.getinsight.core.pagination.PageableRequestModel;
-import it.getinsight.core.pagination.PageableResponseModel;
-import it.getinsight.module.email.dto.EmailDTO;
-import it.getinsight.module.email.service.EmailService;
 import it.getinsight.module.summary.SummaryDTO;
 import it.getinsight.module.summary.service.SummaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/v1/summaries")

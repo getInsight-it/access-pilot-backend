@@ -53,4 +53,12 @@ public interface KeycloakClient {
     @PostMapping("/clients")
     void createClient(@RequestBody ClientRepresentationDTO clientRepresentationDTO);
 
+    @PostMapping("/clients/{clientUUID}/roles")
+    void createRole(@PathVariable String clientUUID, @RequestBody RoleRepresentationDTO roleRepresentationDTO);
+
+    @PutMapping("/clients/{clientUUID}/roles/{roleName}")
+    void updateRole(@PathVariable String clientUUID, @PathVariable String roleName, @RequestBody RoleRepresentationDTO roleRepresentationDTO);
+
+    @DeleteMapping("/clients/{clientUUID}/roles/{roleName}")
+    void deleteRole(@PathVariable String clientUUID, @PathVariable String roleName);
 }

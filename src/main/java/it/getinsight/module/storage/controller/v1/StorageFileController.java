@@ -123,7 +123,7 @@ public class StorageFileController {
         }
     )
     public ResponseEntity<InputStreamResource> downloadFile(@PathVariable Long id,
-                                                            @RequestParam(defaultValue = "false") boolean registerDownload) {
+                                                            @RequestParam(defaultValue = "true") Boolean registerDownload) {
         var storageFile = storageFileService.findById(id);
         var resource = storageFileService.download(storageFile.id(), registerDownload);
 

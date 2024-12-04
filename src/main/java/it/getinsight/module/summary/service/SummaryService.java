@@ -1,21 +1,14 @@
 package it.getinsight.module.summary.service;
 
 import it.getinsight.module.client.service.ClientService;
-import it.getinsight.module.email.service.EmailService;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.request.service.RequestService;
 import it.getinsight.module.role.service.RoleService;
 import it.getinsight.module.summary.SummaryDTO;
-import it.getinsight.module.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 
 @Service
