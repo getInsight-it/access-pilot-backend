@@ -266,8 +266,6 @@
                             <version>${spring.boot.version}</version>
                         </path>
                     </annotationProcessorPaths>
-                    <compilerArgs>--enable-preview</compilerArgs>
-                    <release>${java.version}</release>
                 </configuration>
             </plugin>
         </plugins>

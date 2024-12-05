@@ -184,7 +184,7 @@ public class RoleService {
         var entity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
         if (StringUtils.isNotBlank(entity.getRoleExternalId())) {
             Optional.ofNullable(keycloakClient.getRole(entity.getClient().getClientUUID(), entity.getName()))
-                .ifPresent((_) -> keycloakClient.updateRole(entity.getClient().getClientUUID(), entity.getName(), RoleRepresentationDTO.builder()
+                .ifPresent((o) -> keycloakClient.updateRole(entity.getClient().getClientUUID(), entity.getName(), RoleRepresentationDTO.builder()
                     .name(roleDTO.name())
                     .description(roleDTO.description())
                     .build()));
