@@ -15,6 +15,8 @@ public record ClientDTO(
     @Size(min = 3, max = 100)
     String name,
 
+    String label,
+
     @NotEmpty
     @Size(min = 3, max = 100)
     String clientId,

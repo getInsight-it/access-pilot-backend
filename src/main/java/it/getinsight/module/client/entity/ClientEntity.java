@@ -25,6 +25,9 @@ public class ClientEntity extends BaseEntity<Long> {
     @Column(name = "NAME")
     private String name;
 
+    @Column(name = "LABEL")
+    private String label;
+
     @Column(name = "CLIENT_UUID")
     private String clientUUID;
 

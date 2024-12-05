@@ -1,0 +1,13 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_031" author="luan.rodrigues@getinsight.it">
+        <dropUniqueConstraint tableName="TB_SOLICITACAO_AUD" constraintName="tb_solicitacao_aud_protocol_code_key"/>
+
+        <rollback>
+            <addUniqueConstraint tableName="TB_SOLICITACAO_AUD" columnNames="protocol_code" constraintName="tb_solicitacao_aud_protocol_code_key"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

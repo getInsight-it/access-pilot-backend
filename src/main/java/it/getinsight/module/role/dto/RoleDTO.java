@@ -18,6 +18,10 @@ public record RoleDTO(
     @Size(min = 3, max = 100)
     String name,
 
+    String label,
+
+    String icon,
+
     @NotEmpty
     @Size(min = 3, max = 100)
     String description,
