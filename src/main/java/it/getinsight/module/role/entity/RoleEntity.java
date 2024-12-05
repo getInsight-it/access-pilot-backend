@@ -26,9 +26,14 @@ public class RoleEntity extends AuditableEntity<Long, String> {
     @Column(name = "ID_ROLE_EXTERNO")
     private String roleExternalId;
 
-
     @Column(name = "NOME")
     private String name;
+
+    @Column(name = "LABEL")
+    private String label;
+
+    @Column(name = "icon")
+    private String icon;
 
     @Column(name = "DESCRICAO")
     private String description;
