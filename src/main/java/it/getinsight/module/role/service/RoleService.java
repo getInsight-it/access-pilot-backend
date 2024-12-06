@@ -191,6 +191,8 @@ public class RoleService {
         }
         entity.setName(roleDTO.name());
         entity.setDescription(roleDTO.description());
+        entity.setLabel(roleDTO.label());
+        entity.setIcon(roleDTO.icon());
         return roleMapper.toDto(roleRepository.save(entity));
     }
 
