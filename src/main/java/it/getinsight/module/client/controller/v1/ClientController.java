@@ -26,13 +26,13 @@ public class ClientController {
 
     private final ClientService clientService;
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(path = "/publishes", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
         summary = "Retrieve the list of clients",
         description = "Retrieve all clients"
     )
     public ResponseEntity<List<ClientDTO>> getAllClients() {
-        return ResponseEntity.ok(clientService.getAllClientsDynamicQuery());
+        return ResponseEntity.ok(clientService.getAllClientsPublished());
     }
 
     @Operation(

@@ -11,6 +11,7 @@ import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.request.dto.RequestCreateDTO;
 import it.getinsight.module.request.dto.RequestDTO;
 import it.getinsight.module.request.dto.RequestFilterDTO;
+import it.getinsight.module.request.dto.RequestUpdateDTO;
 import it.getinsight.module.request.service.RequestService;
 import it.getinsight.module.role.dto.RoleDTO;
 import lombok.RequiredArgsConstructor;
@@ -54,13 +55,23 @@ public class RequestController {
         }
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Updates a request.",
         description = "Updates a request with the given id and requestDTO"
     )
-    public ResponseEntity<Void> publishRequestUpdateEvent(@PathVariable Long id, @RequestBody String status) {
-        requestService.publishRequestUpdateEvent(id, status);
-        return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+    public ResponseEntity<Void> publishRequestUpdateEvent(@PathVariable Long id,
+                                                          @RequestPart(name = "attachments", required = false) List<MultipartFile> attachments,
+                                                          @RequestPart(name = "request")
+                                                              @Parameter(schema = @Schema(implementation = RequestUpdateDTO.class))
+                                                              String request) {
+
+        try {
+            final var requestUpdateDTO = objectMapper.readValue(request, RequestUpdateDTO.class);
+            requestService.publishRequestUpdateEvent(id, requestUpdateDTO);
+            return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+        } catch (JsonProcessingException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "JSON mal formado", e);
+        }
     }
 
     @GetMapping(path = "/me/paginated-by-status", produces = MediaType.APPLICATION_JSON_VALUE)

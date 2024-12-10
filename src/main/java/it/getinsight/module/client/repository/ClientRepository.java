@@ -3,9 +3,11 @@ package it.getinsight.module.client.repository;
 import it.getinsight.core.dynamicquery.repository.DynamicNativeQueryRepository;
 import it.getinsight.core.dynamicquery.repository.DynamicQueryRepository;
 import it.getinsight.module.client.entity.ClientEntity;
+import it.getinsight.module.client.entity.ClientStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,4 +19,6 @@ public interface ClientRepository extends JpaRepository<ClientEntity, Long>, Dyn
     List<ClientEntity> findAllByClientIdIn(List<String> ids);
 
     boolean existsByClientId(String clientId);
+
+    List<ClientEntity> findAllByStatus(ClientStatus clientStatus);
 }
