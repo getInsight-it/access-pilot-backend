@@ -70,6 +70,10 @@
     </div>
     <div class="detalhes">
         <ul>
+            <li th:if="${request != null}">
+                <strong>Protocolo:</strong>
+                <span th:text="${request.protocolCode}"></span>
+            </li>
             <li th:if="${approvingUser != null}">
                 <strong>Nome do aprovador:</strong>
                 <span th:text="${approvingUser.username}"></span>

@@ -1,6 +1,7 @@
 package it.getinsight.module.role.service;
 
 
+import feign.FeignException;
 import it.getinsight.core.exception.InfraException;
 import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
@@ -116,25 +117,28 @@ public class RoleService {
         for (ClientRepresentationDTO client : clients) {
             var roles = keycloakClient.getRolesByClientUUID(client.id());
             var clientEntity = clientRepository.findByClientId(client.clientId()).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
-            for (RoleRepresentationDTO role : roles) {
-                var roleOpSynchronized = roleRepository.findByRoleExternalId(role.id());
-                var roleOpNotSynchronized = roleRepository.findByNameAndClient(role.name(), clientEntity);
-                   if (roleOpSynchronized.isPresent()) {
-                        var roleEntity = roleOpSynchronized.get();
-                        roleEntity.setDescription(role.description());
-                        roleEntity.setClient(clientEntity);
-                        roleEntity.setRoleExternalId(role.id());
-                        roleEntity.setName(role.name());
-                        roleRepository.save(roleEntity);
-                   }else if (roleOpNotSynchronized.isPresent()) {
-                       var roleEntity = roleOpNotSynchronized.get();
-                       roleEntity.setDescription(role.description());
-                       roleEntity.setClient(clientEntity);
-                       roleEntity.setRoleExternalId(role.id());
-                       roleEntity.setName(role.name());
-                       roleRepository.save(roleEntity);
-                   }
-            }
+            roles.forEach(role -> synchronizeRole(role, clientEntity));
+        }
+    }
+
+    private void synchronizeRole(RoleRepresentationDTO role, ClientEntity clientEntity) {
+        var roleOpSynchronized = roleRepository.findByRoleExternalId(role.id());
+        var roleOpNotSynchronized = roleRepository.findByNameAndClient(role.name(), clientEntity);
+        if (roleOpSynchronized.isPresent()) {
+             var roleEntity = roleOpSynchronized.get();
+             roleEntity.setDescription(role.description());
+             roleEntity.setClient(clientEntity);
+             roleEntity.setRoleExternalId(role.id());
+             roleEntity.setName(role.name());
+             roleRepository.save(roleEntity);
+        }else if (roleOpNotSynchronized.isEmpty()) {
+            var roleEntity = RoleEntity.builder()
+                .roleExternalId(role.id())
+                .name(role.name())
+                .description(role.description())
+                .client(clientEntity)
+                .build();
+            roleRepository.save(roleEntity);
         }
     }
 
@@ -165,13 +169,20 @@ public class RoleService {
     public RoleDTO createRole(RoleDTO roleDTO) {
         if (roleDTO == null) throw ROLE_NOT_FOUND_ERROR.businessException();
 
-        final var roleRepresentationDTO = Optional.of(roleDTO)
+        final var newRoleRepresentationDTO = Optional.of(roleDTO)
             .map(roleRepresentationMapper::toRoleRepresentationDTO).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
 
         if (roleDTO.client() == null) throw CLIENT_NOT_FOUND_ERROR.businessException();
-
-        keycloakClient.createRole(roleDTO.client().clientUUID(), roleRepresentationDTO);
-        synchronizeRoles(Collections.singletonList(roleDTO.client().clientId()));
+        try {
+            keycloakClient.createRole(roleDTO.client().clientUUID(), newRoleRepresentationDTO);
+            final var roleRepresentationDTO = keycloakClient.getRole(roleDTO.client().clientUUID(), roleDTO.name());
+            synchronizeRole(roleRepresentationDTO, clientRepository.findByClientId(roleDTO.client().clientId()).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException));
+        }catch (InfraException e) {
+            if(e.getCause() instanceof FeignException && ((FeignException) e.getCause()).status() == HttpStatus.CONFLICT.value()) {
+                throw ROLE_ALREADY_EXISTS_ERROR.businessException();
+            }
+            throw e;
+        }
         return roleDTO;
     }
 

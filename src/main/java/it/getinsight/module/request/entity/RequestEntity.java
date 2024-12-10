@@ -12,6 +12,7 @@ import java.io.Serial;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
+import it.getinsight.module.request.util.ProtocolUtil;
 
 
 @Getter
@@ -19,8 +20,8 @@ import java.util.UUID;
 @Entity
 @Audited
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "TB_SOLICITACAO")
 @SequenceGenerator(name = "RequestEntity.sq", sequenceName = "SQ_SOLICITACAO", allocationSize = 1)
 public class RequestEntity extends AuditableEntity<Long, String> {
@@ -41,7 +42,7 @@ public class RequestEntity extends AuditableEntity<Long, String> {
 
     @Column(name = "STATUS")
     @Enumerated(EnumType.STRING)
-    private RequestStatus status = RequestStatus.CREATED;
+    private RequestStatus status;
 
     @Column(name = "DESCRICAO")
     private String description;
@@ -58,19 +59,12 @@ public class RequestEntity extends AuditableEntity<Long, String> {
     @JoinColumn(name = "ID_USUARIO_APROVADOR", referencedColumnName = "ID")
     private UserEntity approvingUser;
 
+
     @PrePersist
     private void generateProtocolCode() {
         if (this.protocolCode == null || this.protocolCode.isEmpty()) {
-            this.protocolCode = generateUniqueProtocolCode();
+            this.protocolCode = ProtocolUtil.generateUniqueProtocolCode();
         }
         this.uuid = UUID.randomUUID();
     }
-
-    private String generateUniqueProtocolCode() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-        String timestamp = LocalDateTime.now().format(formatter);
-        String uniqueID = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        return "REQ-%s-%s" .formatted(timestamp, uniqueID);
-    }
-
 }

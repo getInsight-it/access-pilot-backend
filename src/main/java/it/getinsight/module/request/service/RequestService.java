@@ -8,6 +8,7 @@ import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.entity.ClientEntity;
+import it.getinsight.module.client.entity.ClientStatus;
 import it.getinsight.module.client.mapper.ClientMapper;
 import it.getinsight.module.email.dto.EmailDTO;
 import it.getinsight.module.email.service.EmailService;
@@ -15,11 +16,13 @@ import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.request.config.EmailNotificationProperties;
 import it.getinsight.module.request.dto.RequestDTO;
 import it.getinsight.module.request.dto.RequestFilterDTO;
+import it.getinsight.module.request.dto.RequestUpdateDTO;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.request.mapper.RequestFilterMapper;
 import it.getinsight.module.request.mapper.RequestMapper;
 import it.getinsight.module.request.repository.RequestRepository;
+import it.getinsight.module.request.util.ProtocolUtil;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.mapper.RoleMapper;
 import it.getinsight.module.role.repository.RoleRepository;
@@ -91,6 +94,7 @@ public class RequestService {
         });
         entity.setRequestingUser(user);
         entity.setRole(roleEntity);
+        entity.setProtocolCode(ProtocolUtil.generateUniqueProtocolCode());
         sendApproves(entity);
         requestRepository.save(entity);
         storageFileService.save(attachments, PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET, false, false, entity.getUuid());
@@ -98,21 +102,25 @@ public class RequestService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void publishRequestUpdateEvent(Long id, String status) {
+    public void publishRequestUpdateEvent(Long id, RequestUpdateDTO requestUpdateDTO) {
+        final var status = requestUpdateDTO.status();
         var principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         var approvingUserDTO = userService.findOrImportByExternalId(principal.getSubject());
         var requestEntity = requestRepository.findById(id).orElseThrow(REQUEST_NOT_FOUND_ERROR::businessException);
-        var roleEntityParent = roleRepository.findByRoleExternalId(requestEntity.getRole().getRoleExternalId()).orElseThrow(() -> new ResourceNotFoundException("Role não encontrada"));
+        var roleEntityParent = roleRepository.findByRoleExternalId(requestEntity.getRole().getRoleExternalId()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
         var approvingUsersDTO = roleService.getOrImportApprovesByRoleId(roleEntityParent.getId());
         boolean userExists = approvingUsersDTO.stream().anyMatch(obj -> obj.id().equals(approvingUserDTO.id()));
         if (!userExists) {
             throw APPROVE_NOT_AUTHORIZED.accessForbiddenException();
         }
-        var approvingUserEntity = userRepository.findById(approvingUserDTO.id()).orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+        if (!ClientStatus.PUBLISHED.equals(requestEntity.getRole().getClient().getStatus())) {
+            throw CLIENT_NOT_PUBLISHED_ERROR.businessException();
+        }
+        var approvingUserEntity = userRepository.findById(approvingUserDTO.id()).orElseThrow(USER_NOT_FOUND_ERROR::businessException);
         requestEntity.setStatus(RequestStatus.valueOf(status));
         requestEntity.setApprovingUser(approvingUserEntity);
         var variables = getVariables(requestEntity.getRequestingUser(), approvingUserEntity, requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient());
-        if (RequestStatus.APPROVED.equals(requestEntity.getStatus())) {
+        if ( RequestStatus.APPROVED.equals(requestEntity.getStatus())) {
             confirmRoles(requestEntity);
             sendNotificationStatusToUser(requestEntity, variables);
         }else if (RequestStatus.REJECTED.equals(requestEntity.getStatus())) {

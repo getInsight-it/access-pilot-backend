@@ -55,6 +55,11 @@ public class ClientService {
         return clientRepository.findAllNative(NAME_QUERY_FIND_ALL_CLIENTS, parameters, clientMapper);
     }
 
+    public List<ClientDTO> getAllClientsPublished() {
+        return clientRepository.findAllByStatus(ClientStatus.PUBLISHED).stream().map(clientMapper::toDto).toList();
+    }
+
+
     @Cacheable(value = "clients", key = "#configPage.toString()")
     public PageableResponseModel<ClientDTO> getAllClientsPageable(PageableRequestModel<ClientDTO> configPage) {
         final var model = configPage
