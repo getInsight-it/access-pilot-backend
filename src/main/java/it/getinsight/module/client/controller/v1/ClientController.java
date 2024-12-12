@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -74,6 +75,7 @@ public class ClientController {
         description = "Synchronize clients"
     )
     @PostMapping(value = "/synchronous", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize(value = "hasRole('ADMIN')")
     public ResponseEntity<ClientDTO> synchronous(@RequestBody List<String> clientIds) {
         clientService.synchronizationClients(clientIds);
         return ResponseEntity.noContent().build();
@@ -84,6 +86,7 @@ public class ClientController {
         description = "Create a new client"
     )
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize(value = "hasRole('ADMIN')")
     public ResponseEntity<ClientDTO> create(@RequestBody ClientDTO clientDTO) {
         return ResponseEntity.ok(clientService.create(clientDTO));
     }
@@ -93,6 +96,7 @@ public class ClientController {
         description = "Update client management"
     )
     @PutMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize(value = "hasRole('ADMIN')")
     public ResponseEntity<ClientDTO> synchronous(@PathVariable Long id, @RequestBody ClientDTO clientDTO) {
         clientService.updateManaged(id,clientDTO);
         return ResponseEntity.noContent().build();
@@ -103,6 +107,7 @@ public class ClientController {
         description = "Update status"
     )
     @PatchMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize(value = "hasRole('ADMIN')")
     public ResponseEntity<ClientDTO> updateStatus(@PathVariable Long id, @RequestBody ClientStatusUpdateDTO statusUpdateDTO) {
         return ResponseEntity.ok(clientService.update(id, statusUpdateDTO.status()));
     }

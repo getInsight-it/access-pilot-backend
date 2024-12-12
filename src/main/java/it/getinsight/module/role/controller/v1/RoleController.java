@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -93,6 +94,7 @@ public class RoleController {
 
     @PostMapping("/synchronous")
     @Operation(summary = "Synchronize roles with IDP", description = "Synchronize roles with IDP")
+    @PreAuthorize(value = "hasRole('ADMIN')")
     public ResponseEntity<Void> synchronizeRoles(@RequestBody List<String> clientIds) {
         roleService.synchronizeRoles(clientIds);
         return ResponseEntity.noContent().build();
@@ -106,6 +108,7 @@ public class RoleController {
             @ApiResponse(responseCode = "204")
         }
     )
+    @PreAuthorize(value = "hasRole('ADMIN')")
     public ResponseEntity<Void> updateRoles(@RequestBody List<RoleDTO> roles) {
         roleService.updateRoles(roles);
         return ResponseEntity.noContent().build();
@@ -116,6 +119,7 @@ public class RoleController {
         summary = "Create a new roleParent",
         description = "Create a new roleParent"
     )
+    @PreAuthorize(value = "hasRole('ADMIN')")
     public ResponseEntity<RoleDTO> create(@RequestBody RoleDTO roleDTO) {
         final var roleSavedDTO = roleService.createRole(roleDTO);
         var location = ServletUriComponentsBuilder.fromCurrentRequest().path(
@@ -128,6 +132,7 @@ public class RoleController {
         summary = "Update a role",
         description = "Update a role"
     )
+    @PreAuthorize(value = "hasRole('ADMIN')")
     public ResponseEntity<RoleDTO> update(@PathVariable Long id, @RequestBody RoleDTO roleDTO) {
         return ResponseEntity.ok(roleService.update(id, roleDTO));
     }
@@ -137,6 +142,7 @@ public class RoleController {
         summary = "Delete a role",
         description = "Delete a role"
     )
+    @PreAuthorize(value = "hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         roleService.delete(id);
         return ResponseEntity.noContent().build();

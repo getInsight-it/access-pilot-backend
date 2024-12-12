@@ -36,7 +36,7 @@ provider:
 jwt:
   auth:
     converter:
-      resource-id: ${provider.keycloak.client-id}
+      resource-id: accesspilot-backend
       principal-attribute: preferred_username
 
 cors:
