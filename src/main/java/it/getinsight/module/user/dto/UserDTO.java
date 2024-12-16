@@ -27,6 +27,10 @@ public record UserDTO(
     @NotBlank
     String email,
 
+    @Size(min = 1, max = 255)
+    @NotBlank
+    Boolean isApprover,
+
     @NotBlank
     @Size(min = 1, max = 255)
     String externalId

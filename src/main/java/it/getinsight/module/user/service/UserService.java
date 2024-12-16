@@ -6,6 +6,8 @@ import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.keycloak.client.KeycloakClient;
+import it.getinsight.module.role.repository.RoleRepository;
+import it.getinsight.module.role.repository.specification.RoleSpecification;
 import it.getinsight.module.user.dto.UserDTO;
 import it.getinsight.module.user.entity.UserEntity;
 import it.getinsight.module.user.mapper.UserMapper;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -30,6 +33,7 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final KeycloakClient keycloakClient;
     private final UserMapper userMapper;
 
@@ -102,4 +106,23 @@ public class UserService {
         String userId = principal.getSubject();
         return userRepository.findById(Long.valueOf(userId));
     }
+
+
+    public UserDTO getMe() {
+        var principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Map<String, List<String>> resourceAccess = principal.getClaim("resource_access");
+        var roles = roleRepository.findAll(RoleSpecification.byResourceAccess(resourceAccess)).stream().toList();
+        var rolesChildren = roleRepository.findAllByRoleIn(roles);
+        var userDTO = findOrImportByExternalId(principal.getSubject());
+        return UserDTO.builder().isApprover(!rolesChildren.isEmpty())
+            .username(userDTO.username())
+            .firstName(userDTO.firstName())
+            .lastName(userDTO.lastName())
+            .email(userDTO.email())
+            .externalId(userDTO.externalId()).build();
+
+    }
+
+
+
 }

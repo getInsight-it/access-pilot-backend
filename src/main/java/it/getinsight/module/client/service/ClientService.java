@@ -191,7 +191,7 @@ public class ClientService {
         if (Arrays.stream(ClientStatus.values()).noneMatch(o -> StringUtils.equalsIgnoreCase(o.name(), status))) {
             throw new BusinessException("Invalid status");
         }
-        if (entity.getStatus().name().equalsIgnoreCase(status)) {
+        if (ClientStatus.valueOf(status).equals(entity.getStatus())) {
             throw new BusinessException("Client already %s" .formatted(status));
         }
         if(BooleanUtils.isFalse(entity.getManaged()) && ClientStatus.PUBLISHED.name().equals(status)){

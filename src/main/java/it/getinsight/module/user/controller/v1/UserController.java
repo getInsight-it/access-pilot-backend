@@ -119,4 +119,9 @@ public class UserController {
         return principal.getName();
     }
 
+    @GetMapping("me")
+    public ResponseEntity<UserDTO> getMe() {
+        return ResponseEntity.ok(userService.getMe());
+    }
+
 }
