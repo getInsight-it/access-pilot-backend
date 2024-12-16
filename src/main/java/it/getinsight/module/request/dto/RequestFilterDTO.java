@@ -19,7 +19,11 @@ public record RequestFilterDTO(
 
     String clientId,
 
-    String clientName
+    String clientName,
+
+    String requestingUserId,
+
+    Boolean onlyMine
 ) implements Serializable {
 
     @Serial
