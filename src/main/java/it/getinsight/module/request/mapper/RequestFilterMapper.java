@@ -23,6 +23,10 @@ public interface RequestFilterMapper extends BaseMapper<RequestFilterDTO, Reques
         target = "role.client.clientId",
         source = "clientId"
     )
+    @Mapping(
+        target = "requestingUser.id",
+        source = "requestingUserId"
+    )
     RequestDTO toDto(RequestFilterDTO filterDTO);
 
 

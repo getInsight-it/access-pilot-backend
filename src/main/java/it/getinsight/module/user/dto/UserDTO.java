@@ -2,10 +2,12 @@ package it.getinsight.module.user.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 
 import java.io.Serial;
 import java.io.Serializable;
 
+@Builder
 public record UserDTO(
     Long id,
 

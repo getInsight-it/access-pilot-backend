@@ -74,7 +74,7 @@ public class RequestController {
         }
     }
 
-    @GetMapping(path = "/me/paginated-by-status", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(path = "/me/paginated", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
         summary = "Retrieve the paginated list of requests associated with the authenticated user",
         description = "Retrieve a list of requests, with pagination, using a filter by name"
@@ -83,11 +83,10 @@ public class RequestController {
         @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
-        @RequestParam(defaultValue = "ASC") String sortType,
-        @RequestParam(required = false) String status
+        @RequestParam(defaultValue = "ASC") String sortType
     ) {
-        final var pageRequest = PageableRequestModel.of(pageIndex, pageSize, sortType, sortField, status);
-        return ResponseEntity.ok(requestService.getAllRequestsByStatusDynamicQuery(pageRequest));
+        final var pageRequest = PageableRequestModel.of(pageIndex, pageSize, sortType, sortField, "");
+        return ResponseEntity.ok(requestService.getAllRequestsMine(pageRequest));
     }
 
     @GetMapping(path = "/paginated-by-roles", produces = MediaType.APPLICATION_JSON_VALUE)
