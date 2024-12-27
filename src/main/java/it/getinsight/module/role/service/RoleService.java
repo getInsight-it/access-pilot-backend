@@ -12,7 +12,6 @@ import it.getinsight.module.client.repository.ClientRepository;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
-import it.getinsight.module.request.repository.RequestRepository;
 import it.getinsight.module.role.dto.RoleDTO;
 import it.getinsight.module.role.dto.RoleFilterDTO;
 import it.getinsight.module.role.entity.RoleEntity;
@@ -32,7 +31,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 

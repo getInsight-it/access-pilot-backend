@@ -2,6 +2,7 @@ package it.getinsight.module.request.entity;
 
 import it.getinsight.core.model.jpa.entity.AuditableEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
+import it.getinsight.module.request.util.ProtocolUtil;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.user.entity.UserEntity;
 import jakarta.persistence.*;
@@ -9,10 +10,7 @@ import lombok.*;
 import org.hibernate.envers.Audited;
 
 import java.io.Serial;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.UUID;
-import it.getinsight.module.request.util.ProtocolUtil;
 
 
 @Getter

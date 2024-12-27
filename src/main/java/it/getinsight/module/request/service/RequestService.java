@@ -30,14 +30,12 @@ import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.role.repository.specification.RoleSpecification;
 import it.getinsight.module.role.service.RoleService;
 import it.getinsight.module.storage.service.StorageFileService;
-import it.getinsight.module.user.dto.UserDTO;
 import it.getinsight.module.user.entity.UserEntity;
 import it.getinsight.module.user.mapper.UserMapper;
 import it.getinsight.module.user.repository.UserRepository;
 import it.getinsight.module.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Example;
@@ -52,7 +50,11 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import static it.getinsight.message.MessageProperty.*;
 
 
@@ -74,7 +76,7 @@ public class RequestService {
 
     private static final String NAME_QUERY_FIND_ALL_REQUESTS_IN_ROLES = "find-all-requests-in-roles";
     private static final String NAME_QUERY_FIND_ALL_REQUESTS = "find-all-requests";
-    public static final String  PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET = "private-getinsight-accesspilot-docs";
+    public static final String PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET = "private-getinsight-accesspilot-docs";
     private final UserMapper userMapper;
     private final RoleMapper roleMapper;
     private final ClientMapper clientMapper;
@@ -124,10 +126,10 @@ public class RequestService {
         requestEntity.setStatus(RequestStatus.valueOf(status));
         requestEntity.setApprovingUser(approvingUserEntity);
         var variables = getVariables(requestEntity.getRequestingUser(), approvingUserEntity, requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient());
-        if ( RequestStatus.APPROVED.equals(requestEntity.getStatus())) {
+        if (RequestStatus.APPROVED.equals(requestEntity.getStatus())) {
             confirmRoles(requestEntity);
             sendNotificationStatusToUser(requestEntity, variables);
-        }else if (RequestStatus.REJECTED.equals(requestEntity.getStatus())) {
+        } else if (List.of(RequestStatus.REJECTED, RequestStatus.CANCELED).contains(requestEntity.getStatus())) {
             sendNotificationStatusToUser(requestEntity, variables);
             requestRepository.save(requestEntity);
         }
@@ -145,27 +147,34 @@ public class RequestService {
         }
     }
 
-    public PageableResponseModel<RequestDTO> getAllRequestsMine(PageableRequestModel<String> configPage) {
+    public PageableResponseModel<RequestDTO> getAllRequestsMine(PageableRequestModel<RequestFilterDTO> configPage) {
+        Optional<RequestFilterDTO> filter = configPage
+            .getFilter();
+        final var model = filter
+            .map(requestFilterMapper::toDto)
+            .map(requestMapper::toEntity)
+            .orElse(new RequestEntity());
         var principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Map<String, List<String>> resourceAccess = principal.getClaim("resource_access");
-        List<Long> rolesParentIds = roleRepository.findAll(RoleSpecification.byResourceAccess(resourceAccess)).stream().map(RoleEntity::getId).toList();
 
         Specification<RequestEntity> spec = Specification.where(null);
-        spec = spec.and(RequestSpecification.byRolesParent(rolesParentIds));
-        if (rolesParentIds.isEmpty()){
-            return PageableResponseModel.of(0L, Collections.emptyList());
+        boolean executeQuery = false;
+
+        if (filter.isPresent() && "created".equalsIgnoreCase(filter.get().type())){
+            model.setRequestingUser(UserEntity.builder().externalId(principal.getSubject()).build());
+            executeQuery = true;
         }
 
-//        var filter = configPage.getFilter();
-//        if (filter.isPresent()) {
-//            RequestFilterDTO filterDTO = filter.get();
-//            if (filterDTO.status() != null) {
-//                spec = spec.and((root, query, builder) -> builder.equal(root.get("status"), filterDTO.status()));
-//            }
-//            if (filterDTO.description() != null) {
-//                spec = spec.and((root, query, builder) -> builder.like(root.get("description"), "%" + filterDTO.description() + "%"));
-//            }
-//        }
+        if (filter.isPresent() && "assigned".equalsIgnoreCase(filter.get().type())){
+            List<Long> rolesParentIds = roleRepository.findAll(RoleSpecification.byResourceAccess(resourceAccess)).stream().map(RoleEntity::getId).toList();
+            spec.and(RequestSpecification.byRolesParent(rolesParentIds));
+            executeQuery = !rolesParentIds.isEmpty();
+        }
+
+        if (!executeQuery)
+            return PaginationHelper.toPageResponse(List.of(), 0L);
+
+        spec = spec.and(RequestSpecification.matchCustom(model));
 
         Pageable pageable = PaginationHelper.toPageable(configPage);
         Page<RequestEntity> page = requestRepository.findAll(spec, pageable);
@@ -177,9 +186,9 @@ public class RequestService {
         var roles = configPage.getFilter().filter(StringUtils::isNotBlank).orElse(null);
         if (StringUtils.isNotBlank(roles)) {
             DynamicParameters parameters = DynamicParameters.get().append("roles", List.of(roles.split(",")));
-            return requestRepository.findAllNative(NAME_QUERY_FIND_ALL_REQUESTS_IN_ROLES, parameters,PaginationHelper.toPageable(configPage), requestMapper);
-        }else {
-            return requestRepository.findAllNative(NAME_QUERY_FIND_ALL_REQUESTS, DynamicParameters.get(),PaginationHelper.toPageable(configPage), requestMapper);
+            return requestRepository.findAllNative(NAME_QUERY_FIND_ALL_REQUESTS_IN_ROLES, parameters, PaginationHelper.toPageable(configPage), requestMapper);
+        } else {
+            return requestRepository.findAllNative(NAME_QUERY_FIND_ALL_REQUESTS, DynamicParameters.get(), PaginationHelper.toPageable(configPage), requestMapper);
         }
     }
 
@@ -190,9 +199,9 @@ public class RequestService {
             .map(requestFilterMapper::toDto)
             .map(requestMapper::toEntity)
             .orElse(new RequestEntity());
+        var principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         var filterDTO = configPage.getFilter().get();
-        if (BooleanUtils.isTrue(filterDTO.onlyMine())){
-            Jwt principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (BooleanUtils.isTrue(filterDTO.onlyMine())) {
             model.setRequestingUser(UserEntity.builder().externalId(principal.getSubject()).build());
         }
 
@@ -208,11 +217,11 @@ public class RequestService {
             .withMatcher("managed", ExampleMatcher.GenericPropertyMatcher::exact)
             .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains);
 
+
         final var example = Example.of(model, matcher);
         final var page = requestRepository.findAll(example, PaginationHelper.toPageable(configPage));
         return PaginationHelper.toPageResponse(requestMapper.toDto(page.getContent()), page.getTotalElements());
     }
-
 
 
     private void sendApproves(RequestEntity requestEntity) {
@@ -231,14 +240,14 @@ public class RequestService {
                 .userId(approvedDTO.id())
                 .subject(emailNotificationProperties.getApprover().getSubject())
                 .templateName("request.html")
-                .variables(getVariables(requestEntity.getRequestingUser(),userMapper.toEntity(approvedDTO), requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient()))
+                .variables(getVariables(requestEntity.getRequestingUser(), userMapper.toEntity(approvedDTO), requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient()))
                 .isHtml(true)
                 .build())
             .forEach(o -> {
                 log.info("Sending email to {}", o.to());
                 emailService.sendMail(o);
                 requestEntity.setStatus(RequestStatus.PENDING);
-                var variables = getVariables(requestEntity.getRequestingUser(),null, requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient());
+                var variables = getVariables(requestEntity.getRequestingUser(), null, requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient());
                 sendNotificationStatusToUser(requestEntity, variables);
                 requestRepository.save(requestEntity);
             });
