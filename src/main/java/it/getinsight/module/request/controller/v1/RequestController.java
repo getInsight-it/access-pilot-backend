@@ -83,9 +83,10 @@ public class RequestController {
         @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
-        @RequestParam(defaultValue = "ASC") String sortType
+        @RequestParam(defaultValue = "ASC") String sortType,
+        @ParameterObject RequestFilterDTO filter
     ) {
-        final var pageRequest = PageableRequestModel.of(pageIndex, pageSize, sortType, sortField, "");
+        final var pageRequest = PageableRequestModel.of(pageIndex - 1, pageSize, sortType, sortField, filter);
         return ResponseEntity.ok(requestService.getAllRequestsMine(pageRequest));
     }
 
@@ -120,4 +121,7 @@ public class RequestController {
         final var pageRequest = PageableRequestModel.of(pageIndex - 1, pageSize, sortType, sortField, filter);
         return ResponseEntity.ok(requestService.getAllRequests(pageRequest));
     }
+
+
+
 }

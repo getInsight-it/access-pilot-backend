@@ -10,6 +10,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @FeignClient(name = "keycloakClient", url = "${feign.client.keycloak.url}", configuration = FeignConfiguration.FeignConfigurationToken.class)
 public interface KeycloakClient {
@@ -46,6 +47,9 @@ public interface KeycloakClient {
 
     @GetMapping("/users/count")
     Long getTotalUsersByEnabled(@RequestParam Boolean enabled);
+
+    @GetMapping("/users/{id}/role-mappings")
+    Map<String, List<RoleRepresentationDTO>> getUserRoles(@PathVariable("id") String userId);
 
     @PutMapping("/clients/{clientUUID}")
     void updateClient(@PathVariable String clientUUID, @RequestBody ClientRepresentationDTO clientRepresentationDTO);

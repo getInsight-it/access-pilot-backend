@@ -23,7 +23,9 @@ public record RequestFilterDTO(
 
     String requestingUserId,
 
-    Boolean onlyMine
+    Boolean onlyMine,
+
+    String type
 ) implements Serializable {
 
     @Serial

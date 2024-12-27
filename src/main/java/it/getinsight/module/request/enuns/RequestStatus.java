@@ -6,5 +6,6 @@ public enum RequestStatus {
     PENDING,
     REJECTED,
     APPROVED,
+    CANCELED,
     ROLES_NOT_ASSIGNED
 }
