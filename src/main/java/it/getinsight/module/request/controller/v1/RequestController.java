@@ -122,6 +122,15 @@ public class RequestController {
         return ResponseEntity.ok(requestService.getAllRequests(pageRequest));
     }
 
+    @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(
+        summary = "Retrieve a request by id",
+        description = "Retrieve a request by id"
+    )
+    public ResponseEntity<RequestDTO> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(requestService.findById(id));
+    }
+
 
 
 }
