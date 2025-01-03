@@ -116,8 +116,9 @@ public class RequestService {
         var roleEntityParent = roleRepository.findByRoleExternalId(requestEntity.getRole().getRoleExternalId()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
         var approvingUsersDTO = roleService.getOrImportApprovesByRoleId(roleEntityParent.getId());
         boolean userExists = approvingUsersDTO.stream().anyMatch(obj -> obj.id().equals(approvingUserDTO.id()));
-        if (!userExists) {
-            throw APPROVE_NOT_AUTHORIZED.accessForbiddenException();
+        boolean isRequestingUser = requestEntity.getRequestingUser().getExternalId().equals(principal.getSubject());
+        if (!userExists && !isRequestingUser) {
+            throw USER_NOT_AUTHORIZED.accessForbiddenException();
         }
         if (!ClientStatus.PUBLISHED.equals(requestEntity.getRole().getClient().getStatus())) {
             throw CLIENT_NOT_PUBLISHED_ERROR.businessException();
@@ -126,7 +127,7 @@ public class RequestService {
         requestEntity.setStatus(RequestStatus.valueOf(status));
         requestEntity.setApprovingUser(approvingUserEntity);
         var variables = getVariables(requestEntity.getRequestingUser(), approvingUserEntity, requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient());
-        if (RequestStatus.APPROVED.equals(requestEntity.getStatus())) {
+        if (RequestStatus.APPROVED.equals(requestEntity.getStatus()) && userExists) {
             confirmRoles(requestEntity);
             sendNotificationStatusToUser(requestEntity, variables);
         } else if (List.of(RequestStatus.REJECTED, RequestStatus.CANCELED).contains(requestEntity.getStatus())) {
@@ -281,5 +282,19 @@ public class RequestService {
     public Long getTotalRequestsByStatus(RequestStatus status) {
         Example<RequestEntity> example = Example.of(RequestEntity.builder().status(status).build());
         return requestRepository.count(example);
+    }
+
+    public RequestDTO findById(Long id) {
+        var principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        var approvingUserDTO = userService.findOrImportByExternalId(principal.getSubject());
+        var requestEntity = requestRepository.findById(id).orElseThrow(REQUEST_NOT_FOUND_ERROR::businessException);
+        var roleEntityParent = roleRepository.findByRoleExternalId(requestEntity.getRole().getRoleExternalId()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
+        var approvingUsersDTO = roleService.getOrImportApprovesByRoleId(roleEntityParent.getId());
+        boolean userExists = approvingUsersDTO.stream().anyMatch(obj -> obj.id().equals(approvingUserDTO.id()));
+        boolean isRequestingUser = requestEntity.getRequestingUser().getExternalId().equals(principal.getSubject());
+        if (!isRequestingUser && !userExists) {
+            throw APPROVE_NOT_AUTHORIZED.accessForbiddenException();
+        }
+        return requestMapper.toDto(requestEntity);
     }
 }
