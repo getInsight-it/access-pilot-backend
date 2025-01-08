@@ -171,6 +171,7 @@ public class ClientService {
         client.attributes().put(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED, clientDTO.managed().toString());
         keycloakClient.updateClient(client.id(), client);
         clientMapper.fromDto(clientDTO, entity);
+        entity.setClientUUID(client.id());
         clientRepository.save(entity);
     }
 
