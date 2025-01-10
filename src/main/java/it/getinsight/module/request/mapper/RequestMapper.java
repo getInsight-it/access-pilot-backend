@@ -33,6 +33,10 @@ public interface RequestMapper extends BaseMapper<RequestEntity, RequestDTO>, Ba
         target = "description",
         expression = "java(toString(value, 2))"
     )
+    @Mapping(
+        target = "finalReason",
+        expression = "java(toString(value, 3))"
+    )
     RequestDTO toMap(Object value);
 
 
