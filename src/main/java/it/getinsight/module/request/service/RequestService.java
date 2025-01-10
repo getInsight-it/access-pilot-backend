@@ -126,6 +126,7 @@ public class RequestService {
         var approvingUserEntity = userRepository.findById(approvingUserDTO.id()).orElseThrow(USER_NOT_FOUND_ERROR::businessException);
         requestEntity.setStatus(RequestStatus.valueOf(status));
         requestEntity.setApprovingUser(approvingUserEntity);
+        requestEntity.setFinalReason(requestUpdateDTO.finalReason());
         var variables = getVariables(requestEntity.getRequestingUser(), approvingUserEntity, requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient());
         if (RequestStatus.APPROVED.equals(requestEntity.getStatus()) && userExists) {
             confirmRoles(requestEntity);

@@ -27,6 +27,8 @@ public record RequestDTO(
     @Size(max = 255)
     String description,
 
+    String finalReason,
+
     String protocolCode,
 
     RoleDTO role,

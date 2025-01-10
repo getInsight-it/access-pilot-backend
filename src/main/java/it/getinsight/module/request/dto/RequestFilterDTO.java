@@ -15,6 +15,8 @@ public record RequestFilterDTO(
 
     String description,
 
+    String finalReason,
+
     String roleName,
 
     String clientId,

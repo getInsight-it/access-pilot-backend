@@ -45,6 +45,9 @@ public class RequestEntity extends AuditableEntity<Long, String> {
     @Column(name = "DESCRICAO")
     private String description;
 
+    @Column(name = "JUSTIFICATIVA_FINAL")
+    private String finalReason;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_ROLE", referencedColumnName = "ID")
     private RoleEntity role;
