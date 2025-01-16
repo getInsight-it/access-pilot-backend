@@ -53,12 +53,12 @@
 </head>
 <body>
 <div class="ap-container">
-    <img th:src="${link.frontendUrl + '/accesspilot.svg'}" />
+    <img th:if="${link != null}" th:src="${link.frontendUrl + '/accesspilot.svg'}" />
     <div class="titulo">
         <h1>
             Status da solicitação de acesso
         </h1>
-        <img class="key-icon" th:src="${link.frontendUrl + '/key.svg'}" />
+        <img th:if="${link != null}" class="key-icon" th:src="${link.frontendUrl + '/key.svg'}" />
     </div>
     <div class="">
         <p>
@@ -84,11 +84,11 @@
             </li>
             <li>
                 <strong>Perfil:</strong>
-                <span th:text="${role.name}"></span>
+                <span th:if="${role != null}" th:text="${role.name}"></span>
             </li>
             <li>
                 <strong>Sistema:</strong>
-                <span th:text="${client.clientId}"></span>
+                <span th:if="${client != null}" th:text="${client.clientId}"></span>
             </li>
             <li>
                 <strong>Status:</strong>

@@ -1,6 +1,7 @@
 package it.getinsight.module.email.entity;
 
-import it.getinsight.core.model.jpa.entity.AuditableEntity;
+import it.getinsight.module.notification.entity.NotificationEntity;
+import it.getinsight.module.notification.enums.NotificationType;
 import it.getinsight.module.user.entity.UserEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -16,18 +17,11 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@PrimaryKeyJoinColumn(name= "id")
+@Builder(toBuilder = true)
 @Audited
 @Table(name = "TB_EMAIL_SENT")
-public class EmailSentEntity extends AuditableEntity<Long, String> {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "EMAIL_ID")
-    private Long id;
-
-    @Column(name = "UUID")
-    private UUID uuid;
+public class EmailSentEntity extends NotificationEntity {
 
     @Column(name = "EMAIL_TO")
     private String to;
@@ -71,13 +65,46 @@ public class EmailSentEntity extends AuditableEntity<Long, String> {
     @Column(name = "UPDATED_DATE")
     private LocalDateTime updatedDate;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "USER_ID")
-    private UserEntity user;
-
     @PrePersist
     public void prePersist() {
         this.uuid = UUID.randomUUID();
+        this.isOpened = false;
+        this.type = NotificationType.EMAIL;
+    }
+
+
+    public static CustomEmailSentEntityBuilder builder() {
+        return new CustomEmailSentEntityBuilder();
+    }
+
+    public static class CustomEmailSentEntityBuilder extends EmailSentEntityBuilder {
+        private UserEntity userEntity;
+        private Boolean isOpened;
+        private NotificationType type;
+
+        public CustomEmailSentEntityBuilder user(UserEntity userEntity) {
+            this.userEntity = userEntity;
+            return this;
+        }
+
+        public CustomEmailSentEntityBuilder opened(Boolean isOpened) {
+            this.isOpened = isOpened;
+            return this;
+        }
+
+        public CustomEmailSentEntityBuilder type(NotificationType type) {
+            this.type = type;
+            return this;
+        }
+
+        @Override
+        public EmailSentEntity build() {
+            EmailSentEntity emailSentEntity = super.build();
+            emailSentEntity.setUser(userEntity);
+            emailSentEntity.setIsOpened(isOpened);
+            emailSentEntity.setType(type);
+            return emailSentEntity;
+        }
     }
 
 }

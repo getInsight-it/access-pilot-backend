@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_042" author="luan.rodrigues@getinsight.it">
+
+        <dropPrimaryKey tableName="TB_EMAIL_SENT"/>
+
+
+        <addForeignKeyConstraint baseTableName="TB_EMAIL_SENT"
+                                 baseColumnNames="id"
+                                 constraintName="FK_EMAIL_SENT_TO_NOTIFICACAO"
+                                 referencedTableName="TB_NOTIFICACAO"
+                                 referencedColumnNames="id"/>
+
+        <addPrimaryKey tableName="TB_EMAIL_SENT"
+                       columnNames="id"
+                       constraintName="PK_EMAIL_SENT"/>
+
+
+        <rollback>
+
+            <dropForeignKeyConstraint baseTableName="TB_EMAIL_SENT" constraintName="FK_EMAIL_SENT_TO_NOTIFICACAO"/>
+            <dropPrimaryKey tableName="TB_EMAIL_SENT"/>
+            <addPrimaryKey tableName="TB_EMAIL_SENT"
+                           columnNames="email_id"
+                           constraintName="PK_EMAIL_SENT_OLD"/>
+        </rollback>
+
+    </changeSet>
+
+</databaseChangeLog>

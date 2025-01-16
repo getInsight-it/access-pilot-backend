@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_039" author="luan.rodrigues@getinsight.it">
+
+        <createSequence sequenceName="SQ_NOTIFICACAO" minValue="1" incrementBy="1" startValue="1" />
+
+        <createTable tableName="TB_NOTIFICACAO">
+
+            <column name="ID" type="BIGINT" defaultValueSequenceNext="SQ_NOTIFICACAO">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="TITULO" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="DESCRICAO" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="UUID" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="IS_OPENED" type="BOOLEAN">
+                <constraints nullable="true"/>
+            </column>
+            <column name="USER_ID" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="DATA_CRIACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </createTable>
+
+        <sql>
+            INSERT INTO TB_NOTIFICACAO (ID, UUID, IS_OPENED, USER_ID, DATA_CRIACAO, CRIADO_POR, ATUALIZADO_POR, DATA_ATUALIZACAO)
+            SELECT ID, UUID, SUCCESS_FLG, USER_ID, CREATED_DATE, CRIADO_POR, ATUALIZADO_POR, UPDATED_DATE
+            FROM TB_EMAIL_SENT;
+        </sql>
+        <addForeignKeyConstraint baseTableName="TB_NOTIFICACAO"
+                                 baseColumnNames="USER_ID"
+                                 constraintName="TB_USER_ID"
+                                 referencedTableName="TB_USUARIO"
+                                 referencedColumnNames="ID"/>
+
+        <rollback>
+            <dropColumn tableName="TB_NOTIFICACAO" columnName="ID"/>
+            <dropColumn tableName="TB_NOTIFICACAO" columnName="UUID"/>
+            <dropColumn tableName="TB_NOTIFICACAO" columnName="IS_OPENED"/>
+            <dropColumn tableName="TB_NOTIFICACAO" columnName="USER_ID"/>
+        </rollback>
+    </changeSet>
+
+
+</databaseChangeLog>

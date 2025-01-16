@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_041" author="luan.rodrigues@getinsight.it">
+
+        <createTable tableName="TB_NOTIFICACAO_AUD">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rev" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="revtype" type="SMALLINT"/>
+            <column name="uuid" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="is_opened" type="BOOLEAN">
+                <constraints nullable="true"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="DATA_CRIACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </createTable>
+
+        <addPrimaryKey columnNames="rev, id" constraintName="TB_NOTIFICACAO_AUD_PKEY" tableName="TB_NOTIFICACAO_AUD"/>
+
+        <addForeignKeyConstraint baseColumnNames="rev" baseTableName="TB_NOTIFICACAO_AUD"
+                                 constraintName="FK_NOTIFICACAO_AUD_REV" deferrable="false"
+                                 initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+                                 referencedColumnNames="rev" referencedTableName="revinfo" validate="true"/>
+
+        <sql>
+            INSERT INTO TB_NOTIFICACAO_AUD (ID, REV, UUID, IS_OPENED, USER_ID, DATA_CRIACAO, CRIADO_POR, ATUALIZADO_POR, DATA_ATUALIZACAO)
+            SELECT ID, REV, UUID, SUCCESS_FLG, USER_ID, DATA_CRIACAO, CRIADO_POR, ATUALIZADO_POR, DATA_ATUALIZACAO
+            FROM TB_EMAIL_SENT_AUD;
+        </sql>
+
+        <rollback>
+            <dropForeignKeyConstraint baseTableName="TB_NOTIFICACAO_AUD" constraintName="FK_NOTIFICACAO_AUD_REV" />
+            <dropForeignKeyConstraint baseTableName="TB_NOTIFICACAO_AUD" constraintName="FK_NOTIFICACAO_AUD_USER_ID" />
+            <dropTable tableName="TB_NOTIFICACAO_AUD" />
+        </rollback>
+
+    </changeSet>
+
+</databaseChangeLog>

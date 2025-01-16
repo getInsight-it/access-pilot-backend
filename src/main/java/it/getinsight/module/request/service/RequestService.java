@@ -13,6 +13,7 @@ import it.getinsight.module.client.mapper.ClientMapper;
 import it.getinsight.module.email.dto.EmailDTO;
 import it.getinsight.module.email.service.EmailService;
 import it.getinsight.module.keycloak.client.KeycloakClient;
+import it.getinsight.module.notification.service.NotificationService;
 import it.getinsight.module.request.config.EmailNotificationProperties;
 import it.getinsight.module.request.dto.RequestDTO;
 import it.getinsight.module.request.dto.RequestFilterDTO;
@@ -34,6 +35,7 @@ import it.getinsight.module.user.entity.UserEntity;
 import it.getinsight.module.user.mapper.UserMapper;
 import it.getinsight.module.user.repository.UserRepository;
 import it.getinsight.module.user.service.UserService;
+import it.getinsight.module.web_notification.dto.WebNotificationDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
@@ -71,7 +73,7 @@ public class RequestService {
     private final RoleRepository roleRepository;
     private final RoleService roleService;
     private final UserService userService;
-    private final EmailService emailService;
+    private final NotificationService notificationService;
     private final StorageFileService storageFileService;
 
     private static final String NAME_QUERY_FIND_ALL_REQUESTS_IN_ROLES = "find-all-requests-in-roles";
@@ -162,12 +164,12 @@ public class RequestService {
         Specification<RequestEntity> spec = Specification.where(null);
         boolean executeQuery = false;
 
-        if (filter.isPresent() && "created".equalsIgnoreCase(filter.get().type())){
+        if (filter.isPresent() && "created".equalsIgnoreCase(filter.get().type())) {
             model.setRequestingUser(UserEntity.builder().externalId(principal.getSubject()).build());
             executeQuery = true;
         }
 
-        if (filter.isPresent() && "assigned".equalsIgnoreCase(filter.get().type())){
+        if (filter.isPresent() && "assigned".equalsIgnoreCase(filter.get().type())) {
             List<Long> rolesParentIds = roleRepository.findAll(RoleSpecification.byResourceAccess(resourceAccess)).stream().map(RoleEntity::getId).toList();
             spec.and(RequestSpecification.byRolesParent(rolesParentIds));
             executeQuery = !rolesParentIds.isEmpty();
@@ -246,12 +248,12 @@ public class RequestService {
                 .isHtml(true)
                 .build())
             .forEach(o -> {
+                requestRepository.save(requestEntity);
                 log.info("Sending email to {}", o.to());
-                emailService.sendMail(o);
+                notificationService.send(o);
                 requestEntity.setStatus(RequestStatus.PENDING);
                 var variables = getVariables(requestEntity.getRequestingUser(), null, requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient());
                 sendNotificationStatusToUser(requestEntity, variables);
-                requestRepository.save(requestEntity);
             });
     }
 
@@ -270,7 +272,7 @@ public class RequestService {
 
     public void sendNotificationStatusToUser(RequestEntity requestEntity, Map<String, Object> variables) {
         var requestingUserDTO = Optional.of(requestEntity.getRequestingUser()).map(userMapper::toDto).orElseThrow(() -> new BusinessException("Não foi possivel converter o usuário"));
-        emailService.sendMail(EmailDTO.builder()
+        notificationService.send(EmailDTO.builder()
             .to(requestingUserDTO.email())
             .subject(emailNotificationProperties.getStatusRequest().getSubject())
             .templateName("status-request.html")
@@ -278,6 +280,14 @@ public class RequestService {
             .variables(variables)
             .isHtml(true)
             .build());
+        notificationService.send(
+            WebNotificationDTO.builder()
+                .userId(requestingUserDTO.id())
+                .title("Solicitação de acesso")
+                .requestId(requestEntity.getId())
+                .priority(1L)
+                .description("Sua solicitação foi " + requestEntity.getStatus().name())
+                .build());
     }
 
     public Long getTotalRequestsByStatus(RequestStatus status) {
