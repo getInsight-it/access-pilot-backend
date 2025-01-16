@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_040" author="luan.rodrigues@getinsight.it">
+
+        <dropPrimaryKey tableName="TB_EMAIL_SENT_AUD"/>
+
+
+        <renameColumn tableName="TB_EMAIL_SENT_AUD"
+                      oldColumnName="email_id"
+                      newColumnName="id"
+                      columnDataType="BIGINT"/>
+
+
+        <addPrimaryKey tableName="TB_EMAIL_SENT_AUD"
+                       columnNames="rev, id"
+                       constraintName="PK_EMAIL_SENT_AUD"/>
+
+
+        <rollback>
+
+            <dropPrimaryKey tableName="TB_EMAIL_SENT_AUD"/>
+            <renameColumn tableName="TB_EMAIL_SENT_AUD"
+                          oldColumnName="id"
+                          newColumnName="email_id"
+                          columnDataType="BIGINT"/>
+            <addPrimaryKey tableName="TB_EMAIL_SENT_AUD"
+                           columnNames="rev, email_id"
+                           constraintName="PK_EMAIL_SENT_AUD_OLD"/>
+        </rollback>
+
+    </changeSet>
+
+</databaseChangeLog>

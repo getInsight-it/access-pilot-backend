@@ -16,12 +16,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.util.List;
 import java.util.Map;
@@ -107,6 +110,14 @@ public class UserService {
         return userRepository.findById(Long.valueOf(userId));
     }
 
+    @Cacheable(value = "checkExternalId", key = "#userId")
+    public boolean checkExternalId(Long userId) {
+        Jwt principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userExternalId = principal.getSubject();
+        var user = userRepository.findById(userId);
+        return user.isPresent() && user.get().getExternalId().equals(userExternalId);
+    }
+
 
     public UserDTO getMe() {
         var principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -122,7 +133,5 @@ public class UserService {
             .externalId(userDTO.externalId()).build();
 
     }
-
-
 
 }

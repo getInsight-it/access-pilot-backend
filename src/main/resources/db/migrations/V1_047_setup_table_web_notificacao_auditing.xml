@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_047" author="luan.rodrigues@getinsight.it">
+
+        <createTable tableName="TB_WEB_NOTIFICACAO_AUD">
+            <column name="REV" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ID" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REVTYPE" type="TINYINT"/>
+            <column name="ID_SOLICITACAO" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="PRIORIDADE" type="INTEGER">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey tableName="TB_WEB_NOTIFICACAO_AUD"
+                       columnNames="REV, ID"
+                       constraintName="PK_WEB_NOTIFICACAO_AUD"/>
+
+        <addForeignKeyConstraint baseTableName="TB_WEB_NOTIFICACAO_AUD"
+                                 baseColumnNames="ID"
+                                 constraintName="FK_WEB_NOTIFICACAO_AUD_TO_WEB_NOTIFICACAO"
+                                 referencedTableName="TB_WEB_NOTIFICACAO"
+                                 referencedColumnNames="ID"/>
+
+        <rollback>
+            <dropTable tableName="TB_WEB_NOTIFICACAO_AUD"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

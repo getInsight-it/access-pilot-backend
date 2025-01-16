@@ -7,6 +7,7 @@ import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.email.dto.EmailDTO;
 import it.getinsight.module.email.service.EmailService;
+import it.getinsight.module.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,11 +15,12 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/v1/notifications/emails")
-@Tag(name = "Email", description = "Operations on e-mails.")
+@Tag(name = "Notification", description = "Operations on notification.")
 @RequiredArgsConstructor
 public class EmailController {
 
     private final EmailService emailService;
+    private final NotificationService notificationService;
 
     @Operation(
         summary = "Send an e-mail",
@@ -29,7 +31,7 @@ public class EmailController {
     )
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> sendEmail(@RequestBody EmailDTO emailDTO) {
-        emailService.sendMail(emailDTO);
+        notificationService.send(emailDTO);
         return ResponseEntity.ok().build();
     }
 

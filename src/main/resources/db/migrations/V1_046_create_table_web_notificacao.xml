@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_046" author="luan.rodrigues@getinsight.it">
+
+        <createTable tableName="TB_WEB_NOTIFICACAO">
+            <column name="ID" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="ID_SOLICITACAO" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="PRIORIDADE" type="INTEGER">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+
+        <addForeignKeyConstraint baseTableName="TB_WEB_NOTIFICACAO"
+                                 baseColumnNames="ID"
+                                 constraintName="FK_WEB_NOTIFICACAO_TO_NOTIFICACAO"
+                                 referencedTableName="TB_NOTIFICACAO"
+                                 referencedColumnNames="ID"/>
+
+        <addForeignKeyConstraint baseTableName="TB_WEB_NOTIFICACAO"
+                                 baseColumnNames="ID_SOLICITACAO"
+                                 constraintName="FK_WEB_NOTIFICACAO_TO_SOLICITACAO"
+                                 referencedTableName="TB_SOLICITACAO"
+                                 referencedColumnNames="ID"/>
+
+        <rollback>
+            <dropTable tableName="TB_WEB_NOTIFICACAO"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

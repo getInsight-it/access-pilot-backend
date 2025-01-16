@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_043" author="luan.rodrigues@getinsight.it">
+
+        <addColumn tableName="TB_CLIENTE_AUD">
+            <column name="DATA_CRIACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </addColumn>
+
+        <sql>
+            UPDATE TB_CLIENTE_AUD
+            SET DATA_CRIACAO     = subquery.DATA_CRIACAO,
+                CRIADO_POR       = subquery.CRIADO_POR,
+                ATUALIZADO_POR   = subquery.ATUALIZADO_POR,
+                DATA_ATUALIZACAO = subquery.DATA_ATUALIZACAO FROM (
+        SELECT ID, REV, DATA_CRIACAO, CRIADO_POR, ATUALIZADO_POR, DATA_ATUALIZACAO
+        FROM TB_CLIENTE_AUD
+    ) AS subquery
+            WHERE TB_CLIENTE_AUD.ID = subquery.ID
+              AND TB_CLIENTE_AUD.REV = subquery.REV;
+        </sql>
+
+        <addColumn tableName="TB_USUARIO_AUD">
+            <column name="DATA_CRIACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </addColumn>
+
+        <sql>
+            UPDATE TB_USUARIO_AUD
+            SET DATA_CRIACAO     = subquery.DATA_CRIACAO,
+                CRIADO_POR       = subquery.CRIADO_POR,
+                ATUALIZADO_POR   = subquery.ATUALIZADO_POR,
+                DATA_ATUALIZACAO = subquery.DATA_ATUALIZACAO FROM (
+        SELECT ID, REV, DATA_CRIACAO, CRIADO_POR, ATUALIZADO_POR, DATA_ATUALIZACAO
+        FROM TB_USUARIO_AUD
+    ) AS subquery
+            WHERE TB_USUARIO_AUD.ID = subquery.ID
+              AND TB_USUARIO_AUD.REV = subquery.REV;
+        </sql>
+
+        <addColumn tableName="TB_EMAIL_SENT_AUD">
+            <column name="DATA_CRIACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </addColumn>
+
+        <sql>
+            UPDATE TB_EMAIL_SENT_AUD
+            SET DATA_CRIACAO     = subquery.DATA_CRIACAO,
+                CRIADO_POR       = subquery.CRIADO_POR,
+                ATUALIZADO_POR   = subquery.ATUALIZADO_POR,
+                DATA_ATUALIZACAO = subquery.DATA_ATUALIZACAO FROM (
+        SELECT ID, REV, DATA_CRIACAO, CRIADO_POR, ATUALIZADO_POR, DATA_ATUALIZACAO
+        FROM TB_EMAIL_SENT_AUD
+    ) AS subquery
+            WHERE TB_EMAIL_SENT_AUD.ID = subquery.ID
+              AND TB_EMAIL_SENT_AUD.REV = subquery.REV;
+        </sql>
+
+        <addColumn tableName="TB_SOLICITACAO_AUD">
+            <column name="DATA_CRIACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </addColumn>
+
+        <sql>
+            UPDATE TB_SOLICITACAO_AUD
+            SET DATA_CRIACAO     = subquery.DATA_CRIACAO,
+                CRIADO_POR       = subquery.CRIADO_POR,
+                ATUALIZADO_POR   = subquery.ATUALIZADO_POR,
+                DATA_ATUALIZACAO = subquery.DATA_ATUALIZACAO FROM (
+        SELECT ID, REV, UUID, DATA_CRIACAO, CRIADO_POR, ATUALIZADO_POR, DATA_ATUALIZACAO
+        FROM TB_SOLICITACAO_AUD
+    ) AS subquery
+            WHERE TB_SOLICITACAO_AUD.ID = subquery.ID
+              AND TB_SOLICITACAO_AUD.REV = subquery.REV;
+        </sql>
+
+        <addColumn tableName="TB_STORAGE_FILE_AUD">
+            <column name="DATA_CRIACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </addColumn>
+
+        <sql>
+            UPDATE TB_STORAGE_FILE_AUD
+            SET DATA_CRIACAO = subquery.DATA_CRIACAO,
+                CRIADO_POR = subquery.CRIADO_POR,
+                ATUALIZADO_POR = subquery.ATUALIZADO_POR,
+                DATA_ATUALIZACAO = subquery.DATA_ATUALIZACAO
+                FROM (
+        SELECT ID, REV, DATA_CRIACAO, CRIADO_POR, ATUALIZADO_POR, DATA_ATUALIZACAO
+        FROM TB_STORAGE_FILE_AUD
+    ) AS subquery
+            WHERE TB_STORAGE_FILE_AUD.ID = subquery.ID
+              AND TB_STORAGE_FILE_AUD.REV = subquery.REV;
+        </sql>
+
+
+        <addColumn tableName="TB_ROLE_AUD">
+            <column name="DATA_CRIACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </addColumn>
+
+        <sql>
+            UPDATE TB_ROLE_AUD
+            SET DATA_CRIACAO     = subquery.DATA_CRIACAO,
+                CRIADO_POR       = subquery.CRIADO_POR,
+                ATUALIZADO_POR   = subquery.ATUALIZADO_POR,
+                DATA_ATUALIZACAO = subquery.DATA_ATUALIZACAO FROM (
+        SELECT ID, REV, DATA_CRIACAO, CRIADO_POR, ATUALIZADO_POR, DATA_ATUALIZACAO
+        FROM TB_ROLE_AUD
+    ) AS subquery
+            WHERE TB_ROLE_AUD.ID = subquery.ID
+              AND TB_ROLE_AUD.REV = subquery.REV;
+        </sql>
+
+        <addColumn tableName="TB_CONFIGURATION_AUD">
+            <column name="DATA_CRIACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </addColumn>
+
+        <sql>
+            UPDATE TB_CONFIGURATION_AUD
+            SET DATA_CRIACAO     = subquery.DATA_CRIACAO,
+                CRIADO_POR       = subquery.CRIADO_POR,
+                ATUALIZADO_POR   = subquery.ATUALIZADO_POR,
+                DATA_ATUALIZACAO = subquery.DATA_ATUALIZACAO FROM (
+        SELECT ID, REV, DATA_CRIACAO, CRIADO_POR, ATUALIZADO_POR, DATA_ATUALIZACAO
+        FROM TB_CONFIGURATION_AUD
+    ) AS subquery
+            WHERE TB_CONFIGURATION_AUD.ID = subquery.ID
+              AND TB_CONFIGURATION_AUD.REV = subquery.REV;
+        </sql>
+
+
+        <rollback>
+            <dropColumn tableName="TB_CLIENTE_AUD" columnName="DATA_CRIACAO"/>
+            <dropColumn tableName="TB_CLIENTE_AUD" columnName="CRIADO_POR"/>
+            <dropColumn tableName="TB_CLIENTE_AUD" columnName="ATUALIZADO_POR"/>
+            <dropColumn tableName="TB_CLIENTE_AUD" columnName="DATA_ATUALIZACAO"/>
+
+            <dropColumn tableName="TB_USUARIO_AUD" columnName="DATA_CRIACAO"/>
+            <dropColumn tableName="TB_USUARIO_AUD" columnName="CRIADO_POR"/>
+            <dropColumn tableName="TB_USUARIO_AUD" columnName="ATUALIZADO_POR"/>
+            <dropColumn tableName="TB_USUARIO_AUD" columnName="DATA_ATUALIZACAO"/>
+
+            <dropColumn tableName="TB_NOTIFICACAO_AUD" columnName="DATA_CRIACAO"/>
+            <dropColumn tableName="TB_NOTIFICACAO_AUD" columnName="CRIADO_POR"/>
+            <dropColumn tableName="TB_NOTIFICACAO_AUD" columnName="ATUALIZADO_POR"/>
+            <dropColumn tableName="TB_NOTIFICACAO_AUD" columnName="DATA_ATUALIZACAO"/>
+
+            <dropColumn tableName="TB_STORAGE_FILE_AUD" columnName="DATA_CRIACAO"/>
+            <dropColumn tableName="TB_STORAGE_FILE_AUD" columnName="CRIADO_POR"/>
+            <dropColumn tableName="TB_STORAGE_FILE_AUD" columnName="ATUALIZADO_POR"/>
+            <dropColumn tableName="TB_STORAGE_FILE_AUD" columnName="DATA_ATUALIZACAO"/>
+
+            <dropColumn tableName="TB_ROLE_AUD" columnName="DATA_CRIACAO"/>
+            <dropColumn tableName="TB_ROLE_AUD" columnName="CRIADO_POR"/>
+            <dropColumn tableName="TB_ROLE_AUD" columnName="ATUALIZADO_POR"/>
+            <dropColumn tableName="TB_ROLE_AUD" columnName="DATA_ATUALIZACAO"/>
+
+            <dropColumn tableName="TB_CONFIGURATION_AUD" columnName="DATA_CRIACAO"/>
+            <dropColumn tableName="TB_CONFIGURATION_AUD" columnName="CRIADO_POR"/>
+            <dropColumn tableName="TB_CONFIGURATION_AUD" columnName="ATUALIZADO_POR"/>
+            <dropColumn tableName="TB_CONFIGURATION_AUD" columnName="DATA_ATUALIZACAO"/>
+        </rollback>
+
+    </changeSet>
+
+</databaseChangeLog>

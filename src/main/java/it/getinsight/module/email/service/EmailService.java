@@ -7,17 +7,22 @@ import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.email.dto.EmailDTO;
+import it.getinsight.module.email.dto.EmailFilterDTO;
 import it.getinsight.module.email.entity.EmailSentEntity;
 import it.getinsight.module.email.entity.EmailStatus;
 import it.getinsight.module.email.mapper.EmailMapper;
 import it.getinsight.module.email.repository.EmailRepository;
+import it.getinsight.module.notification.dto.Notification;
+import it.getinsight.module.notification.service.NotificationSender;
 import it.getinsight.module.storage.service.StorageFileService;
 import it.getinsight.module.user.repository.UserRepository;
+import it.getinsight.module.web_notification.dto.WebNotificationDTO;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -41,7 +46,7 @@ import static org.apache.commons.lang3.BooleanUtils.isTrue;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class EmailService {
+public class EmailService implements NotificationSender {
 
     private final JavaMailSender emailSender;
     private final EmailRepository emailRepository;
@@ -55,15 +60,16 @@ public class EmailService {
     @Value("${spring.mail.properties.mail.from}")
     private String emailFrom;
 
-     public void sendMail(EmailDTO emailDTO){
+     private void sendMail(EmailDTO emailDTO){
          final var content = isTrue(emailDTO.isHtml()) ? processContentByTemplate(emailDTO.templateName(), emailDTO.variables()) : emailDTO.content();
          final var userEntity = userRepository.findById(emailDTO.userId()).orElseThrow(ResourceNotFoundException::new);
          final var emailSent = EmailSentEntity.builder()
+                 .user(userEntity)
+                 .opened(false)
                  .to(emailDTO.to())
                  .from(emailFrom)
                  .subject(emailDTO.subject())
                  .isHtml(emailDTO.isHtml())
-                 .user(userEntity)
                  .content(content)
                  .build();
          sendEmail(emailSent);
@@ -153,6 +159,12 @@ public class EmailService {
         return PaginationHelper.toPageResponse(emailMapper.toDto(page.getContent()), page.getTotalElements());
     }
 
+    public PageableResponseModel<EmailDTO> getNotificationsFull(PageableRequestModel<EmailFilterDTO> configPage) {
+        final var page = emailRepository.findAll(PaginationHelper.toPageable(configPage));
+        return PaginationHelper.toPageResponse(emailMapper.toDto(page.getContent()), page.getTotalElements());
+    }
+
+
     @Transactional(propagation = Propagation.REQUIRED)
     public void updateEmail(Long emailId, EmailDTO emailDTO) {
         final var emailSent = emailRepository.findById(emailId).orElseThrow(ResourceNotFoundException::new);
@@ -166,4 +178,18 @@ public class EmailService {
         return emailMapper.toDto(emailSent);
     }
 
+    @Override
+    public Notification send(Notification notification) {
+        if (!(notification instanceof EmailDTO)) {
+            return null;
+        }
+        var emailDTO = (EmailDTO) notification;
+        sendMail((EmailDTO) notification);
+        return emailDTO;
+    }
+
+    @Override
+    public boolean isSupported() {
+        return true;
+    }
 }
