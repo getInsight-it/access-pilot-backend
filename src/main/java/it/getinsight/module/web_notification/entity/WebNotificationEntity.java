@@ -32,7 +32,7 @@ public class WebNotificationEntity extends NotificationEntity {
     public void prePersist() {
         this.uuid = UUID.randomUUID();
         this.isOpened = false;
-        this.type = NotificationType.EMAIL;
+        this.type = NotificationType.WEB;
     }
 
 
@@ -44,6 +44,8 @@ public class WebNotificationEntity extends NotificationEntity {
         private UserEntity userEntity;
         private Boolean isOpened;
         private NotificationType type;
+        private String title;
+        private String description;
 
         public CustomWebNotificationEntityBuilder user(UserEntity userEntity) {
             this.userEntity = userEntity;
@@ -60,12 +62,25 @@ public class WebNotificationEntity extends NotificationEntity {
             return this;
         }
 
+
+        public CustomWebNotificationEntityBuilder title(String title) {
+            this.title = title;
+            return this;
+        }
+
+        public CustomWebNotificationEntityBuilder description(String description) {
+            this.description = description;
+            return this;
+        }
+
         @Override
         public WebNotificationEntity build() {
             WebNotificationEntity webNotificationEntity = super.build();
             webNotificationEntity.setUser(userEntity);
             webNotificationEntity.setIsOpened(isOpened);
             webNotificationEntity.setType(type);
+            webNotificationEntity.setTitle(title);
+            webNotificationEntity.setDescription(description);
             return webNotificationEntity;
         }
     }

@@ -7,7 +7,8 @@ import java.io.Serializable;
 
 public record NotificationFilterDTO(
     NotificationType type,
-    Long userId
+    Long userId,
+    String externalId
 ) implements Serializable {
     @Serial
     private static final long serialVersionUID = -6731357049354425215L;

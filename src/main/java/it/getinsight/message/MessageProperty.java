@@ -24,6 +24,7 @@ public enum MessageProperty implements IMessageProperty {
     CLIENT_NOT_PUBLISHED_ERROR("client.not.published"),
     USER_NOT_FOUND_ERROR("user.not.found"),
     REQUIRED_FIELD_WITH_PARAMETER("required.field.with.parameter"),
+    NOTIFICATION_NOT_FOUND_ERROR("notification.not.found"),
     ;
 
     private final String key;

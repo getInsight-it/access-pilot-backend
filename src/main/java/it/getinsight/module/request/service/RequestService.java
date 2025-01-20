@@ -283,10 +283,10 @@ public class RequestService {
         notificationService.send(
             WebNotificationDTO.builder()
                 .userId(requestingUserDTO.id())
-                .title("Solicitação de acesso")
+                .title("protocolo: " + requestEntity.getProtocolCode())
                 .requestId(requestEntity.getId())
                 .priority(1L)
-                .description("Sua solicitação foi " + requestEntity.getStatus().name())
+                .description(requestEntity.getDescription())
                 .build());
     }
 

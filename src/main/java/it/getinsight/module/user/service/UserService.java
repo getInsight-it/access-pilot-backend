@@ -14,6 +14,7 @@ import it.getinsight.module.user.mapper.UserMapper;
 import it.getinsight.module.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.security.core.Authentication;
@@ -110,12 +111,11 @@ public class UserService {
         return userRepository.findById(Long.valueOf(userId));
     }
 
-    @Cacheable(value = "checkExternalId", key = "#userId")
-    public boolean checkExternalId(Long userId) {
+//    @Cacheable(value = "checkExternalId", key = "#externalId")
+    public boolean checkExternalId(String externalId) {
         Jwt principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userExternalId = principal.getSubject();
-        var user = userRepository.findById(userId);
-        return user.isPresent() && user.get().getExternalId().equals(userExternalId);
+        return StringUtils.isNotBlank(externalId) && externalId.equals(userExternalId);
     }
 
 

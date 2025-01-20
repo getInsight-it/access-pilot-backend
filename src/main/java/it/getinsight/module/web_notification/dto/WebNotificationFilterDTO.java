@@ -16,6 +16,7 @@ public record WebNotificationFilterDTO(
     Boolean isOpened,
     String title,
     String description,
+    String externalId,
     NotificationType type
 ) implements Serializable {}
 
