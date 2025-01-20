@@ -83,10 +83,6 @@ public class StorageFileService {
             }
         }
     }
-    /**
-     * Sigo no accesspilot - dei uma pausa no front
-     * templates
-     * */
 
     public void upload(String bucket,
                         Boolean isPublic,

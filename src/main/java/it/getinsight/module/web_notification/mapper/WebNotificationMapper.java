@@ -16,6 +16,9 @@ public interface WebNotificationMapper extends BaseMapper<WebNotificationEntity,
 
     @Mapping(source = "userId", target = "user.id")
     @Mapping(source = "requestId", target = "request.id")
+    @Mapping(source = "title", target = "title")
+    @Mapping(source = "description", target = "description")
+    @Mapping(source = "type", target = "type")
     WebNotificationEntity toEntity(WebNotificationDTO webNotificationDTO);
 
     WebNotificationDTO fromFilter(WebNotificationFilterDTO dto);

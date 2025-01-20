@@ -6,6 +6,7 @@ import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.email.service.EmailService;
 import it.getinsight.module.notification.dto.Notification;
 import it.getinsight.module.notification.dto.NotificationFilterDTO;
+import it.getinsight.module.notification.dto.NotificationSummaryDTO;
 import it.getinsight.module.notification.enums.NotificationType;
 import it.getinsight.module.notification.mapper.NotificationMapper;
 import it.getinsight.module.notification.repository.NotificationRepository;
@@ -13,14 +14,14 @@ import it.getinsight.module.web_notification.service.WebNotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 
-import static it.getinsight.message.MessageProperty.REQUIRED_FIELD_WITH_PARAMETER;
+import static it.getinsight.message.MessageProperty.*;
 
 
 @Service
@@ -31,15 +32,17 @@ public class NotificationService {
     private final NotificationMapper notificationMapper;
     private final EmailService emailService;
     private final WebNotificationService webNotificationService;
+    private final NotificationRepository notificationRepository;
 
     public NotificationService(@Qualifier("notificationSenderImpl") NotificationSender notificationSender,
                                NotificationMapper notificationMapper,
                                EmailService emailService,
-                               WebNotificationService webNotificationService) {
+                               WebNotificationService webNotificationService, NotificationRepository notificationRepository) {
         this.notificationSender = notificationSender;
         this.notificationMapper = notificationMapper;
         this.emailService = emailService;
         this.webNotificationService = webNotificationService;
+        this.notificationRepository = notificationRepository;
     }
 
     public Notification send(Notification notification) {
@@ -79,5 +82,22 @@ public class NotificationService {
         var configPageWeb = PageableRequestModel.of(configPage.getPageNumber(), configPage.getPageSize(), configPage.getSortType(), configPage.getSortField(), webFilterDTO);
         var page = webNotificationService.getNotificationsFull(configPageWeb);
         return PaginationHelper.toPageResponse(page.getItems().stream().map(o -> (Notification) o).toList(), page.getTotal());
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void updateOpenNotification(Long id, Boolean read) {
+        var notification = notificationRepository.findById(id).orElseThrow(NOTIFICATION_NOT_FOUND_ERROR::businessException);
+        notification.setIsOpened(read);
+        notificationRepository.save(notification);
+    }
+
+    public NotificationSummaryDTO getNotificationsSummary(String externalId, NotificationType type) {
+        long totalRead = notificationRepository.countByUser_ExternalIdAndIsOpenedAndType(externalId, true, type);
+        long totalUnread = notificationRepository.countByUser_ExternalIdAndIsOpenedAndType(externalId, false, type);
+        return NotificationSummaryDTO.builder()
+            .totalRead(totalRead)
+            .totalUnread(totalUnread)
+            .total(totalRead + totalUnread)
+            .build();
     }
 }

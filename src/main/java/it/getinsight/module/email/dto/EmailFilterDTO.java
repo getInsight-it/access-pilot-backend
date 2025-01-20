@@ -21,6 +21,7 @@ public record EmailFilterDTO(
     String modificadoPor,
     Date ultimaAlteracao,
     Long userId,
+    String externalId,
     String status,
     String content,
     Boolean isHtml,

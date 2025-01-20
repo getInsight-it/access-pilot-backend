@@ -43,7 +43,7 @@ public class WebNotificationService implements NotificationSender {
         final var matcher = ExampleMatcher
             .matchingAll()
             .withIgnoreNullValues()
-            .withMatcher("user.id", ExampleMatcher.GenericPropertyMatcher::exact);
+            .withMatcher("user.externalId", ExampleMatcher.GenericPropertyMatcher::exact);
 
         final var example = Example.of(model, matcher);
 
