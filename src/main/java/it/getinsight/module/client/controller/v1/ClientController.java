@@ -37,6 +37,17 @@ public class ClientController {
     }
 
     @Operation(
+        summary = "Retrieve the list of clients",
+        description = "Retrieve all clients"
+    )
+    @GetMapping(path = "/me/associations", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<ClientDTO>> getAssociateClients(
+        @RequestParam() Boolean attached
+        ) {
+        return ResponseEntity.ok(clientService.getAssociateClients(attached));
+    }
+
+    @Operation(
         summary = "Retrieve the paginated list of clients",
         description = "Retrieve a list of clients, with pagination, using a name filter"
     )

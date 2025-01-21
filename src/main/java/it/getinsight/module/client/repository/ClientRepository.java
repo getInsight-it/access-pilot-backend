@@ -20,4 +20,8 @@ public interface ClientRepository extends JpaRepository<ClientEntity, Long>, Dyn
     boolean existsByClientId(String clientId);
 
     List<ClientEntity> findAllByStatus(ClientStatus clientStatus);
+
+    List<ClientEntity> findAllByManaged(Boolean attached);
+
+    List<ClientEntity> findAllByManagedAndStatus(Boolean managed, ClientStatus clientStatus);
 }

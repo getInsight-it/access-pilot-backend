@@ -19,18 +19,18 @@ import it.getinsight.module.role.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.actuate.web.mappings.MappingsEndpoint;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static it.getinsight.message.MessageProperty.CLIENT_NOT_FOUND_ERROR;
@@ -48,6 +48,7 @@ public class ClientService {
     private final KeycloakClient keycloakClient;
     private static final String NAME_QUERY_FIND_ALL_CLIENTS = "find-all-clients";
     private final KeycloakProperties keycloakProperties;
+    private final MappingsEndpoint mappingsEndpoint;
 
 
     public List<ClientDTO> getAllClientsDynamicQuery() {
@@ -198,5 +199,19 @@ public class ClientService {
         if(BooleanUtils.isFalse(entity.getManaged()) && ClientStatus.PUBLISHED.name().equals(status)){
             throw new BusinessException("Managed clients cannot be published");
         }
+    }
+
+    public List<ClientDTO> getAssociateClients(Boolean attached) {
+        var principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Map<String, List<String>> resourceAccess = principal.getClaim("resource_access");
+
+        var clientEntities = clientRepository.findAllByManagedAndStatus(true, ClientStatus.PUBLISHED);
+        return keycloakClient.getClients().stream()
+            .filter(client -> client.attributes().containsKey(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED) && client.attributes().get(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED).equals("true"))
+            .map(obj -> clientEntities.stream().filter(c -> Objects.equals(c.getClientId(), obj.clientId())).findFirst().orElse(null))
+            .filter(Objects::nonNull)
+            .filter(obj -> BooleanUtils.isTrue(attached)  ? resourceAccess.entrySet().stream().anyMatch(e -> Objects.equals(e.getKey(), obj.getClientId())) : resourceAccess.entrySet().stream().noneMatch(e -> Objects.equals(e.getKey(), obj.getClientId())) )
+            .map(clientMapper::toDto)
+            .toList();
     }
 }
