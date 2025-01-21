@@ -13,6 +13,7 @@ import it.getinsight.module.client.mapper.ClientMapper;
 import it.getinsight.module.email.dto.EmailDTO;
 import it.getinsight.module.email.service.EmailService;
 import it.getinsight.module.keycloak.client.KeycloakClient;
+import it.getinsight.module.notification.enums.NotificationType;
 import it.getinsight.module.notification.service.NotificationService;
 import it.getinsight.module.request.config.EmailNotificationProperties;
 import it.getinsight.module.request.dto.RequestDTO;
@@ -52,10 +53,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static it.getinsight.message.MessageProperty.*;
 
@@ -242,6 +240,8 @@ public class RequestService {
             .map(approvedDTO -> EmailDTO.builder()
                 .to(approvedDTO.email())
                 .userId(approvedDTO.id())
+                .isOpened(false)
+                .type(NotificationType.EMAIL)
                 .subject(emailNotificationProperties.getApprover().getSubject())
                 .templateName("request.html")
                 .variables(getVariables(requestEntity.getRequestingUser(), userMapper.toEntity(approvedDTO), requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient()))
@@ -277,6 +277,9 @@ public class RequestService {
             .subject(emailNotificationProperties.getStatusRequest().getSubject())
             .templateName("status-request.html")
             .userId(requestingUserDTO.id())
+            .isOpened(false)
+            .uuid(UUID.randomUUID().toString())
+            .type(NotificationType.EMAIL)
             .variables(variables)
             .isHtml(true)
             .build());
@@ -284,7 +287,10 @@ public class RequestService {
             WebNotificationDTO.builder()
                 .userId(requestingUserDTO.id())
                 .title("protocolo: " + requestEntity.getProtocolCode())
+                .uuid(UUID.randomUUID().toString())
                 .requestId(requestEntity.getId())
+                .isOpened(false)
+                .type(NotificationType.WEB)
                 .priority(1L)
                 .description(requestEntity.getDescription())
                 .build());

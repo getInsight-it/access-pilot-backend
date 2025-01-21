@@ -54,10 +54,9 @@ public class WebNotificationService implements NotificationSender {
 
     @Override
     public Notification send(Notification notification) {
-        if (!(notification instanceof WebNotificationDTO)) {
+        if (!(notification instanceof WebNotificationDTO webNotificationDTO)) {
             return null;
         }
-        WebNotificationDTO webNotificationDTO = (WebNotificationDTO) notification;
         log.info("Sending web notification: {}", webNotificationDTO);
         return mapper.toDto(repository.save(mapper.toEntity(webNotificationDTO)));
     }

@@ -16,6 +16,7 @@ public record WebNotificationDTO(
     String modificadoPor,
     Date ultimaAlteracao,
     Long userId,
+    String externalId,
     Long requestId,
     Long priority,
     Boolean isOpened,

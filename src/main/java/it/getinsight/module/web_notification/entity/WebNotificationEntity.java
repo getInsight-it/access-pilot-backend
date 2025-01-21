@@ -1,5 +1,6 @@
 package it.getinsight.module.web_notification.entity;
 
+import it.getinsight.module.email.entity.EmailSentEntity;
 import it.getinsight.module.notification.entity.NotificationEntity;
 import it.getinsight.module.notification.enums.NotificationType;
 import it.getinsight.module.request.entity.RequestEntity;
@@ -42,6 +43,7 @@ public class WebNotificationEntity extends NotificationEntity {
 
     public static class CustomWebNotificationEntityBuilder extends WebNotificationEntity.WebNotificationEntityBuilder {
         private UserEntity userEntity;
+        private UUID uuid;
         private Boolean isOpened;
         private NotificationType type;
         private String title;
@@ -52,7 +54,12 @@ public class WebNotificationEntity extends NotificationEntity {
             return this;
         }
 
-        public CustomWebNotificationEntityBuilder opened(Boolean isOpened) {
+        public CustomWebNotificationEntityBuilder uuid(UUID uuid) {
+            this.uuid = uuid;
+            return this;
+        }
+
+        public CustomWebNotificationEntityBuilder isOpened(Boolean isOpened) {
             this.isOpened = isOpened;
             return this;
         }
@@ -78,6 +85,7 @@ public class WebNotificationEntity extends NotificationEntity {
             WebNotificationEntity webNotificationEntity = super.build();
             webNotificationEntity.setUser(userEntity);
             webNotificationEntity.setIsOpened(isOpened);
+            webNotificationEntity.setUuid(uuid);
             webNotificationEntity.setType(type);
             webNotificationEntity.setTitle(title);
             webNotificationEntity.setDescription(description);

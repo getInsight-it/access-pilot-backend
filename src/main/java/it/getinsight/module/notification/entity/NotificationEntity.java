@@ -1,7 +1,6 @@
 package it.getinsight.module.notification.entity;
 
 import it.getinsight.core.model.jpa.entity.AuditableEntity;
-import it.getinsight.module.notification.dto.Notification;
 import it.getinsight.module.notification.enums.NotificationType;
 import it.getinsight.module.user.entity.UserEntity;
 import jakarta.persistence.*;
@@ -15,8 +14,8 @@ import java.util.UUID;
 @Getter
 @Setter
 @Audited
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @SequenceGenerator(name = "NotificationEntity.sq", sequenceName = "SQ_NOTIFICACAO", allocationSize = 1)
 @Table(name = "TB_NOTIFICACAO")
 public abstract class  NotificationEntity extends AuditableEntity<Long, String> {

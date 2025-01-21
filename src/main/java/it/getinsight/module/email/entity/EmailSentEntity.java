@@ -3,7 +3,6 @@ package it.getinsight.module.email.entity;
 import it.getinsight.module.notification.entity.NotificationEntity;
 import it.getinsight.module.notification.enums.NotificationType;
 import it.getinsight.module.user.entity.UserEntity;
-import it.getinsight.module.web_notification.entity.WebNotificationEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
@@ -81,6 +80,7 @@ public class EmailSentEntity extends NotificationEntity {
     public static class CustomEmailSentEntityBuilder extends EmailSentEntityBuilder {
         private UserEntity userEntity;
         private Boolean isOpened;
+        private UUID uuid;
         private NotificationType type;
         private String title;
         private String description;
@@ -100,6 +100,10 @@ public class EmailSentEntity extends NotificationEntity {
             return this;
         }
 
+        public CustomEmailSentEntityBuilder uuid(UUID uuid) {
+            this.uuid = uuid;
+            return this;
+        }
 
         public CustomEmailSentEntityBuilder title(String title) {
             this.title = title;
@@ -116,6 +120,7 @@ public class EmailSentEntity extends NotificationEntity {
             EmailSentEntity emailSentEntity = super.build();
             emailSentEntity.setUser(userEntity);
             emailSentEntity.setIsOpened(isOpened);
+            emailSentEntity.setUuid(uuid);
             emailSentEntity.setType(type);
             emailSentEntity.setTitle(title);
             emailSentEntity.setDescription(description);

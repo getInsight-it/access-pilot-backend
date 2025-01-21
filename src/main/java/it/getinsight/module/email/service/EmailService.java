@@ -39,6 +39,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.apache.commons.lang3.BooleanUtils.isTrue;
 
@@ -64,6 +65,7 @@ public class EmailService implements NotificationSender {
          final var content = isTrue(emailDTO.isHtml()) ? processContentByTemplate(emailDTO.templateName(), emailDTO.variables()) : emailDTO.content();
          final var userEntity = userRepository.findById(emailDTO.userId()).orElseThrow(ResourceNotFoundException::new);
          final var emailSent = EmailSentEntity.builder()
+                 .uuid(UUID.randomUUID())
                  .user(userEntity)
                  .opened(false)
                  .to(emailDTO.to())
