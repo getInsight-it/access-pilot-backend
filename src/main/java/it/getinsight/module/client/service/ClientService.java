@@ -17,6 +17,7 @@ import it.getinsight.module.keycloak.config.KeycloakProperties;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.role.service.RoleService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.actuate.web.mappings.MappingsEndpoint;
@@ -38,6 +39,7 @@ import static it.getinsight.message.MessageProperty.CLIENT_NOT_FOUND_ERROR;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ClientService {
 
     public static final String IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED = "acl.client.managed";
@@ -61,7 +63,7 @@ public class ClientService {
     }
 
 
-    @Cacheable(value = "clients", key = "#configPage.toString()")
+//    @Cacheable(value = "clients", key = "#configPage.toString()")
     public PageableResponseModel<ClientDTO> getAllClientsPageable(PageableRequestModel<ClientDTO> configPage) {
         final var model = configPage
             .getFilter()
@@ -132,9 +134,11 @@ public class ClientService {
         entity.setClientUUID(client.id());
         entity.setDescription(client.description());
         entity.setClientId(client.clientId());
+        entity.setManaged("true".equals(client.attributes().get(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED)));
         entity.setBaseUrl(client.baseUrl());
+        var clientEntity = clientRepository.save(entity);
         roleService.synchronizeRoles(Collections.singletonList(client.clientId()));
-        return clientRepository.save(entity);
+        return clientEntity;
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -165,15 +169,21 @@ public class ClientService {
     }
 
 
+
     @CacheEvict(value = "clients", allEntries = true)
     public void updateManaged(Long id, ClientDTO clientDTO) {
         var entity = clientRepository.findById(id).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
+        if (BooleanUtils.isTrue(clientDTO.managed()) && StringUtils.isBlank(entity.getClientUUID())) {
+            handleManagedClient(entity);
+            return;
+        }
         var client = keycloakClient.getClientsByClientId(entity.getClientId()).getFirst();
         client.attributes().put(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED, clientDTO.managed().toString());
         keycloakClient.updateClient(client.id(), client);
-        clientMapper.fromDto(clientDTO, entity);
+        log.warn("Client {} updated", keycloakClient.getClientsByClientId(entity.getClientId()).getFirst());
+        clientMapper.fromDtoWithoutImmutableFields(clientDTO, entity);
         entity.setClientUUID(client.id());
-        clientRepository.save(entity);
+        handleManagedClient(entity);
     }
 
     @Cacheable(value = "getTotalClients")

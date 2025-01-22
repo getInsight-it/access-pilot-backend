@@ -14,6 +14,10 @@ public interface ClientMapper extends BaseMapper<ClientEntity, ClientDTO>, BaseG
     @InheritInverseConfiguration(name = "toDto")
     void fromDto(ClientDTO dto, @MappingTarget ClientEntity entity);
 
+    @InheritInverseConfiguration(name = "toDto")
+    @Mapping(ignore = true, target = "clientUUID")
+    void fromDtoWithoutImmutableFields(ClientDTO dto, @MappingTarget ClientEntity entity);
+
     @InheritInverseConfiguration(name = "toMap")
     List<ClientDTO> toList(List<Object> value);
 
