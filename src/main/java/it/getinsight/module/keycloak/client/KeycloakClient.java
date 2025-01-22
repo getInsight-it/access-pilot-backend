@@ -35,14 +35,12 @@ public interface KeycloakClient {
 
 
     @GetMapping("/clients/{clientUUID}")
-    @Cacheable(value = "getClientByClientUUID", key = "#clientUUID")
     ClientRepresentationDTO getClientByClientUUID(@PathVariable String clientUUID);
 
     @GetMapping("/clients")
     List<ClientRepresentationDTO> getClients();
 
     @GetMapping("/clients")
-    @Cacheable(value = "getClientsByClientId", key = "#clientId")
     List<ClientRepresentationDTO> getClientsByClientId(@RequestParam String clientId);
 
     @GetMapping("/users/count")
