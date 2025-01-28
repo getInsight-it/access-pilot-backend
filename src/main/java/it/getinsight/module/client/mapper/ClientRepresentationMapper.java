@@ -7,13 +7,28 @@ import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import org.mapstruct.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ClientRepresentationMapper extends BaseMapper<ClientRepresentationDTO, ClientDTO>, BaseGenericObjectMapper<ClientDTO> {
 
     @InheritInverseConfiguration(name = "toDto")
     void fromDto(ClientDTO dto, @MappingTarget ClientRepresentationDTO entity);
+
+    @Mapping(source = "description", target = "description")
+    @Mapping(source = "baseUrl", target = "baseUrl")
+    default void fromDtoRepresentation(ClientDTO dto, ClientRepresentationDTO obj) {
+        obj.setName(dto.name() );
+        obj.setClientId(dto.clientId() );
+        obj.setDescription(dto.description() );
+        obj.setBaseUrl(dto.baseUrl() );
+        if (obj.getAttributes() != null) {
+            obj.getAttributes().put("acl.client.managed", String.valueOf(dto.managed()));
+        }
+    }
+
 
     @InheritInverseConfiguration(name = "toMap")
     List<ClientDTO> toList(List<Object> value);
@@ -36,7 +51,7 @@ public interface ClientRepresentationMapper extends BaseMapper<ClientRepresentat
         target = "id"
     )
     @Mapping(
-        expression = "java(Boolean.valueOf(obj.attributes().get(\"acl.client.managed\")))",
+        expression = "java(Boolean.valueOf(obj.getAttributes().get(\"acl.client.managed\")))",
         target = "managed"
     )
     @Mapping(
