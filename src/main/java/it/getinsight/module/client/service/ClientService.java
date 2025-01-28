@@ -15,6 +15,7 @@ import it.getinsight.module.client.repository.ClientRepository;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.config.KeycloakProperties;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
+import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -189,6 +190,11 @@ public class ClientService {
     @Cacheable(value = "getTotalClients")
     public long getTotalClients() {
         return clientRepository.count();
+    }
+
+    @Cacheable(value = "getTotalClients", key = "#roles")
+    public long getTotalClients(List<RoleEntity> roles) {
+        return roles.stream().map(RoleEntity::getClient).distinct().count();
     }
 
     @CacheEvict(value = "clients", allEntries = true)

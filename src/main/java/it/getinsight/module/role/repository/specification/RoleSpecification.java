@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static it.getinsight.utilitario.JwtUtils.extractRoles;
+
 public class RoleSpecification {
 
     public static Specification<RoleEntity> byResourceAccess(Map<String, List<String>> resourceAccess) {
@@ -35,16 +37,4 @@ public class RoleSpecification {
         };
     }
 
-    private static List<String> extractRoles(Object value) {
-        if (value instanceof Map) {
-            Object roles = ((Map<?, ?>) value).get("roles");
-            if (roles instanceof List) {
-                return ((List<?>) roles).stream()
-                    .filter(String.class::isInstance)
-                    .map(String.class::cast)
-                    .toList();
-            }
-        }
-        return Collections.emptyList();
-    }
 }

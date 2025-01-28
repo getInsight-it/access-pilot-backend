@@ -15,6 +15,7 @@ import it.getinsight.module.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.security.core.Authentication;
@@ -29,6 +30,7 @@ import org.springframework.cache.annotation.Cacheable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -40,6 +42,9 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final KeycloakClient keycloakClient;
     private final UserMapper userMapper;
+
+    @Value("${jwt.auth.converter.resource-id}")
+    private String clientId;
 
     private static final String NAME_QUERY_FIND_ALL_USERS = "find-all-users";
 
@@ -132,6 +137,17 @@ public class UserService {
             .email(userDTO.email())
             .externalId(userDTO.externalId()).build();
 
+    }
+
+    public boolean isUserLoggedAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || authentication.getAuthorities() == null) {
+            return false;
+        }
+
+        return authentication.getAuthorities().stream()
+            .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
     }
 
 }
