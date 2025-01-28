@@ -109,12 +109,12 @@ public class RoleService {
     @Transactional(propagation = Propagation.REQUIRED)
     public void synchronizeRoles(List<String> clientIds) {
         var clients = keycloakClient.getClients().stream()
-            .filter(client -> client.attributes().containsKey("acl.client.managed") && client.attributes().get("acl.client.managed").equals("true"))
-            .filter(client -> clientIds.contains(client.clientId()))
+            .filter(client -> client.getAttributes().containsKey("acl.client.managed") && client.getAttributes().get("acl.client.managed").equals("true"))
+            .filter(client -> clientIds.contains(client.getClientId()))
             .toList();
         for (ClientRepresentationDTO client : clients) {
-            var roles = keycloakClient.getRolesByClientUUID(client.id());
-            var clientEntity = clientRepository.findByClientId(client.clientId()).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
+            var roles = keycloakClient.getRolesByClientUUID(client.getId());
+            var clientEntity = clientRepository.findByClientId(client.getClientId()).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
             roles.forEach(role -> synchronizeRole(role, clientEntity));
         }
     }

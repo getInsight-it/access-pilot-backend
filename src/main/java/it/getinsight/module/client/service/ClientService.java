@@ -81,7 +81,7 @@ public class ClientService {
         final var example = Example.of(model, matcher);
         final var page = clientRepository.findAll(example, PaginationHelper.toPageable(configPage));
         final var clientsNotSynchronized = page.getContent().stream().filter(o -> o.getClientUUID() == null).map(clientMapper::toDto).toList();
-        final var clientsSynchronized = page.getContent().stream().filter(o -> o.getClientUUID() != null).map(o -> keycloakClient.getClientByClientUUID(o.getClientUUID())).map(obj -> clientRepresentationMapper.toDto(page.stream().filter(e -> Objects.equals(e.getClientUUID(), obj.id())).findFirst().orElse(null), obj)).toList();
+        final var clientsSynchronized = page.getContent().stream().filter(o -> o.getClientUUID() != null).map(o -> keycloakClient.getClientByClientUUID(o.getClientUUID())).map(obj -> clientRepresentationMapper.toDto(page.stream().filter(e -> Objects.equals(e.getClientUUID(), obj.getId())).findFirst().orElse(null), obj)).toList();
         final var dtos = Stream.concat(clientsNotSynchronized.stream(), clientsSynchronized.stream()).toList();
         return PaginationHelper.toPageResponse(dtos, page.getTotalElements());
     }
@@ -123,22 +123,22 @@ public class ClientService {
         final var searchableClientIds = clientIds.stream().map(String::trim).map(String::toLowerCase).filter(o -> !keycloakProperties.getIgnoreClients().contains(o)).toList();
         var clientEntities = clientRepository.findAllByClientIdIn(searchableClientIds);
         var clients = keycloakClient.getClients().stream()
-            .filter(client -> client.attributes().containsKey(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED) && client.attributes().get(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED).equals("true"))
-            .filter(obj -> clientEntities.stream().anyMatch(c -> Objects.equals(c.getClientId(), obj.clientId()))).toList();
+            .filter(client -> client.getAttributes().containsKey(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED) && client.getAttributes().get(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED).equals("true"))
+            .filter(obj -> clientEntities.stream().anyMatch(c -> Objects.equals(c.getClientId(), obj.getClientId()))).toList();
         clients.forEach(this::synchronize);
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
     @CacheEvict(value = "clients", allEntries = true)
     public ClientEntity synchronize(ClientRepresentationDTO client) {
-        var entity = clientRepository.findByClientId(client.clientId()).orElse(new ClientEntity());
-        entity.setClientUUID(client.id());
-        entity.setDescription(client.description());
-        entity.setClientId(client.clientId());
-        entity.setManaged("true".equals(client.attributes().get(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED)));
-        entity.setBaseUrl(client.baseUrl());
+        var entity = clientRepository.findByClientId(client.getClientId()).orElse(new ClientEntity());
+        entity.setClientUUID(client.getId());
+        entity.setDescription(client.getDescription());
+        entity.setClientId(client.getClientId());
+        entity.setManaged("true".equals(client.getAttributes().get(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED)));
+        entity.setBaseUrl(client.getBaseUrl());
         var clientEntity = clientRepository.save(entity);
-        roleService.synchronizeRoles(Collections.singletonList(client.clientId()));
+        roleService.synchronizeRoles(Collections.singletonList(client.getClientId()));
         return clientEntity;
     }
 
@@ -179,11 +179,12 @@ public class ClientService {
             return;
         }
         var client = keycloakClient.getClientsByClientId(entity.getClientId()).getFirst();
-        client.attributes().put(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED, clientDTO.managed().toString());
-        keycloakClient.updateClient(client.id(), client);
-        log.warn("Client {} updated", keycloakClient.getClientsByClientId(entity.getClientId()).getFirst());
+//        client.getAttributes().put(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED, clientDTO.managed().toString());
         clientMapper.fromDtoWithoutImmutableFields(clientDTO, entity);
-        entity.setClientUUID(client.id());
+        entity.setClientUUID(client.getId());
+        clientRepresentationMapper.toDto(entity, client);
+        Optional.of(entity).map(clientMapper::toDto).ifPresent(o -> clientRepresentationMapper.fromDtoRepresentation(o, client));
+        keycloakClient.updateClient(client.getId(), client);
         handleManagedClient(entity);
     }
 
@@ -223,8 +224,8 @@ public class ClientService {
 
         var clientEntities = clientRepository.findAllByManagedAndStatus(true, ClientStatus.PUBLISHED);
         return keycloakClient.getClients().stream()
-            .filter(client -> client.attributes().containsKey(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED) && client.attributes().get(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED).equals("true"))
-            .map(obj -> clientEntities.stream().filter(c -> Objects.equals(c.getClientId(), obj.clientId())).findFirst().orElse(null))
+            .filter(client -> client.getAttributes().containsKey(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED) && client.getAttributes().get(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED).equals("true"))
+            .map(obj -> clientEntities.stream().filter(c -> Objects.equals(c.getClientId(), obj.getClientId())).findFirst().orElse(null))
             .filter(Objects::nonNull)
             .filter(obj -> BooleanUtils.isTrue(attached)  ? resourceAccess.entrySet().stream().anyMatch(e -> Objects.equals(e.getKey(), obj.getClientId())) : resourceAccess.entrySet().stream().noneMatch(e -> Objects.equals(e.getKey(), obj.getClientId())) )
             .map(clientMapper::toDto)
