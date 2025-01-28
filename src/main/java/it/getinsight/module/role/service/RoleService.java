@@ -188,6 +188,11 @@ public class RoleService {
         return roleRepository.count();
     }
 
+    public Long getTotalRoles(List<RoleEntity> roles) {
+        return roles.stream().distinct().count();
+    }
+
+
     @Transactional(propagation = Propagation.REQUIRED)
     public RoleDTO update(Long id, RoleDTO roleDTO) {
         var entity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);

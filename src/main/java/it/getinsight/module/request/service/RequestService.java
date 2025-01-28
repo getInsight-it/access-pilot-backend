@@ -11,7 +11,6 @@ import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.client.entity.ClientStatus;
 import it.getinsight.module.client.mapper.ClientMapper;
 import it.getinsight.module.email.dto.EmailDTO;
-import it.getinsight.module.email.service.EmailService;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.notification.enums.NotificationType;
 import it.getinsight.module.notification.service.NotificationService;
@@ -24,6 +23,7 @@ import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.request.mapper.RequestFilterMapper;
 import it.getinsight.module.request.mapper.RequestMapper;
 import it.getinsight.module.request.repository.RequestRepository;
+import it.getinsight.module.request.repository.specification.RequestEntitySpecificationFilter;
 import it.getinsight.module.request.repository.specification.RequestSpecification;
 import it.getinsight.module.request.util.ProtocolUtil;
 import it.getinsight.module.role.entity.RoleEntity;
@@ -300,6 +300,22 @@ public class RequestService {
         Example<RequestEntity> example = Example.of(RequestEntity.builder().status(status).build());
         return requestRepository.count(example);
     }
+
+    public Long getTotalRequests(RequestStatus status, List<RoleEntity> roles) {
+        var filter = RequestEntitySpecificationFilter.builder().status(status).roles(roles).build();
+        return requestRepository.count(RequestSpecification.matchCustom(filter));
+    }
+
+    public Long getTotalUsers(RequestStatus status, List<RoleEntity> roles) {
+        var filter = RequestEntitySpecificationFilter.builder().status(status).roles(roles).build();
+        return requestRepository.countRequestingUserDistinct(RequestSpecification.matchCustom(filter));
+    }
+
+    public Long getTotalUsers(RequestStatus status) {
+        var filter = RequestEntitySpecificationFilter.builder().status(status).build();
+        return requestRepository.countRequestingUserDistinct(RequestSpecification.matchCustom(filter));
+    }
+
 
     public RequestDTO findById(Long id) {
         var principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
