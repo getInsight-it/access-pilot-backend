@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_053" author="luan.rodrigues@getinsight.it">
+        <createSequence sequenceName="SQ_ESFERA_ITEM" minValue="1" incrementBy="1" startValue="1"/>
+
+        <createTable tableName="TB_ESFERA_ITEM">
+            <column name="ID" type="BIGINT" defaultValueSequenceNext="SQ_ESFERA_ITEM">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="UUID" type="UUID">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="ID_ESFERA" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CODIGO_EXTERNO" type="VARCHAR(255)"/>
+            <column name="ID_PARENT" type="BIGINT"/>
+            <column name="DESCRICAO" type="VARCHAR(255)"/>
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_CRIACAO" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="ID_ESFERA" baseTableName="TB_ESFERA_ITEM"
+                                 constraintName="FK_ESFERA_ITEM_ESFERA" referencedColumnNames="ID"
+                                 referencedTableName="TB_ESFERA" onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint baseColumnNames="ID_PARENT" baseTableName="TB_ESFERA_ITEM"
+                                 constraintName="FK_ESFERA_ITEM_PARENT" referencedColumnNames="ID"
+                                 referencedTableName="TB_ESFERA_ITEM" onDelete="SET NULL"/>
+
+        <rollback>
+            <dropTable tableName="TB_ESFERA_ITEM"/>
+            <dropSequence sequenceName="SQ_ESFERA_ITEM"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
