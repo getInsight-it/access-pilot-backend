@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_054" author="luan.rodrigues@getinsight.it">
+        <createTable tableName="TB_ESFERA_ITEM_AUD">
+            <column name="ID" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REV" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REVTYPE" type="SMALLINT"/>
+            <column name="UUID" type="UUID"/>
+            <column name="ID_ESFERA" type="BIGINT"/>
+            <column name="CODIGO_EXTERNO" type="VARCHAR(255)"/>
+            <column name="ID_PARENT" type="BIGINT"/>
+            <column name="DESCRICAO" type="VARCHAR(255)"/>
+            <column name="NAME" type="VARCHAR(45)"/>
+        </createTable>
+
+        <addPrimaryKey columnNames="REV, ID" constraintName="TB_ESFERA_ITEM_AUD_PKEY" tableName="TB_ESFERA_ITEM_AUD"/>
+
+        <rollback>
+            <dropForeignKeyConstraint baseTableName="TB_ESFERA_ITEM_AUD" constraintName="FK_ESFERA_ITEM_AUD_REV"/>
+            <dropTable tableName="TB_ESFERA_ITEM_AUD"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

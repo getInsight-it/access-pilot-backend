@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_051" author="luan.rodrigues@getinsight.it">
+        <createSequence sequenceName="SQ_ESFERA" minValue="1" incrementBy="1" startValue="1"/>
+
+        <createTable tableName="TB_ESFERA">
+            <column name="ID" type="BIGINT" defaultValueSequenceNext="SQ_ESFERA">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="UUID" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ID_PARENT" type="BIGINT"/>
+            <column name="SIGLA" type="VARCHAR(45)"/>
+            <column name="NOME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DESCRICAO" type="VARCHAR(255)"/>
+            <column name="URL_EXTERNA" type="VARCHAR(255)"/>
+            <column name="TIPO" type="VARCHAR(45)"/>
+            <column name="ICON" type="VARCHAR(255)"/>
+            <column name="API_KEY" type="VARCHAR(45)"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_CRIACAO" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="ID_PARENT" baseTableName="TB_ESFERA"
+                                 constraintName="FK_ESFERA_PARENT" referencedColumnNames="ID"
+                                 referencedTableName="TB_ESFERA"/>
+
+        <rollback>
+            <dropTable tableName="TB_ESFERA"/>
+            <dropSequence sequenceName="SQ_ESFERA"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
