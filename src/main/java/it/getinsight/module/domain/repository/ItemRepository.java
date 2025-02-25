@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ItemRepository extends JpaRepository<ItemEntity, Long>, DynamicQueryRepository, DynamicNativeQueryRepository {
@@ -18,6 +19,8 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long>, Dynamic
     List<ItemEntity> findAllByDomainId(Long id);
 
     Page<ItemEntity> findAllByDomainId(Long id, Example<ItemEntity> example, Pageable pageable);
+
+    Optional<ItemEntity> findByDomainIdAndId(Long id, Long itemId);
 
 
     List<ItemEntity> findAllByDomainIdAndParentId(Long id, Long itemId);
