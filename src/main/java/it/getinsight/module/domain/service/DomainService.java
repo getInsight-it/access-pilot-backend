@@ -1,10 +1,9 @@
 package it.getinsight.module.domain.service;
 
-import it.getinsight.core.exception.BusinessException;
+import it.getinsight.module.domain.client.FeignClientFactory;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
-import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.domain.dto.DomainDTO;
 import it.getinsight.module.domain.dto.DomainFilterDTO;
 import it.getinsight.module.domain.dto.ItemDTO;
@@ -18,15 +17,11 @@ import it.getinsight.module.domain.mapper.ItemFilterMapper;
 import it.getinsight.module.domain.mapper.ItemMapper;
 import it.getinsight.module.domain.repository.DomainRepository;
 import it.getinsight.module.domain.repository.ItemRepository;
-import it.getinsight.module.erro.service.ErrorService;
-import it.getinsight.module.request.entity.RequestEntity;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,11 +32,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static it.getinsight.message.MessageProperty.*;
 
@@ -57,11 +50,7 @@ public class DomainService {
     private final ItemMapper itemMapper;
     private final ItemFilterMapper itemFilterMapper;
     private final DomainFilterMapper domainFilterMapper;
-
-
-    public List<DomainDTO> getAllDomains() {
-        return domainRepository.findAll().stream().map(domainMapper::toDto).toList();
-    }
+    private final FeignClientFactory feignClientFactory;
 
     public PageableResponseModel<DomainDTO> getAllPaginatedDomains(PageableRequestModel<DomainFilterDTO> configPage) {
         final var filter = configPage.getFilter();
@@ -87,11 +76,15 @@ public class DomainService {
         return domainRepository.findById(id).map(domainMapper::toDto).orElse(null);
     }
 
-    public List<ItemDTO> getItemsByDomain(Long id) {
-        return itemRepository.findAllByDomainId(id).stream().map(itemMapper::toDto).toList();
-    }
 
     public PageableResponseModel<ItemDTO> getItemsPaginatedByDomain(Long domainId, PageableRequestModel<ItemFilterDTO> configPage) {
+        var domainEntity = domainRepository.findById(domainId).orElseThrow(DOMAIN_NOT_FOUND_ERROR::businessException);
+
+        if (DomainType.EXTERNAL.equals(domainEntity.getType())) {
+            var client = feignClientFactory.createClient(domainEntity.getExternalUrl());
+            return client.getItems(  domainEntity.getApiKey(), configPage.getPageNumber() + 1, configPage.getPageSize(), configPage.getSortField(), configPage.getSortType(), configPage.getFilter().orElse(null));
+        }
+
         var filter = configPage.getFilter();
         var model = filter
             .map(itemFilterMapper::toDto)
@@ -138,12 +131,11 @@ public class DomainService {
         return PaginationHelper.toPageResponse(itemMapper.toDto(page.getContent()), page.getTotalElements());
     }
 
-
-    public List<ItemDTO> getSubItemsByItem(Long id, Long itemId) {
-        return itemRepository.findAllByDomainIdAndParentId(id, itemId).stream().map(itemMapper::toDto).toList();
-    }
-
+    @Transactional(propagation = Propagation.REQUIRED)
     public DomainDTO create(DomainDTO domainDTO) {
+        if (DomainType.BUILT_IN.equals(domainDTO.type())) {
+            throw CREATE_BUILT_IN_DOMAIN.businessException();
+        }
         var entity = domainMapper.toEntity(domainDTO);
         return domainMapper.toDto(domainRepository.save(entity));
     }
@@ -208,6 +200,9 @@ public class DomainService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void update(Long id, DomainDTO domainDTO) {
+        if (DomainType.BUILT_IN.equals(domainDTO.type())) {
+            throw UPDATE_BUILT_IN_DOMAIN.businessException();
+        }
         if (domainRepository.existsById(id)) {
             var domainEntity = domainRepository.findById(id).orElseThrow(DOMAIN_NOT_FOUND_ERROR::businessException);
             domainMapper.fromDto(domainDTO, domainEntity);
@@ -216,17 +211,25 @@ public class DomainService {
         }
     }
 
-    public DomainDTO updateStatus(Long id, String status) {
-        // Implementação
-        return null;
-    }
 
     @Transactional(propagation = Propagation.REQUIRED)
     public ItemDTO createItem(Long id, ItemDTO itemDTO) {
         var domain = domainRepository.findById(id).orElseThrow(DOMAIN_NOT_FOUND_ERROR::businessException);
+        if (DomainType.BUILT_IN.equals(domain.getType())) {
+            throw CREATE_BUILT_IN_ITEM.businessException();
+        }
         var entity = itemMapper.toEntity(itemDTO);
         entity.setDomain(domain);
         return itemMapper.toDto(itemRepository.save(entity));
+    }
+
+    public ItemDTO getItemById(Long id, String itemId) {
+        var domainEntity = domainRepository.findById(id).orElseThrow(DOMAIN_NOT_FOUND_ERROR::businessException);
+        if (DomainType.EXTERNAL.equals(domainEntity.getType())) {
+            feignClientFactory.createClient(domainEntity.getExternalUrl()).getItemByExternalCode(domainEntity.getApiKey(), itemId);
+        }
+        var entity = itemRepository.findByDomainIdAndId(id, Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+        return itemMapper.toDto(entity);
     }
 }
 
