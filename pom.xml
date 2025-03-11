@@ -162,6 +162,7 @@
             <artifactId>postgresql</artifactId>
         </dependency>
 
+
         <!-- TESTES -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
