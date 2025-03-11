@@ -1,4 +1,4 @@
-package it.getinsight.module.domain.dto;
+package it.getinsight.module.level.dto;
 
 import lombok.Builder;
 
@@ -6,9 +6,9 @@ import java.io.Serializable;
 
 
 @Builder
-public record DomainFilterDTO(
+public record ItemFilterDTO(
     String name,
     String description,
-    String externalUrl
+    String externalCode
 ) implements Serializable{
 }

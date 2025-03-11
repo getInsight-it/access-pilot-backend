@@ -15,6 +15,9 @@ public record RequestCreateDTO(
     @NotNull
     Long roleId,
 
+    @NotNull
+    String codeItem,
+
     @Size(max = 1000)
     String description
 

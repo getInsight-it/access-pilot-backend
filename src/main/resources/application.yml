@@ -47,6 +47,7 @@ cors:
   allowed-origin-pattern: 'http://localhost:*,localhost:*,https://exemplo-arquitetura.dev.getinsight.tech'
 
 feign:
+  log-level: full
   client:
     keycloak:
       url: ${provider.keycloak.url}/admin/realms/${provider.keycloak.realm}
@@ -251,3 +252,6 @@ management:
 logging:
   level:
     root: info
+
+
+
