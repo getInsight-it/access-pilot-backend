@@ -31,6 +31,8 @@ public record RequestDTO(
 
     String protocolCode,
 
+    String codeItem,
+
     RoleDTO role,
 
     ClientDTO client,

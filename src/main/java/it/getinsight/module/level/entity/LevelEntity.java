@@ -1,4 +1,4 @@
-package it.getinsight.module.domain.entity;
+package it.getinsight.module.level.entity;
 
 
 import it.getinsight.core.model.jpa.entity.BaseEntity;
@@ -16,12 +16,12 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@SequenceGenerator(name = "DomainEntity.sq", sequenceName = "SQ_ESFERA", allocationSize = 1)
-public class DomainEntity extends BaseEntity<Long> {
+@SequenceGenerator(name = "LevelEntity.sq", sequenceName = "SQ_ESFERA", allocationSize = 1)
+public class LevelEntity extends BaseEntity<Long> {
 
     @Id
     @Column(name = "ID")
-    @GeneratedValue(generator = "DomainEntity.sq", strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(generator = "LevelEntity.sq", strategy = GenerationType.SEQUENCE)
     private Long id;
 
     @Column(name = "UUID")
@@ -29,7 +29,7 @@ public class DomainEntity extends BaseEntity<Long> {
 
     @JoinColumn(name = "ID_PARENT")
     @ManyToOne(fetch = FetchType.LAZY)
-    private DomainEntity parent;
+    private LevelEntity parent;
 
     @Column(name = "SIGLA")
     private String sigla;
@@ -45,7 +45,7 @@ public class DomainEntity extends BaseEntity<Long> {
 
     @Column(name = "TIPO")
     @Enumerated(EnumType.STRING)
-    private DomainType type;
+    private LevelType type;
 
     @Column(name = "ICON")
     private String icon;

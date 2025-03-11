@@ -3,6 +3,7 @@ package it.getinsight.module.role.entity;
 
 import it.getinsight.core.model.jpa.entity.AuditableEntity;
 import it.getinsight.module.client.entity.ClientEntity;
+import it.getinsight.module.level.entity.LevelEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
@@ -45,5 +46,9 @@ public class RoleEntity extends AuditableEntity<Long, String> {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_CLIENTE")
     private ClientEntity client;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ID_ESFERA")
+    private LevelEntity level;
 
 }

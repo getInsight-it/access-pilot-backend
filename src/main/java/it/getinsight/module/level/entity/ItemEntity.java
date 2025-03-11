@@ -1,4 +1,4 @@
-package it.getinsight.module.domain.entity;
+package it.getinsight.module.level.entity;
 
 import it.getinsight.core.model.jpa.entity.AuditableEntity;
 import jakarta.persistence.*;
@@ -31,7 +31,7 @@ public class ItemEntity extends AuditableEntity<Long, String> {
 
     @ManyToOne
     @JoinColumn(name = "ID_ESFERA", nullable = false)
-    private DomainEntity domain;
+    private LevelEntity level;
 
     @Column(name = "CODIGO_EXTERNO")
     private String externalCode;
