@@ -1,6 +1,7 @@
 package it.getinsight.module.request.service;
 
 
+import io.sentry.protocol.User;
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.exception.BusinessException;
 import it.getinsight.core.exception.ResourceNotFoundException;
@@ -10,6 +11,12 @@ import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.client.entity.ClientStatus;
 import it.getinsight.module.client.mapper.ClientMapper;
+import it.getinsight.module.level.client.FeignClientFactory;
+import it.getinsight.module.level.dto.ItemDTO;
+import it.getinsight.module.level.entity.LevelType;
+import it.getinsight.module.level.mapper.LevelMapper;
+import it.getinsight.module.level.repository.ItemRepository;
+import it.getinsight.module.level.service.ItemService;
 import it.getinsight.module.email.dto.EmailDTO;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.notification.enums.NotificationType;
@@ -39,6 +46,7 @@ import it.getinsight.module.user.service.UserService;
 import it.getinsight.module.web_notification.dto.WebNotificationDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Example;
@@ -73,6 +81,7 @@ public class RequestService {
     private final UserService userService;
     private final NotificationService notificationService;
     private final StorageFileService storageFileService;
+    private final FeignClientFactory feignClientFactory;
 
     private static final String NAME_QUERY_FIND_ALL_REQUESTS_IN_ROLES = "find-all-requests-in-roles";
     private static final String NAME_QUERY_FIND_ALL_REQUESTS = "find-all-requests";
@@ -80,14 +89,18 @@ public class RequestService {
     private final UserMapper userMapper;
     private final RoleMapper roleMapper;
     private final ClientMapper clientMapper;
+    private final LevelMapper levelMapper;
     private final EmailNotificationProperties emailNotificationProperties;
+    private final ItemRepository itemRepository;
+    private final ItemService itemService;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public RequestDTO createRequest(final RequestDTO requestDTO, List<MultipartFile> attachments) {
         Jwt principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userId = principal.getSubject();
         String username = principal.getClaimAsString("preferred_username");
-        var roleEntity = roleRepository.findById(requestDTO.role().id()).orElseThrow(ResourceNotFoundException::new);
+        var roleEntity = roleRepository.findById(requestDTO.role().id()).orElseThrow(REQUEST_NOT_FOUND_ERROR::businessException);
+        validateItemExistence(requestDTO.codeItem(), roleEntity);
         final var entity = requestMapper.toEntity(requestDTO);
         var user = userRepository.findByExternalId(userId).orElseGet(() -> {
             var userEntity = new UserEntity();
@@ -98,6 +111,8 @@ public class RequestService {
             userEntity.setUsername(username);
             return userRepository.save(userEntity);
         });
+
+        entity.setCodeItem(requestDTO.codeItem());
         entity.setRequestingUser(user);
         entity.setRole(roleEntity);
         entity.setProtocolCode(ProtocolUtil.generateUniqueProtocolCode());
@@ -105,6 +120,24 @@ public class RequestService {
         requestRepository.save(entity);
         storageFileService.save(attachments, PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET, false, false, entity.getUuid());
         return requestMapper.toDto(entity);
+    }
+
+    private void validateItemExistence(String codeItem,  RoleEntity roleEntity) {
+        Optional.ofNullable(roleEntity.getLevel()).ifPresent(level -> {
+            var levelType = level.getType();
+
+            if (levelType == LevelType.BUILT_IN || levelType == LevelType.BUSINESS) {
+                var entityFound = itemRepository.findById(Long.parseLong(codeItem))
+                    .orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+                log.info("Item found for request: {}", entityFound);
+            }
+
+            if (levelType == LevelType.EXTERNAL) {
+                var opItemDtoFound = feignClientFactory.createClient(level.getExternalUrl())
+                    .getItemByExternalCode(level.getApiKey(), codeItem).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+                log.info("Item found for request: {}", opItemDtoFound);
+            }
+        });
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -264,9 +297,11 @@ public class RequestService {
         variables.put("approvingUser", userMapper.toDto(approvingUserEntity));
         variables.put("requestingUser", userMapper.toDto(requestingUserEntity));
         variables.put("request", requestMapper.toDto(requestEntity));
-        variables.put("status", requestMapper.toDto(requestEntity).status().name());
+        variables.put("status", requestMapper.toDto(requestEntity).status().getDescription());
         variables.put("role", roleMapper.toDto(roleEntity));
         variables.put("client", clientMapper.toDto(clientEntity));
+        variables.put("item", itemService.findByTypeAndCodeItem(roleEntity.getLevel(), requestEntity.getCodeItem()).orElse(ItemDTO.builder().build()));
+        variables.put("level", levelMapper.toDto(roleEntity.getLevel()));
         return variables;
     }
 
