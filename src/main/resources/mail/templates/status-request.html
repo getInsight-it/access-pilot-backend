@@ -90,6 +90,14 @@
                 <strong>Sistema:</strong>
                 <span th:if="${client != null}" th:text="${client.clientId}"></span>
             </li>
+            <li th:if="${domain != null && domain.name != null}">
+                <strong>Esfera:</strong>
+                <span th:text="${domain.name}"></span>
+            </li>
+            <li th:if="${item != null && item.name != null}">
+                <strong>Item da esfera:</strong>
+                <span th:text="${item.name}"></span>
+            </li>
             <li>
                 <strong>Status:</strong>
                 <span th:text="${status}"></span>
