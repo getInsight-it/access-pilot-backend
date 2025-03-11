@@ -52,6 +52,9 @@ public class RequestEntity extends AuditableEntity<Long, String> {
     @JoinColumn(name = "ID_ROLE", referencedColumnName = "ID")
     private RoleEntity role;
 
+    @Column(name = "CODIGO_ITEM")
+    private String codeItem;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_USUARIO_SOLICITANTE", referencedColumnName = "ID")
     private UserEntity requestingUser;

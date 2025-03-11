@@ -1,6 +1,6 @@
-package it.getinsight.module.domain.dto;
+package it.getinsight.module.level.dto;
 
-import it.getinsight.module.domain.entity.DomainType;
+import it.getinsight.module.level.entity.LevelType;
 import lombok.Builder;
 
 import java.io.Serializable;
@@ -8,7 +8,7 @@ import java.util.UUID;
 
 
 @Builder
-public record DomainDTO(
+public record LevelDTO(
     Long id,
     UUID uuid,
     Long parentId,
@@ -16,7 +16,7 @@ public record DomainDTO(
     String name,
     String description,
     String externalUrl,
-    DomainType type,
+    LevelType type,
     String icon,
     String apiKey
 ) implements Serializable{

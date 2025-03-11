@@ -49,6 +49,9 @@ public interface KeycloakClient {
     @GetMapping("/users/{id}/role-mappings")
     Map<String, List<RoleRepresentationDTO>> getUserRoles(@PathVariable("id") String userId);
 
+    @PutMapping("/users/{id}")
+    void updateUser(@PathVariable String id, @RequestBody UserRepresentationDTO userRepresentationDTO);
+
     @PutMapping("/clients/{clientUUID}")
     void updateClient(@PathVariable String clientUUID, @RequestBody ClientRepresentationDTO clientRepresentationDTO);
 
@@ -63,4 +66,5 @@ public interface KeycloakClient {
 
     @DeleteMapping("/clients/{clientUUID}/roles/{roleName}")
     void deleteRole(@PathVariable String clientUUID, @PathVariable String roleName);
+
 }

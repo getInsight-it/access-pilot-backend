@@ -46,7 +46,7 @@ public class RequestController {
                                        String request) {
         try {
             final var requestCreateDTO = objectMapper.readValue(request, RequestCreateDTO.class);
-            RequestDTO requestDTO = RequestDTO.builder().description(requestCreateDTO.description()).role(RoleDTO.builder().id(requestCreateDTO.roleId()).build()).build();
+            RequestDTO requestDTO = RequestDTO.builder().description(requestCreateDTO.description()).codeItem(requestCreateDTO.codeItem()).role(RoleDTO.builder().id(requestCreateDTO.roleId()).build()).build();
             var uri = ServletUriComponentsBuilder.fromCurrentRequest().path(
                 "/{id}").buildAndExpand(requestService.createRequest(requestDTO, attachments).id()).toUri();
             return ResponseEntity.created(uri).build();
