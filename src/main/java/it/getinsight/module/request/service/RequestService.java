@@ -1,22 +1,16 @@
 package it.getinsight.module.request.service;
 
 
-import io.sentry.protocol.User;
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.exception.BusinessException;
-import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
-import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.client.entity.ClientStatus;
-import it.getinsight.module.client.mapper.ClientMapper;
+import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
 import it.getinsight.module.level.client.FeignClientFactory;
-import it.getinsight.module.level.dto.ItemDTO;
 import it.getinsight.module.level.entity.LevelType;
-import it.getinsight.module.level.mapper.LevelMapper;
 import it.getinsight.module.level.repository.ItemRepository;
-import it.getinsight.module.level.service.ItemService;
 import it.getinsight.module.email.dto.EmailDTO;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.notification.enums.NotificationType;
@@ -34,7 +28,6 @@ import it.getinsight.module.request.repository.specification.RequestEntitySpecif
 import it.getinsight.module.request.repository.specification.RequestSpecification;
 import it.getinsight.module.request.util.ProtocolUtil;
 import it.getinsight.module.role.entity.RoleEntity;
-import it.getinsight.module.role.mapper.RoleMapper;
 import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.role.repository.specification.RoleSpecification;
 import it.getinsight.module.role.service.RoleService;
@@ -46,7 +39,6 @@ import it.getinsight.module.user.service.UserService;
 import it.getinsight.module.web_notification.dto.WebNotificationDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Example;
@@ -87,39 +79,66 @@ public class RequestService {
     private static final String NAME_QUERY_FIND_ALL_REQUESTS = "find-all-requests";
     public static final String PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET = "private-getinsight-accesspilot-docs";
     private final UserMapper userMapper;
-    private final RoleMapper roleMapper;
-    private final ClientMapper clientMapper;
-    private final LevelMapper levelMapper;
+    private final RequestVariableService requestVariableService;
     private final EmailNotificationProperties emailNotificationProperties;
     private final ItemRepository itemRepository;
-    private final ItemService itemService;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public RequestDTO createRequest(final RequestDTO requestDTO, List<MultipartFile> attachments) {
-        Jwt principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String userId = principal.getSubject();
-        String username = principal.getClaimAsString("preferred_username");
-        var roleEntity = roleRepository.findById(requestDTO.role().id()).orElseThrow(REQUEST_NOT_FOUND_ERROR::businessException);
+        var principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        var roleEntity = roleRepository.findById(requestDTO.role().id())
+                .orElseThrow(REQUEST_NOT_FOUND_ERROR::businessException);
         validateItemExistence(requestDTO.codeItem(), roleEntity);
-        final var entity = requestMapper.toEntity(requestDTO);
-        var user = userRepository.findByExternalId(userId).orElseGet(() -> {
-            var userEntity = new UserEntity();
-            userEntity.setExternalId(userId);
-            userEntity.setFirstName(principal.getClaimAsString("name"));
-            userEntity.setLastName(principal.getClaimAsString("family_name"));
-            userEntity.setEmail(principal.getClaimAsString("email"));
-            userEntity.setUsername(username);
-            return userRepository.save(userEntity);
-        });
-
-        entity.setCodeItem(requestDTO.codeItem());
+        var user = findOrCreateUser(principal);
+        var entity = requestMapper.toEntity(requestDTO);
         entity.setRequestingUser(user);
         entity.setRole(roleEntity);
+        entity.setCodeItem(requestDTO.codeItem());
         entity.setProtocolCode(ProtocolUtil.generateUniqueProtocolCode());
-        sendApproves(entity);
+
         requestRepository.save(entity);
         storageFileService.save(attachments, PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET, false, false, entity.getUuid());
+
+        sendApprovalNotifications(entity);
+
         return requestMapper.toDto(entity);
+    }
+
+    private void sendApprovalNotifications(RequestEntity requestEntity) {
+        var roleEntity = requestEntity.getRole().getRole();
+        var approves = keycloakClient.getUsersByClientUUIDAndRoleName(roleEntity.getClient().getClientUUID(), roleEntity.getName())
+            .stream()
+            .map(user -> userService.findOrImportByExternalId(user.id()))
+            .toList();
+
+        if (approves.isEmpty()) {
+            throw APPROVERS_NOT_FOUND_ERROR.businessException();
+        }
+
+        approves.forEach(approve -> {
+            var email = EmailDTO.builder()
+                .to(approve.email())
+                .userId(approve.id())
+                .type(NotificationType.EMAIL)
+                .subject(emailNotificationProperties.getApprover().getSubject())
+                .templateName("request.html")
+                .variables(Map.of("request", requestEntity.getProtocolCode()))
+                .isHtml(true)
+                .build();
+            notificationService.send(email);
+        });
+    }
+
+    private UserEntity findOrCreateUser(Jwt principal) {
+        String userId = principal.getSubject();
+        return userRepository.findByExternalId(userId).orElseGet(() -> {
+            UserEntity user = new UserEntity();
+            user.setExternalId(userId);
+            user.setFirstName(principal.getClaimAsString("name"));
+            user.setLastName(principal.getClaimAsString("family_name"));
+            user.setEmail(principal.getClaimAsString("email"));
+            return userRepository.save(user);
+        });
     }
 
     private void validateItemExistence(String codeItem,  RoleEntity roleEntity) {
@@ -160,7 +179,7 @@ public class RequestService {
         requestEntity.setStatus(RequestStatus.valueOf(status));
         requestEntity.setApprovingUser(approvingUserEntity);
         requestEntity.setFinalReason(requestUpdateDTO.finalReason());
-        var variables = getVariables(requestEntity.getRequestingUser(), approvingUserEntity, requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient());
+        var variables = requestVariableService.buildVariables(requestEntity.getRequestingUser(), approvingUserEntity, requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient());
         if (RequestStatus.APPROVED.equals(requestEntity.getStatus()) && userExists) {
             confirmRoles(requestEntity);
             sendNotificationStatusToUser(requestEntity, variables);
@@ -171,15 +190,50 @@ public class RequestService {
     }
 
 
-    private void confirmRoles(RequestEntity entity) {
-        var roleEntity = roleRepository.findById(entity.getRole().getId()).orElseThrow(ResourceNotFoundException::new);
-        var role = keycloakClient.getRoleByNameAndClientUUID(roleEntity.getName(), roleEntity.getClient().getClientUUID());
+    public void confirmRoles(RequestEntity entity) {
         try {
-            keycloakClient.assignRoles(entity.getRequestingUser().getExternalId(), roleEntity.getClient().getClientUUID(), List.of(role));
+            var roleEntity = roleRepository.findById(entity.getRole().getId()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
+            var role = keycloakClient.getRoleByNameAndClientUUID(roleEntity.getName(), roleEntity.getClient().getClientUUID());
+            assignRoleToUser(entity, roleEntity, role);
+            updateUserAttributes(entity, roleEntity, role);
         } catch (Exception e) {
-            entity.setStatus(RequestStatus.ROLES_NOT_ASSIGNED);
-            requestRepository.save(entity);
+            handleAssignmentFailure(entity);
         }
+    }
+
+
+    private void assignRoleToUser(RequestEntity entity, RoleEntity roleEntity, RoleRepresentationDTO role) {
+        keycloakClient.assignRoles(
+            entity.getRequestingUser().getExternalId(),
+            roleEntity.getClient().getClientUUID(),
+            List.of(role)
+        );
+    }
+
+    private void updateUserAttributes(RequestEntity entity, RoleEntity roleEntity, RoleRepresentationDTO role) {
+        var user = keycloakClient.getUsers(entity.getRequestingUser().getExternalId());
+        String levelAccess = buildLevelAccess(entity, roleEntity, role);
+
+        var levelAttributes = new ArrayList<>(user.attributes().getOrDefault("levelAttributes", Collections.emptyList()));
+
+        if (!levelAttributes.contains(levelAccess)) {
+            levelAttributes.add(levelAccess);
+            keycloakClient.updateUser(entity.getRequestingUser().getExternalId(), user.withLevelAttributes(levelAttributes));
+        }
+    }
+
+    private String buildLevelAccess(RequestEntity entity, RoleEntity roleEntity, RoleRepresentationDTO role) {
+        return String.join("|",
+            roleEntity.getClient().getClientId(),
+            role.name(),
+            entity.getRole().getLevel().getName(),
+            entity.getCodeItem()
+        );
+    }
+
+    private void handleAssignmentFailure(RequestEntity entity) {
+        entity.setStatus(RequestStatus.ROLES_NOT_ASSIGNED);
+        requestRepository.save(entity);
     }
 
     public PageableResponseModel<RequestDTO> getAllRequestsMine(PageableRequestModel<RequestFilterDTO> configPage) {
@@ -277,7 +331,7 @@ public class RequestService {
                 .type(NotificationType.EMAIL)
                 .subject(emailNotificationProperties.getApprover().getSubject())
                 .templateName("request.html")
-                .variables(getVariables(requestEntity.getRequestingUser(), userMapper.toEntity(approvedDTO), requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient()))
+                .variables(requestVariableService.buildVariables(requestEntity.getRequestingUser(), userMapper.toEntity(approvedDTO), requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient()))
                 .isHtml(true)
                 .build())
             .forEach(o -> {
@@ -285,25 +339,12 @@ public class RequestService {
                 log.info("Sending email to {}", o.to());
                 notificationService.send(o);
                 requestEntity.setStatus(RequestStatus.PENDING);
-                var variables = getVariables(requestEntity.getRequestingUser(), null, requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient());
+                var variables = requestVariableService.buildVariables(requestEntity.getRequestingUser(), null, requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient());
                 sendNotificationStatusToUser(requestEntity, variables);
             });
     }
 
-    private Map<String, Object> getVariables(UserEntity requestingUserEntity, UserEntity approvingUserEntity, RequestEntity requestEntity, RoleEntity roleEntity, ClientEntity clientEntity) {
-        Map<String, Object> variables = new HashMap<>();
-        var url = emailNotificationProperties.getUrl();
-        variables.put("link", Map.of("address", url.getClientUrl(), "hint", url.getHint(), "frontendUrl", url.getFrontendUrl()));
-        variables.put("approvingUser", userMapper.toDto(approvingUserEntity));
-        variables.put("requestingUser", userMapper.toDto(requestingUserEntity));
-        variables.put("request", requestMapper.toDto(requestEntity));
-        variables.put("status", requestMapper.toDto(requestEntity).status().getDescription());
-        variables.put("role", roleMapper.toDto(roleEntity));
-        variables.put("client", clientMapper.toDto(clientEntity));
-        variables.put("item", itemService.findByTypeAndCodeItem(roleEntity.getLevel(), requestEntity.getCodeItem()).orElse(ItemDTO.builder().build()));
-        variables.put("level", levelMapper.toDto(roleEntity.getLevel()));
-        return variables;
-    }
+
 
     public void sendNotificationStatusToUser(RequestEntity requestEntity, Map<String, Object> variables) {
         var requestingUserDTO = Optional.of(requestEntity.getRequestingUser()).map(userMapper::toDto).orElseThrow(() -> new BusinessException("Não foi possivel converter o usuário"));

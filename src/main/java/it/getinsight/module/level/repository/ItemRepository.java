@@ -7,9 +7,11 @@ import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +23,14 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long>, Dynamic
     Page<ItemEntity> findAllByLevelId(Long id, Example<ItemEntity> example, Pageable pageable);
 
     Optional<ItemEntity> findByLevelIdAndId(Long id, Long itemId);
+
+    List<ItemEntity> findAllByLevelNameIn(List<String> names);
+
+    @Modifying
+    @Query("UPDATE ItemEntity i SET i.active = false WHERE i.id = :id")
+    void softDelete(@Param("id") Long id);
+
+    Boolean existsByLevelIdAndId(Long id, Long itemId);
 
 
     List<ItemEntity> findAllByLevelIdAndParentId(Long id, Long itemId);

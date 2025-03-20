@@ -90,9 +90,9 @@
                 <strong>Sistema:</strong>
                 <span th:if="${client != null}" th:text="${client.clientId}"></span>
             </li>
-            <li th:if="${domain != null && domain.name != null}">
+            <li th:if="${level != null && level.name != null}">
                 <strong>Esfera:</strong>
-                <span th:text="${domain.name}"></span>
+                <span th:text="${level.name}"></span>
             </li>
             <li th:if="${item != null && item.name != null}">
                 <strong>Item da esfera:</strong>
