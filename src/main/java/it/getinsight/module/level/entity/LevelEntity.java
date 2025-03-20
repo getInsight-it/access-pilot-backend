@@ -4,6 +4,9 @@ package it.getinsight.module.level.entity;
 import it.getinsight.core.model.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.DialectOverride;
+import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.Where;
 import org.hibernate.envers.Audited;
 
 import java.util.UUID;
@@ -14,6 +17,7 @@ import java.util.UUID;
 @Audited
 @Table(name = "TB_ESFERA")
 @Builder
+@SQLRestriction(value = "ATIVO = true")
 @NoArgsConstructor
 @AllArgsConstructor
 @SequenceGenerator(name = "LevelEntity.sq", sequenceName = "SQ_ESFERA", allocationSize = 1)
@@ -52,6 +56,9 @@ public class LevelEntity extends BaseEntity<Long> {
 
     @Column(name = "API_KEY")
     private String apiKey;
+
+    @Column(name = "ATIVO")
+    private Boolean active;
 
     @PrePersist
     public void prePersist() {
