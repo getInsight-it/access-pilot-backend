@@ -99,12 +99,12 @@ public class RequestService {
         requestRepository.save(entity);
         storageFileService.save(attachments, PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET, false, false, entity.getUuid());
 
-        sendApprovalNotifications(entity);
+        sendNotifications(entity);
 
         return requestMapper.toDto(entity);
     }
 
-    private void sendApprovalNotifications(RequestEntity requestEntity) {
+    private void sendNotifications(RequestEntity requestEntity) {
         var roleEntity = requestEntity.getRole().getRole();
         var approves = keycloakClient.getUsersByClientUUIDAndRoleName(roleEntity.getClient().getClientUUID(), roleEntity.getName())
             .stream()
@@ -115,18 +115,25 @@ public class RequestService {
             throw APPROVERS_NOT_FOUND_ERROR.businessException();
         }
 
-        approves.forEach(approve -> {
-            var email = EmailDTO.builder()
-                .to(approve.email())
-                .userId(approve.id())
+        approves.stream()
+            .map(approvedDTO -> EmailDTO.builder()
+                .to(approvedDTO.email())
+                .userId(approvedDTO.id())
+                .isOpened(false)
                 .type(NotificationType.EMAIL)
                 .subject(emailNotificationProperties.getApprover().getSubject())
                 .templateName("request.html")
-                .variables(Map.of("request", requestEntity.getProtocolCode()))
+                .variables(requestVariableService.buildVariables(requestEntity.getRequestingUser(), userMapper.toEntity(approvedDTO), requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient()))
                 .isHtml(true)
-                .build();
-            notificationService.send(email);
-        });
+                .build())
+            .forEach(o -> {
+                requestRepository.save(requestEntity);
+                log.info("Sending email to {}", o.to());
+                notificationService.send(o);
+                requestEntity.setStatus(RequestStatus.PENDING);
+                var variables = requestVariableService.buildVariables(requestEntity.getRequestingUser(), null, requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient());
+                sendNotificationStatusToUser(requestEntity, variables);
+            });
     }
 
     private UserEntity findOrCreateUser(Jwt principal) {
@@ -311,40 +318,6 @@ public class RequestService {
         final var page = requestRepository.findAll(example, PaginationHelper.toPageable(configPage));
         return PaginationHelper.toPageResponse(requestMapper.toDto(page.getContent()), page.getTotalElements());
     }
-
-
-    private void sendApproves(RequestEntity requestEntity) {
-        requestEntity.setStatus(RequestStatus.CREATED);
-        var roleEntity = Optional.ofNullable(requestEntity.getRole().getRole()).orElseThrow(() -> new BusinessException("Role parent não encontrada"));
-        var approvals = keycloakClient.getUsersByClientUUIDAndRoleName(roleEntity.getClient().getClientUUID(), roleEntity.getName()).stream()
-            .map(user ->
-                userService.findOrImportByExternalId(user.id())
-            ).toList();
-        if (approvals.isEmpty()) {
-            throw APPROVERS_NOT_FOUND_ERROR.businessException();
-        }
-        approvals.stream()
-            .map(approvedDTO -> EmailDTO.builder()
-                .to(approvedDTO.email())
-                .userId(approvedDTO.id())
-                .isOpened(false)
-                .type(NotificationType.EMAIL)
-                .subject(emailNotificationProperties.getApprover().getSubject())
-                .templateName("request.html")
-                .variables(requestVariableService.buildVariables(requestEntity.getRequestingUser(), userMapper.toEntity(approvedDTO), requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient()))
-                .isHtml(true)
-                .build())
-            .forEach(o -> {
-                requestRepository.save(requestEntity);
-                log.info("Sending email to {}", o.to());
-                notificationService.send(o);
-                requestEntity.setStatus(RequestStatus.PENDING);
-                var variables = requestVariableService.buildVariables(requestEntity.getRequestingUser(), null, requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient());
-                sendNotificationStatusToUser(requestEntity, variables);
-            });
-    }
-
-
 
     public void sendNotificationStatusToUser(RequestEntity requestEntity, Map<String, Object> variables) {
         var requestingUserDTO = Optional.of(requestEntity.getRequestingUser()).map(userMapper::toDto).orElseThrow(() -> new BusinessException("Não foi possivel converter o usuário"));
