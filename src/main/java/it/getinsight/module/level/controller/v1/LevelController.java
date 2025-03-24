@@ -5,10 +5,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
-import it.getinsight.module.level.dto.LevelDTO;
-import it.getinsight.module.level.dto.LevelFilterDTO;
-import it.getinsight.module.level.dto.ItemDTO;
-import it.getinsight.module.level.dto.ItemFilterDTO;
+import it.getinsight.module.level.dto.*;
 import it.getinsight.module.level.service.LevelService;
 import it.getinsight.module.level.service.ItemService;
 import jakarta.annotation.security.PermitAll;
@@ -39,7 +36,7 @@ public class LevelController {
     @Operation(summary = "Retrieve the list of levels", description = "Retrieve all levels")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<PageableResponseModel<LevelDTO>> getPaginatedAllLevels(
+    public ResponseEntity<PageableResponseModel<LevelResponseDTO>> getPaginatedAllLevels(
         @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
@@ -52,13 +49,13 @@ public class LevelController {
     @Operation(summary = "Retrieve a level by ID", description = "Retrieve a level by ID")
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<LevelDTO> getLevelById(@PathVariable Long id
+    public ResponseEntity<LevelResponseDTO> getLevelById(@PathVariable Long id
     ) {
         return ResponseEntity.ok(levelService.findById(id));
     }
 
     @GetMapping("/{id}/hierarchy")
-    public ResponseEntity<List<LevelDTO>> getHierarchy(@PathVariable Long id) {
+    public ResponseEntity<List<LevelResponseDTO>> getHierarchy(@PathVariable Long id) {
         return ResponseEntity.ok(levelService.getHierarchy(id));
     }
 
@@ -81,22 +78,32 @@ public class LevelController {
     @PostMapping(value = "/importation", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> importLevels(@RequestParam("file") MultipartFile file) {
         levelService.importLevels(file);
-        return ResponseEntity.ok("Importação realizada com sucesso.");
+        return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "Import items", description = "Import items")
     @PostMapping(value = "/items/importation", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> importItems(@RequestParam("file") MultipartFile file) {
         itemService.importLevels(file);
-        return ResponseEntity.ok("Importação realizada com sucesso.");
+        return ResponseEntity.ok().build();
     }
+
+    @Operation(summary = "Import items", description = "Import items")
+    @PostMapping(value = "/items/exportation",  produces = "text/csv")
+    public ResponseEntity<String> exportationItems(@ParameterObject ExportationFilterDTO filterDTO, HttpServletResponse response) {
+        response.setContentType("text/csv");
+        response.setHeader("Content-Disposition", "attachment; filename=items.csv");
+        itemService.exportItems(filterDTO,response);
+        return ResponseEntity.ok().build();
+    }
+
 
     @Operation(summary = "Export levels", description = "Export levels")
     @GetMapping(value = "/exportation", produces = "text/csv")
-    public void exportLevels(HttpServletResponse response) {
+    public void exportLevels(@ParameterObject ExportationFilterDTO filter, HttpServletResponse response) {
         response.setContentType("text/csv");
         response.setHeader("Content-Disposition", "attachment; filename=levels.csv");
-        levelService.exportLevels(response);
+        levelService.exportLevels(filter,response);
     }
 
     @Operation(summary = "Retrieve items of a level", description = "Retrieve items related to a level")
@@ -109,7 +116,7 @@ public class LevelController {
                                                                    @RequestParam(defaultValue = "ASC") String sortType,
                                                                    @ParameterObject ItemFilterDTO filterDTO) {
         final var pageRequest = PageableRequestModel.of(pageIndex - 1, pageSize, sortType, sortField, filterDTO);
-        return ResponseEntity.ok(levelService.getItemsPaginatedByLevel(id, pageRequest));
+        return ResponseEntity.ok(itemService.getItemsPaginatedByLevel(id, pageRequest));
     }
 
     @Operation(summary = "Retrieve items of a level", description = "Retrieve items related to a level")
@@ -141,5 +148,22 @@ public class LevelController {
                                                                     ) {
         final var pageRequest = PageableRequestModel.of(pageIndex - 1, pageSize, sortType, sortField, filterDTO);
         return ResponseEntity.ok(levelService.getSubItemsPaginatedByLevel(id,itemId, pageRequest));
+    }
+
+
+    @Operation(summary = "Delete a level", description = "Delete a level")
+    @DeleteMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize(value = "hasRole('ADMIN')")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        levelService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Delete an item", description = "Delete an item")
+    @DeleteMapping(value = "{id}/items/{itemId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize(value = "hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteItem(@PathVariable Long id, @PathVariable String itemId) {
+        levelService.deleteItem(id, itemId);
+        return ResponseEntity.noContent().build();
     }
 }

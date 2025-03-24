@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_064" author="luan.rodrigues@getinsight.it">
+
+        <addColumn tableName="TB_CONFIGURATION">
+            <column name="UUID" type="UUID"/>
+        </addColumn>
+
+        <addColumn tableName="TB_CONFIGURATION">
+            <column name="VALUE" type="JSONB"/>
+        </addColumn>
+
+        <addColumn tableName="TB_CONFIGURATION">
+            <column name="ACTIVE" type="BOOLEAN"/>
+        </addColumn>
+
+        <dropColumn tableName="TB_CONFIGURATION" columnName="AUTHORITY"/>
+        <dropColumn tableName="TB_CONFIGURATION" columnName="REDIRECT_URL"/>
+        <dropColumn tableName="TB_CONFIGURATION" columnName="CLIENT_ID"/>
+        <dropColumn tableName="TB_CONFIGURATION" columnName="RESPONSE_TYPE"/>
+        <dropColumn tableName="TB_CONFIGURATION" columnName="SCOPE"/>
+        <dropColumn tableName="TB_CONFIGURATION" columnName="POST_LOGOUT_REDIRECT_URI"/>
+        <dropColumn tableName="TB_CONFIGURATION" columnName="START_CHECKSESSION"/>
+        <dropColumn tableName="TB_CONFIGURATION" columnName="SILENT_RENEW"/>
+        <dropColumn tableName="TB_CONFIGURATION" columnName="STARTUP_ROUTE"/>
+        <dropColumn tableName="TB_CONFIGURATION" columnName="FORBIDDEN_ROUTE"/>
+        <dropColumn tableName="TB_CONFIGURATION" columnName="UNAUTHORIZED_ROUTE"/>
+        <dropColumn tableName="TB_CONFIGURATION" columnName="LOG_LEVEL"/>
+        <dropColumn tableName="TB_CONFIGURATION" columnName="MAX_ID_TOKEN_IAT_OFFSET_ALLOWED_IN_SECONDS"/>
+        <dropColumn tableName="TB_CONFIGURATION" columnName="HISTORY_CLEANUP_OFF"/>
+        <dropColumn tableName="TB_CONFIGURATION" columnName="ICON"/>
+
+        <rollback>
+            <addColumn tableName="TB_CONFIGURATION">
+                <column name="AUTHORITY" type="VARCHAR(255)"/>
+                <column name="REDIRECT_URL" type="VARCHAR(255)"/>
+                <column name="CLIENT_ID" type="VARCHAR(255)"/>
+                <column name="RESPONSE_TYPE" type="VARCHAR(255)"/>
+                <column name="SCOPE" type="VARCHAR(255)"/>
+                <column name="POST_LOGOUT_REDIRECT_URI" type="VARCHAR(255)"/>
+                <column name="START_CHECKSESSION" type="BOOLEAN"/>
+                <column name="SILENT_RENEW" type="BOOLEAN"/>
+                <column name="STARTUP_ROUTE" type="VARCHAR(255)"/>
+                <column name="FORBIDDEN_ROUTE" type="VARCHAR(255)"/>
+                <column name="UNAUTHORIZED_ROUTE" type="VARCHAR(255)"/>
+                <column name="LOG_LEVEL" type="INTEGER"/>
+                <column name="MAX_ID_TOKEN_IAT_OFFSET_ALLOWED_IN_SECONDS" type="INTEGER"/>
+                <column name="HISTORY_CLEANUP_OFF" type="BOOLEAN"/>
+            </addColumn>
+
+            <dropColumn tableName="TB_CONFIGURATION" columnName="UUID"/>
+            <dropColumn tableName="TB_CONFIGURATION" columnName="VALUE"/>
+            <dropColumn tableName="TB_CONFIGURATION" columnName="ACTIVE"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

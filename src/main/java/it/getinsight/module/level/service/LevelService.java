@@ -1,20 +1,15 @@
 package it.getinsight.module.level.service;
 
+import it.getinsight.core.message.CoreMessageSource;
 import it.getinsight.module.level.client.FeignClientFactory;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
-import it.getinsight.module.level.dto.LevelDTO;
-import it.getinsight.module.level.dto.LevelFilterDTO;
-import it.getinsight.module.level.dto.ItemDTO;
-import it.getinsight.module.level.dto.ItemFilterDTO;
+import it.getinsight.module.level.dto.*;
 import it.getinsight.module.level.entity.LevelEntity;
 import it.getinsight.module.level.entity.LevelType;
 import it.getinsight.module.level.entity.ItemEntity;
-import it.getinsight.module.level.mapper.LevelFilterMapper;
-import it.getinsight.module.level.mapper.LevelMapper;
-import it.getinsight.module.level.mapper.ItemFilterMapper;
-import it.getinsight.module.level.mapper.ItemMapper;
+import it.getinsight.module.level.mapper.*;
 import it.getinsight.module.level.repository.LevelRepository;
 import it.getinsight.module.level.repository.ItemRepository;
 import jakarta.servlet.http.HttpServletResponse;
@@ -47,12 +42,14 @@ public class LevelService {
     private final LevelRepository levelRepository;
     private final ItemRepository itemRepository;
     private final LevelMapper levelMapper;
+    private final LevelResponseMapper levelResponseMapper;
+    private final LevelHierarchyResponseMapper levelHierarchyResponseMapper;
     private final ItemMapper itemMapper;
     private final ItemFilterMapper itemFilterMapper;
     private final LevelFilterMapper levelFilterMapper;
     private final FeignClientFactory feignClientFactory;
 
-    public PageableResponseModel<LevelDTO> getAllPaginatedLevels(PageableRequestModel<LevelFilterDTO> configPage) {
+    public PageableResponseModel<LevelResponseDTO> getAllPaginatedLevels(PageableRequestModel<LevelFilterDTO> configPage) {
         final var filter = configPage.getFilter();
         final var model = filter
             .map(levelFilterMapper::toDto)
@@ -69,54 +66,26 @@ public class LevelService {
         final var example = Example.of(model, matcher);
 
         final var page = levelRepository.findAll(example, PaginationHelper.toPageable(configPage));
-        return PaginationHelper.toPageResponse(levelMapper.toDto(page.getContent()), page.getTotalElements());
+        return PaginationHelper.toPageResponse(levelResponseMapper.toDto(page.getContent()), page.getTotalElements());
     }
 
-    public List<LevelDTO> getHierarchy(Long id) {
-        var hierarchy = Stream.iterate(levelRepository.findById(id).orElseThrow(level_NOT_FOUND_ERROR::businessException),
+    public List<LevelResponseDTO> getHierarchy(Long id) {
+        var hierarchy = Stream.iterate(levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException),
                 Objects::nonNull,
                 LevelEntity::getParent)
             .collect(Collectors.toList());
 
         Collections.reverse(hierarchy);
-        return levelMapper.toDto(hierarchy);
+        return levelResponseMapper.toDto(hierarchy);
     }
 
 
 
-    public LevelDTO findById(Long id) {
-        return levelRepository.findById(id).map(levelMapper::toDto).orElse(null);
+    public LevelResponseDTO findById(Long id) {
+        return levelRepository.findById(id).map(levelHierarchyResponseMapper::toDto).orElse(null);
     }
 
-    public PageableResponseModel<ItemDTO> getItemsPaginatedByLevel(Long levelId, PageableRequestModel<ItemFilterDTO> configPage) {
-        var levelEntity = levelRepository.findById(levelId).orElseThrow(level_NOT_FOUND_ERROR::businessException);
 
-        if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
-            var client = feignClientFactory.createClient(levelEntity.getExternalUrl());
-            return client.getItems(  levelEntity.getApiKey(), configPage.getPageNumber() + 1, configPage.getPageSize(), configPage.getSortField(), configPage.getSortType(), configPage.getFilter().orElse(null));
-        }
-
-        var filter = configPage.getFilter();
-        var model = filter
-            .map(itemFilterMapper::toDto)
-            .map(itemMapper::toEntity)
-            .orElse(new ItemEntity());
-
-        final var matcher = ExampleMatcher
-            .matchingAll()
-            .withIgnoreNullValues()
-            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("externalCode", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("level.id", ExampleMatcher.GenericPropertyMatcher::exact);
-        model.setLevel(LevelEntity.builder().id(levelId).build());
-
-        final var example = Example.of(model, matcher);
-
-
-        final var page = itemRepository.findAll(example, PaginationHelper.toPageable(configPage));
-        return PaginationHelper.toPageResponse(itemMapper.toDto(page.getContent()), page.getTotalElements());
-    }
 
     public PageableResponseModel<ItemDTO> getSubItemsPaginatedByLevel(Long levelId,Long itemId, PageableRequestModel<ItemFilterDTO> configPage) {
         var filter = configPage.getFilter();
@@ -145,7 +114,10 @@ public class LevelService {
     @Transactional(propagation = Propagation.REQUIRED)
     public LevelDTO create(LevelDTO levelDTO) {
         if (LevelType.BUILT_IN.equals(levelDTO.type())) {
-            throw CREATE_BUILT_IN_level.businessException();
+            throw CREATE_BUILT_IN_LEVEL.businessException();
+        }
+        if (Boolean.TRUE.equals(levelRepository.existsByName(levelDTO.name()))) {
+            throw LEVEL_ALREADY_EXISTS_ERROR.businessException();
         }
         var entity = levelMapper.toEntity(levelDTO);
         return levelMapper.toDto(levelRepository.save(entity));
@@ -181,14 +153,14 @@ public class LevelService {
                 }).toList();
             levelRepository.saveAll(levels);
         } catch (Exception e) {
-            log.error("Erro ao importar CSV", e);
+            log.error(CoreMessageSource.get().message(ERROR_IMPORT_CSV.key()), e);
             throw ERROR_IMPORT_CSV.businessException();
         }
     }
 
-    public void exportLevels(HttpServletResponse response) {
+    public void exportLevels(ExportationFilterDTO filter, HttpServletResponse response) {
         try {
-            List<LevelEntity> levels = levelRepository.findAll();
+            var levels = levelRepository.findByNameIn(filter.namesLevels());
             OutputStreamWriter writer = new OutputStreamWriter(response.getOutputStream(), StandardCharsets.UTF_8);
             writer.write("id,uuid,parentId,sigla,name,description,type,apiKey\n");
             for (LevelEntity level : levels) {
@@ -204,7 +176,7 @@ public class LevelService {
             }
             writer.flush();
         } catch (Exception e) {
-            log.error("Erro ao exportar CSV", e);
+            log.error(CoreMessageSource.get().message(ERROR_EXPORT_CSV.key()), e);
             throw ERROR_EXPORT_CSV.businessException();
         }
     }
@@ -212,10 +184,10 @@ public class LevelService {
     @Transactional(propagation = Propagation.REQUIRED)
     public void update(Long id, LevelDTO levelDTO) {
         if (LevelType.BUILT_IN.equals(levelDTO.type())) {
-            throw UPDATE_BUILT_IN_level.businessException();
+            throw UPDATE_BUILT_IN_LEVEL.businessException();
         }
         if (levelRepository.existsById(id)) {
-            var levelEntity = levelRepository.findById(id).orElseThrow(level_NOT_FOUND_ERROR::businessException);
+            var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
             levelMapper.fromDto(levelDTO, levelEntity);
             levelEntity.setId(id);
             levelRepository.save(levelEntity);
@@ -225,7 +197,7 @@ public class LevelService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public ItemDTO createItem(Long id, ItemDTO itemDTO) {
-        var level = levelRepository.findById(id).orElseThrow(level_NOT_FOUND_ERROR::businessException);
+        var level = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
         if (LevelType.BUILT_IN.equals(level.getType())) {
             throw CREATE_BUILT_IN_ITEM.businessException();
         }
@@ -235,12 +207,27 @@ public class LevelService {
     }
 
     public ItemDTO getItemById(Long id, String itemId) {
-        var levelEntity = levelRepository.findById(id).orElseThrow(level_NOT_FOUND_ERROR::businessException);
+        var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
         if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
             feignClientFactory.createClient(levelEntity.getExternalUrl()).getItemByExternalCode(levelEntity.getApiKey(), itemId);
         }
         var entity = itemRepository.findByLevelIdAndId(id, Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
         return itemMapper.toDto(entity);
+    }
+
+    public void delete(Long id) {
+        if (levelRepository.existsById(id)) {
+            var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+            levelRepository.softDelete(levelEntity.getId());
+        }
+    }
+
+    public void deleteItem(Long id, String itemId) {
+        var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        if (!LevelType.EXTERNAL.equals(levelEntity.getType())) {
+            var itemEntity = itemRepository.findByLevelIdAndId(id, Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+            itemRepository.softDelete(itemEntity.getId());
+        }
     }
 }
 
