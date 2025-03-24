@@ -1,11 +1,13 @@
 package it.getinsight.module.configuration.mapper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import it.getinsight.core.dynamicquery.model.mapper.BaseGenericObjectMapper;
 import it.getinsight.core.model.mapper.BaseMapper;
 import it.getinsight.module.configuration.dto.ConfigurationDTO;
 import it.getinsight.module.configuration.entity.ConfigurationEntity;
 import org.mapstruct.*;
 
+import java.sql.Clob;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -30,64 +32,17 @@ public interface ConfigurationMapper extends BaseMapper<ConfigurationEntity, Con
         expression = "java(toString( value, 2 ))"
     )
     @Mapping(
-        target = "icon",
-        expression = "java(toString( value, 3 ))"
-    )
-    @Mapping(
-        target = "authority",
-        expression = "java(toString( value, 4 ))"
-    )
-    @Mapping(
-        target = "redirectUrl",
-        expression = "java(toString( value, 5 ))"
-    )
-    @Mapping(
-        target = "clientId",
-        expression = "java(toString( value, 6 ))"
-    )
-    @Mapping(
-        target = "responseType",
-        expression = "java(toString( value, 7 ))"
-    )
-    @Mapping(
-        target = "scope",
-        expression = "java(toString( value, 8 ))"
-    )
-    @Mapping(
-        target = "postLogoutRedirectUri",
-        expression = "java(toString( value, 9 ))"
-    )
-    @Mapping(
-        target = "startChecksession",
-        expression = "java(toBooleanFromSimNao( value, 10 ))"
-    )
-    @Mapping(
-        target = "silentRenew",
-        expression = "java(toBooleanFromSimNao( value, 11 ))"
-    )
-    @Mapping(
-        target = "startupRoute",
-        expression = "java(toString( value, 12 ))"
-    )
-    @Mapping(
-        target = "forbiddenRoute",
-        expression = "java(toString( value, 13 ))"
-    )
-    @Mapping(
-        target = "unauthorizedRoute",
-        expression = "java(toString( value, 14 ))"
-    )
-    @Mapping(
-        target = "logLevel",
-        expression = "java(toInteger( value, 15 ))"
-    )
-    @Mapping(
-        target = "maxIdTokenIatOffsetAllowedInSeconds",
-        expression = "java(toInteger( value, 16 ))"
-    )
-    @Mapping(
-        target = "historyCleanupOff",
-        expression = "java(toBooleanFromSimNao( value, 17 ))"
+        target = "value",
+        expression = "java(toJsonNode( value, 3))"
     )
     ConfigurationDTO toMap(Object value);
+
+
+
+    default JsonNode toJsonNode(Object valor, int pos) {
+        Object[] value = (Object[]) valor;
+        return (JsonNode) value[pos];
+    }
+
+
 }

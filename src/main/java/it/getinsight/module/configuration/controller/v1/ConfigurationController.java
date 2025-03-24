@@ -37,20 +37,6 @@ public class ConfigurationController {
         return ResponseEntity.created(uri).build();
     }
 
-    @PutMapping("/{id}")
-    @Operation(summary = "Updates a configuration.", responses = {
-        @ApiResponse(responseCode = "204", description = "Configuration successfully updated."),
-        @ApiResponse(responseCode = "400", description = "Invalid request."),
-        @ApiResponse(responseCode = "401", description = "Unauthorized."),
-        @ApiResponse(responseCode = "403", description = "Forbidden."),
-        @ApiResponse(responseCode = "404", description = "Configuration not found."),
-        @ApiResponse(responseCode = "500", description = "Internal server error.")
-    })
-    public ResponseEntity<Void> update(@PathVariable Long id, @Valid @RequestBody ConfigurationDTO configurationDTO) {
-        configurationService.update(id, configurationDTO);
-        return ResponseEntity.noContent().build();
-    }
-
     @DeleteMapping("/{id}")
     @Operation(summary = "Removes a configuration.", responses = {
         @ApiResponse(responseCode = "204", description = "Configuration successfully removed."),
@@ -79,16 +65,4 @@ public class ConfigurationController {
         return ResponseEntity.ok(configurationDTO);
     }
 
-    @GetMapping
-    @Operation(summary = "Fetches all configurations.", responses = {
-        @ApiResponse(responseCode = "200", description = "Configurations found.", content = @Content(schema = @Schema(implementation = ConfigurationDTO.class))),
-        @ApiResponse(responseCode = "400", description = "Invalid request."),
-        @ApiResponse(responseCode = "401", description = "Unauthorized."),
-        @ApiResponse(responseCode = "403", description = "Forbidden."),
-        @ApiResponse(responseCode = "500", description = "Internal server error.")
-    })
-    public ResponseEntity<List<ConfigurationDTO>> findAll() {
-        var configurations = configurationService.getAllConfigurationsDynamicQuery();
-        return ResponseEntity.ok(configurations);
-    }
 }
