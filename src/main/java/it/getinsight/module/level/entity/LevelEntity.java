@@ -63,5 +63,6 @@ public class LevelEntity extends BaseEntity<Long> {
     @PrePersist
     public void prePersist() {
         this.uuid = UUID.randomUUID();
+        this.active = true;
     }
 }

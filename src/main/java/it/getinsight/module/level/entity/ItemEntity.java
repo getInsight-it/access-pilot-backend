@@ -52,5 +52,6 @@ public class ItemEntity extends AuditableEntity<Long, String> {
     @PrePersist
     public void prePersist() {
         this.uuid = UUID.randomUUID();
+        this.active = true;
     }
 }
