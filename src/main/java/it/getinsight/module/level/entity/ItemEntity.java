@@ -3,6 +3,9 @@ package it.getinsight.module.level.entity;
 import it.getinsight.core.model.jpa.entity.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLJoinTableRestriction;
+import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.Subselect;
 import org.hibernate.envers.Audited;
 
 import java.util.UUID;
@@ -42,6 +45,9 @@ public class ItemEntity extends AuditableEntity<Long, String> {
 
     @Column(name = "DESCRICAO")
     private String description;
+
+    @Column(name = "ATIVO")
+    private Boolean active;
 
     @PrePersist
     public void prePersist() {

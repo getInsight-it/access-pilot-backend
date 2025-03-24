@@ -1,7 +1,5 @@
 package it.getinsight.module.configuration.service;
 
-import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
-import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
@@ -10,8 +8,10 @@ import it.getinsight.module.configuration.mapper.ConfigurationMapper;
 import it.getinsight.module.configuration.repository.ConfigurationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import static it.getinsight.message.MessageProperty.ERROR_CONFIGURATION_NOT_FOUND;
 
 
 @Service
@@ -21,27 +21,21 @@ public class ConfigurationService {
     private final ConfigurationRepository configurationRepository;
     private final ConfigurationMapper configurationMapper;
 
-    private static final String NAME_QUERY_FIND_ALL_CONFIGURATIONS = "find-all-configurations";
-
+    @Transactional(propagation = Propagation.REQUIRED)
     public ConfigurationDTO create(ConfigurationDTO configurationDTO) {
         var configurationEntity = configurationMapper.toEntity(configurationDTO);
         configurationEntity = configurationRepository.save(configurationEntity);
         return configurationMapper.toDto(configurationEntity);
     }
 
-    public void update(Long id, ConfigurationDTO configurationDTO) {
-        var configurationEntity = configurationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Configuração não encontrada"));
-        configurationMapper.fromDto(configurationDTO, configurationEntity);
-        configurationRepository.save(configurationEntity);
-    }
-
+    @Transactional(propagation = Propagation.REQUIRED)
     public void delete(Long id) {
-        var configurationEntity = configurationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Configuração não encontrada"));
-        configurationRepository.delete(configurationEntity);
+        var configurationEntity = configurationRepository.findById(id).orElseThrow(ERROR_CONFIGURATION_NOT_FOUND::businessException);
+        configurationRepository.softDelete(configurationEntity.getId());
     }
 
     public ConfigurationDTO findById(Long id) {
-        var configurationEntity = configurationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Configuração não encontrada"));
+        var configurationEntity = configurationRepository.findById(id).orElseThrow(ERROR_CONFIGURATION_NOT_FOUND::businessException);
         return configurationMapper.toDto(configurationEntity);
     }
 
@@ -49,12 +43,6 @@ public class ConfigurationService {
     public PageableResponseModel<ConfigurationDTO> findAll(PageableRequestModel<String> configPage) {
         final var page = configurationRepository.findAll(PaginationHelper.toPageable(configPage));
         return PaginationHelper.toPageResponse(configurationMapper.toDto(page.getContent()), page.getTotalElements());
-    }
-
-
-    public List<ConfigurationDTO> getAllConfigurationsDynamicQuery() {
-        final var parameters = DynamicParameters.get();
-        return configurationRepository.findAllNative(NAME_QUERY_FIND_ALL_CONFIGURATIONS, parameters, configurationMapper);
     }
 
 

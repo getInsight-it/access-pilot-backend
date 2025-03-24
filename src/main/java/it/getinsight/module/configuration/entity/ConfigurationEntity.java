@@ -1,17 +1,26 @@
 package it.getinsight.module.configuration.entity;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.vladmihalcea.hibernate.type.json.JsonType;
 import it.getinsight.core.model.jpa.entity.AuditableEntity;
+import it.getinsight.module.configuration.util.HashMapConverter;
+import it.getinsight.module.notification.enums.NotificationType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.Type;
 import org.hibernate.envers.Audited;
 
 import java.io.Serial;
+import java.util.Map;
+import java.util.UUID;
 
 @Getter
 @Setter
 @Entity
 @Audited
+@SQLRestriction(value = "ACTIVE = true")
 @Table(name = "TB_CONFIGURATION")
 @SequenceGenerator(name = "ConfigurationEntity.sq", sequenceName = "SQ_CONFIGURATION", allocationSize = 1)
 public class ConfigurationEntity extends AuditableEntity<Long, String> {
@@ -23,55 +32,26 @@ public class ConfigurationEntity extends AuditableEntity<Long, String> {
     @GeneratedValue(generator = "ConfigurationEntity.sq", strategy = GenerationType.SEQUENCE)
     private Long id;
 
-    @Column(name = "NAME")
+    @Column(name = "UUID")
+    private UUID uuid;
+
+    @Column(name = "NAME", nullable = false)
     private String name;
 
     @Column(name = "DESCRIPTION")
     private String description;
 
-    @Column(name = "ICON")
-    private String icon;
 
-    @Column(name = "AUTHORITY")
-    private String authority;
+    @Column(name = "value", columnDefinition = "jsonb")
+    @Type(JsonType.class)
+    private JsonNode value;
 
-    @Column(name = "REDIRECT_URL")
-    private String redirectUrl;
+    @Column(name = "ACTIVE")
+    private Boolean active = true;
 
-    @Column(name = "CLIENT_ID")
-    private String clientId;
-
-    @Column(name = "RESPONSE_TYPE")
-    private String responseType;
-
-    @Column(name = "SCOPE")
-    private String scope;
-
-    @Column(name = "POST_LOGOUT_REDIRECT_URI")
-    private String postLogoutRedirectUri;
-
-    @Column(name = "START_CHECKSESSION")
-    private Boolean startChecksession;
-
-    @Column(name = "SILENT_RENEW")
-    private Boolean silentRenew;
-
-    @Column(name = "STARTUP_ROUTE")
-    private String startupRoute;
-
-    @Column(name = "FORBIDDEN_ROUTE")
-    private String forbiddenRoute;
-
-    @Column(name = "UNAUTHORIZED_ROUTE")
-    private String unauthorizedRoute;
-
-    @Column(name = "LOG_LEVEL")
-    private Integer logLevel;
-
-    @Column(name = "MAX_ID_TOKEN_IAT_OFFSET_ALLOWED_IN_SECONDS")
-    private Integer maxIdTokenIatOffsetAllowedInSeconds;
-
-    @Column(name = "HISTORY_CLEANUP_OFF")
-    private Boolean historyCleanupOff;
+    @PrePersist
+    public void prePersist() {
+        this.uuid = UUID.randomUUID();
+    }
 
 }

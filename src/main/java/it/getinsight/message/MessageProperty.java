@@ -27,13 +27,22 @@ public enum MessageProperty implements IMessageProperty {
     NOTIFICATION_NOT_FOUND_ERROR("notification.not.found"),
     ERROR_IMPORT_CSV("error.import"),
     ERROR_EXPORT_CSV("error.export"),
-    level_NOT_FOUND_ERROR("level.not.found"),
-    UPDATE_BUILT_IN_level("error.update.built.in.level"),
+    LEVEL_NOT_FOUND_ERROR("level.not.found"),
+    UPDATE_BUILT_IN_LEVEL("error.update.built.in.level"),
     UPDATE_BUILT_IN_ITEM("error.update.built.in.level.parent"),
     CREATE_BUILT_IN_ITEM("error.create.built.in.level.parent"),
-    CREATE_BUILT_IN_level("error.create.built.in.level"),
+    CREATE_BUILT_IN_LEVEL("error.create.built.in.level"),
     ROLE_INVALID_CODE_ERROR("role.invalid.code"),
-    ITEM_NOT_FOUND_ERROR("item.not.found");
+    ITEM_NOT_FOUND_ERROR("item.not.found"),
+    LEVEL_ALREADY_EXISTS_ERROR("level.already.exists"),
+    ERROR_WRITING_JSON("error.writing.json"),
+    ERROR_READING_JSON("error.reading.json"),
+    ERROR_CONFIGURATION_NOT_FOUND("error.configuration.not.found"),
+    ERROR_CONFIGURATION_UPDATE("error.configuration.update"),
+    ERROR_CONFIGURATION_CREATE("error.configuration.create"),
+    ERROR_CONFIGURATION_DELETE("error.configuration.delete"),
+    NOTIFICATION_NOT_FOUND("notification.not.found"),
+    ;
 
     private final String key;
 
