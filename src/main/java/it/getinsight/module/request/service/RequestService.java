@@ -320,7 +320,7 @@ public class RequestService {
     }
 
     public void sendNotificationStatusToUser(RequestEntity requestEntity, Map<String, Object> variables) {
-        var requestingUserDTO = Optional.of(requestEntity.getRequestingUser()).map(userMapper::toDto).orElseThrow(() -> new BusinessException("Não foi possivel converter o usuário"));
+        var requestingUserDTO = Optional.of(requestEntity.getRequestingUser()).map(userMapper::toDto).orElseThrow(() -> new BusinessException("Não foi possivel util o usuário"));
         notificationService.send(EmailDTO.builder()
             .to(requestingUserDTO.email())
             .subject(emailNotificationProperties.getStatusRequest().getSubject())
