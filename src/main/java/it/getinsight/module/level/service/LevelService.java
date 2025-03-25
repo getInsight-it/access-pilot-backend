@@ -46,6 +46,7 @@ public class LevelService {
     private final LevelHierarchyResponseMapper levelHierarchyResponseMapper;
     private final ItemMapper itemMapper;
     private final ItemFilterMapper itemFilterMapper;
+    private final ItemHierarchyMapper itemHierarchyMapper;
     private final LevelFilterMapper levelFilterMapper;
     private final FeignClientFactory feignClientFactory;
 
@@ -206,13 +207,13 @@ public class LevelService {
         return itemMapper.toDto(itemRepository.save(entity));
     }
 
-    public ItemDTO getItemById(Long id, String itemId) {
+    public ItemHierarchyDTO getItemById(Long id, String itemId) {
         var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
         if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
             feignClientFactory.createClient(levelEntity.getExternalUrl()).getItemByExternalCode(levelEntity.getApiKey(), itemId);
         }
         var entity = itemRepository.findByLevelIdAndId(id, Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
-        return itemMapper.toDto(entity);
+        return itemHierarchyMapper.toDto(entity);
     }
 
     public void delete(Long id) {

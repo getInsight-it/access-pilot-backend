@@ -3,6 +3,7 @@ package it.getinsight.module.level.client;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.level.dto.ItemDTO;
 import it.getinsight.module.level.dto.ItemFilterDTO;
+import it.getinsight.module.level.dto.ItemHierarchyDTO;
 import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +14,7 @@ import java.util.Optional;
 public interface LevelClient {
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    PageableResponseModel<ItemDTO> getItems(
+    PageableResponseModel<ItemHierarchyDTO> getItems(
         @RequestHeader(name = "apiKey", required = false) String apiKey,
         @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
