@@ -8,10 +8,12 @@ import it.getinsight.module.level.client.FeignClientFactory;
 import it.getinsight.module.level.dto.ItemDTO;
 import it.getinsight.module.level.dto.ExportationFilterDTO;
 import it.getinsight.module.level.dto.ItemFilterDTO;
+import it.getinsight.module.level.dto.ItemHierarchyDTO;
 import it.getinsight.module.level.entity.LevelEntity;
 import it.getinsight.module.level.entity.LevelType;
 import it.getinsight.module.level.entity.ItemEntity;
 import it.getinsight.module.level.mapper.ItemFilterMapper;
+import it.getinsight.module.level.mapper.ItemHierarchyMapper;
 import it.getinsight.module.level.mapper.ItemMapper;
 import it.getinsight.module.level.repository.LevelRepository;
 import it.getinsight.module.level.repository.ItemRepository;
@@ -46,9 +48,10 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final FeignClientFactory feignClientFactory;
     private final ItemMapper itemMapper;
+    private final ItemHierarchyMapper itemHierarchyMapper;
     private final ItemFilterMapper itemFilterMapper;
 
-    public PageableResponseModel<ItemDTO> getItemsPaginatedByLevel(Long levelId, PageableRequestModel<ItemFilterDTO> configPage) {
+    public PageableResponseModel<ItemHierarchyDTO> getItemsPaginatedByLevel(Long levelId, PageableRequestModel<ItemFilterDTO> configPage) {
         var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
 
         if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
@@ -76,7 +79,7 @@ public class ItemService {
 
 
         final var page = itemRepository.findAll(example, PaginationHelper.toPageable(configPage));
-        return PaginationHelper.toPageResponse(itemMapper.toDto(page.getContent()), page.getTotalElements());
+        return PaginationHelper.toPageResponse(itemHierarchyMapper.toDto(page.getContent()), page.getTotalElements());
     }
 
 

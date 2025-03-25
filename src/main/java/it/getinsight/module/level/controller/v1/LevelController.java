@@ -109,7 +109,7 @@ public class LevelController {
     @Operation(summary = "Retrieve items of a level", description = "Retrieve items related to a level")
     @GetMapping(value = "{id}/items", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<PageableResponseModel<ItemDTO>> getItemsPaginatedByLevel(@PathVariable Long id,
+    public ResponseEntity<PageableResponseModel<ItemHierarchyDTO>> getItemsPaginatedByLevel(@PathVariable Long id,
                                                                    @RequestParam(defaultValue = "1") Integer pageIndex,
                                                                    @RequestParam(defaultValue = "10") Integer pageSize,
                                                                    @RequestParam(defaultValue = "id") String sortField,
@@ -122,7 +122,7 @@ public class LevelController {
     @Operation(summary = "Retrieve items of a level", description = "Retrieve items related to a level")
     @GetMapping(value = "{id}/items/{itemId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ItemDTO> getItemById(@PathVariable Long id, @PathVariable String itemId
+    public ResponseEntity<ItemHierarchyDTO> getItemById(@PathVariable Long id, @PathVariable String itemId
     ) {
         return ResponseEntity.ok(levelService.getItemById(id, itemId));
     }
