@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_066" author="luan.rodrigues@getinsight.it">
+
+        <renameTable oldTableName="TB_CONFIGURATION" newTableName="TB_CONFIGURACAO"/>
+
+        <renameColumn tableName="TB_CONFIGURACAO" oldColumnName="VALUE" newColumnName="VALOR" columnDataType="JSONB"/>
+        <renameColumn tableName="TB_CONFIGURACAO" oldColumnName="ACTIVE" newColumnName="ATIVO" columnDataType="BOOLEAN"/>
+        <renameColumn tableName="TB_CONFIGURACAO" oldColumnName="DESCRIPTION" newColumnName="DESCRICAO" columnDataType="VARCHAR(255)"/>
+        <renameColumn tableName="TB_CONFIGURACAO" oldColumnName="NAME" newColumnName="NOME" columnDataType="VARCHAR(255)"/>
+
+        <rollback>
+            <renameColumn tableName="TB_CONFIGURACAO" oldColumnName="VALOR" newColumnName="VALUE" columnDataType="JSONB"/>
+            <renameColumn tableName="TB_CONFIGURACAO" oldColumnName="ATIVO" newColumnName="ACTIVE" columnDataType="BOOLEAN"/>
+            <renameColumn tableName="TB_CONFIGURACAO" oldColumnName="DESCRICAO" newColumnName="DESCRIPTION" columnDataType="VARCHAR(255)"/>
+            <renameTable oldTableName="TB_CONFIGURACAO" newTableName="TB_CONFIGURATION"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

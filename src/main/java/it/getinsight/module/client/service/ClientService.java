@@ -7,11 +7,14 @@ import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.dto.ClientDTO;
+import it.getinsight.module.client.dto.ClientFullResponseDTO;
 import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.client.entity.ClientStatus;
+import it.getinsight.module.client.mapper.ClientFullResponseMapper;
 import it.getinsight.module.client.mapper.ClientMapper;
 import it.getinsight.module.client.mapper.ClientRepresentationMapper;
 import it.getinsight.module.client.repository.ClientRepository;
+import it.getinsight.module.configuration.entity.ConfigurationEntity;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.config.KeycloakProperties;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
@@ -44,6 +47,7 @@ import static it.getinsight.message.MessageProperty.CLIENT_NOT_FOUND_ERROR;
 public class ClientService {
 
     public static final String IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED = "acl.client.managed";
+    public static final String IDP_KEYCLOAK_NAME_CONFIGURATION_ID = "configurationId";
     private final ClientRepository clientRepository;
     private final ClientMapper clientMapper;
     private final RoleService roleService;
@@ -52,6 +56,7 @@ public class ClientService {
     private static final String NAME_QUERY_FIND_ALL_CLIENTS = "find-all-clients";
     private final KeycloakProperties keycloakProperties;
     private final MappingsEndpoint mappingsEndpoint;
+    private final ClientFullResponseMapper clientFullResponseMapper;
 
 
     public List<ClientDTO> getAllClientsDynamicQuery() {
@@ -104,9 +109,9 @@ public class ClientService {
     }
 
     @Cacheable(value = "clients", key = "#id")
-    public ClientDTO findById(Long id) {
+    public ClientFullResponseDTO findById(Long id) {
         var entity = clientRepository.findById(id).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
-        return clientMapper.toDto(entity);
+        return clientFullResponseMapper.toDto(entity);
     }
 
     @Cacheable(value = "clients", key = "#clientId")
@@ -127,15 +132,16 @@ public class ClientService {
             .filter(obj -> clientEntities.stream().anyMatch(c -> Objects.equals(c.getClientId(), obj.getClientId()))).toList();
         clients.forEach(this::synchronize);
     }
-
-    @Transactional(propagation = Propagation.REQUIRED)
+    //@Transactional(propagation = Propagation.REQUIRED)
     @CacheEvict(value = "clients", allEntries = true)
     public ClientEntity synchronize(ClientRepresentationDTO client) {
         var entity = clientRepository.findByClientId(client.getClientId()).orElse(new ClientEntity());
+        var configurationId = client.getAttributes().get(IDP_KEYCLOAK_NAME_CONFIGURATION_ID);
         entity.setClientUUID(client.getId());
         entity.setDescription(client.getDescription());
         entity.setClientId(client.getClientId());
         entity.setManaged("true".equals(client.getAttributes().get(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED)));
+        entity.setConfiguration(configurationId == null ? null : ConfigurationEntity.builder().id(Long.parseLong(configurationId)).build());
         entity.setBaseUrl(client.getBaseUrl());
         var clientEntity = clientRepository.save(entity);
         roleService.synchronizeRoles(Collections.singletonList(client.getClientId()));
@@ -159,7 +165,8 @@ public class ClientService {
 
     private ClientDTO handleManagedClient(ClientEntity entity) {
         var existingClients = keycloakClient.getClientsByClientId(entity.getClientId());
-        if (!existingClients.isEmpty()) {
+        final boolean hasClient = !existingClients.isEmpty();
+        if (hasClient) {
             var clientRepresentationDTO = existingClients.getFirst();
             return clientMapper.toDto(synchronize(clientRepresentationDTO));
         } else {
@@ -172,20 +179,19 @@ public class ClientService {
 
 
     @CacheEvict(value = "clients", allEntries = true)
-    public void updateManaged(Long id, ClientDTO clientDTO) {
-        var entity = clientRepository.findById(id).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
-        if (BooleanUtils.isTrue(clientDTO.managed()) && StringUtils.isBlank(entity.getClientUUID())) {
-            handleManagedClient(entity);
+    public void updateManaged(Long id, ClientDTO clientUpdatedDTO) {
+        var entityUpdated = clientRepository.findById(id).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
+        if (BooleanUtils.isTrue(clientUpdatedDTO.managed()) && StringUtils.isBlank(entityUpdated.getClientUUID())) {
+            handleManagedClient(entityUpdated);
             return;
         }
-        var client = keycloakClient.getClientsByClientId(entity.getClientId()).getFirst();
-//        client.getAttributes().put(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED, clientDTO.managed().toString());
-        clientMapper.fromDtoWithoutImmutableFields(clientDTO, entity);
-        entity.setClientUUID(client.getId());
-        clientRepresentationMapper.toDto(entity, client);
-        Optional.of(entity).map(clientMapper::toDto).ifPresent(o -> clientRepresentationMapper.fromDtoRepresentation(o, client));
+        var client = keycloakClient.getClientsByClientId(entityUpdated.getClientId()).getFirst();
+        clientMapper.fromDtoWithoutImmutableFields(clientUpdatedDTO, entityUpdated);
+        entityUpdated.setClientUUID(client.getId());
+        clientRepresentationMapper.toDto(entityUpdated, client);
+        Optional.of(entityUpdated).map(clientMapper::toDto).ifPresent(o -> clientRepresentationMapper.fromDtoRepresentation(o, client));
         keycloakClient.updateClient(client.getId(), client);
-        handleManagedClient(entity);
+        handleManagedClient(entityUpdated);
     }
 
     @Cacheable(value = "getTotalClients")

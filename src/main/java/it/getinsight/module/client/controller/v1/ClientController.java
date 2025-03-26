@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.dto.ClientDTO;
+import it.getinsight.module.client.dto.ClientFullResponseDTO;
 import it.getinsight.module.client.dto.ClientStatusUpdateDTO;
 import it.getinsight.module.client.service.ClientService;
 import lombok.RequiredArgsConstructor;
@@ -77,7 +78,7 @@ public class ClientController {
         description = "Retrieve a client by ID"
     )
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ClientDTO> getClientById(@PathVariable Long id) {
+    public ResponseEntity<ClientFullResponseDTO> getClientById(@PathVariable Long id) {
         return ResponseEntity.ok(clientService.findById(id));
     }
 

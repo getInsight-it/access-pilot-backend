@@ -1,5 +1,7 @@
 package it.getinsight.module.client.dto;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import it.getinsight.module.configuration.dto.ConfigurationDTO;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
@@ -7,7 +9,7 @@ import lombok.Builder;
 import java.io.Serializable;
 
 @Builder
-public record ClientDTO(
+public record ClientFullResponseDTO(
 
     Long id,
 
@@ -38,8 +40,6 @@ public record ClientDTO(
     @Size(min = 3, max = 255)
     String baseUrl,
 
-    @NotEmpty
-    @Size(min = 3, max = 100)
-    Long configurationId
+    ConfigurationDTO configuration
 
 ) implements Serializable {}
