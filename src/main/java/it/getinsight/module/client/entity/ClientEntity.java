@@ -2,6 +2,7 @@ package it.getinsight.module.client.entity;
 
 
 import it.getinsight.core.model.jpa.entity.BaseEntity;
+import it.getinsight.module.configuration.entity.ConfigurationEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
@@ -48,5 +49,9 @@ public class ClientEntity extends BaseEntity<Long> {
 
     @Column(name = "BASE_URL")
     private String baseUrl;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CONFIGURACAO_ID")
+    private ConfigurationEntity configuration;
 
 }

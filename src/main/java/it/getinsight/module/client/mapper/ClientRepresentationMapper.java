@@ -26,6 +26,7 @@ public interface ClientRepresentationMapper extends BaseMapper<ClientRepresentat
         obj.setBaseUrl(dto.baseUrl() );
         if (obj.getAttributes() != null) {
             obj.getAttributes().put("acl.client.managed", String.valueOf(dto.managed()));
+            obj.getAttributes().put("configurationId", dto.configurationId() == null ? null : String.valueOf(dto.configurationId()));
         }
     }
 
@@ -61,6 +62,10 @@ public interface ClientRepresentationMapper extends BaseMapper<ClientRepresentat
     @Mapping(
         source = "obj.baseUrl",
         target = "baseUrl"
+    )
+    @Mapping(
+        source = "entity.configuration.id",
+        target = "configurationId"
     )
     ClientDTO toDto(ClientEntity entity, ClientRepresentationDTO obj);
 

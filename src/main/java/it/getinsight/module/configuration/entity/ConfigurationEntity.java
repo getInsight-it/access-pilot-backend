@@ -6,8 +6,7 @@ import it.getinsight.core.model.jpa.entity.AuditableEntity;
 import it.getinsight.module.configuration.util.HashMapConverter;
 import it.getinsight.module.notification.enums.NotificationType;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.Type;
 import org.hibernate.envers.Audited;
@@ -20,8 +19,11 @@ import java.util.UUID;
 @Setter
 @Entity
 @Audited
-@SQLRestriction(value = "ACTIVE = true")
-@Table(name = "TB_CONFIGURATION")
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@SQLRestriction(value = "ATIVO = true")
+@Table(name = "TB_CONFIGURACAO")
 @SequenceGenerator(name = "ConfigurationEntity.sq", sequenceName = "SQ_CONFIGURATION", allocationSize = 1)
 public class ConfigurationEntity extends AuditableEntity<Long, String> {
     @Serial
@@ -35,18 +37,18 @@ public class ConfigurationEntity extends AuditableEntity<Long, String> {
     @Column(name = "UUID")
     private UUID uuid;
 
-    @Column(name = "NAME", nullable = false)
+    @Column(name = "NOME", nullable = false)
     private String name;
 
-    @Column(name = "DESCRIPTION")
+    @Column(name = "DESCRICAO")
     private String description;
 
 
-    @Column(name = "value", columnDefinition = "jsonb")
+    @Column(name = "VALOR", columnDefinition = "jsonb")
     @Type(JsonType.class)
     private JsonNode value;
 
-    @Column(name = "ACTIVE")
+    @Column(name = "ATIVO")
     private Boolean active = true;
 
     @PrePersist

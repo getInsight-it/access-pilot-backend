@@ -45,8 +45,8 @@ public class LevelService {
     private final LevelResponseMapper levelResponseMapper;
     private final LevelHierarchyResponseMapper levelHierarchyResponseMapper;
     private final ItemMapper itemMapper;
-    private final ItemFilterMapper itemFilterMapper;
     private final ItemHierarchyMapper itemHierarchyMapper;
+    private final ItemFilterMapper itemFilterMapper;
     private final LevelFilterMapper levelFilterMapper;
     private final FeignClientFactory feignClientFactory;
 

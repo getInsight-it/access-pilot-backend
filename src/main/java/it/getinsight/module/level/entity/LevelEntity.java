@@ -65,4 +65,8 @@ public class LevelEntity extends BaseEntity<Long> {
         this.uuid = UUID.randomUUID();
         this.active = true;
     }
+
+    // criar em anexo referencia da configuracao e a key
+    // relacionamento com sistema e configuracao
+    // criar um certo tipo de tipagem na criacao da cofiguracao
 }
