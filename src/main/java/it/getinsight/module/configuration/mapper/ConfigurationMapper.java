@@ -7,7 +7,6 @@ import it.getinsight.module.configuration.dto.ConfigurationDTO;
 import it.getinsight.module.configuration.entity.ConfigurationEntity;
 import org.mapstruct.*;
 
-import java.sql.Clob;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -43,6 +42,5 @@ public interface ConfigurationMapper extends BaseMapper<ConfigurationEntity, Con
         Object[] value = (Object[]) valor;
         return (JsonNode) value[pos];
     }
-
 
 }

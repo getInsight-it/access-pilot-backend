@@ -4,9 +4,15 @@ import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.configuration.dto.ConfigurationDTO;
+import it.getinsight.module.configuration.dto.ConfigurationFilterDTO;
+import it.getinsight.module.configuration.entity.ConfigurationEntity;
+import it.getinsight.module.configuration.mapper.ConfigurationFilterMapper;
 import it.getinsight.module.configuration.mapper.ConfigurationMapper;
 import it.getinsight.module.configuration.repository.ConfigurationRepository;
+import it.getinsight.module.level.entity.LevelEntity;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +26,7 @@ public class ConfigurationService {
 
     private final ConfigurationRepository configurationRepository;
     private final ConfigurationMapper configurationMapper;
+    private final ConfigurationFilterMapper configurationFilterMapper;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public ConfigurationDTO create(ConfigurationDTO configurationDTO) {
@@ -40,8 +47,22 @@ public class ConfigurationService {
     }
 
 
-    public PageableResponseModel<ConfigurationDTO> findAll(PageableRequestModel<String> configPage) {
-        final var page = configurationRepository.findAll(PaginationHelper.toPageable(configPage));
+    public PageableResponseModel<ConfigurationDTO> getAllConfigurations(PageableRequestModel<ConfigurationFilterDTO> configPage) {
+        final var filter = configPage.getFilter();
+        final var model = filter
+            .map(configurationFilterMapper::toDto)
+            .map(configurationMapper::toEntity)
+            .orElse(new ConfigurationEntity());
+
+        final var matcher = ExampleMatcher
+            .matchingAll()
+            .withIgnoreNullValues()
+            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains);
+
+        final var example = Example.of(model, matcher);
+
+        final var page = configurationRepository.findAll(example, PaginationHelper.toPageable(configPage));
         return PaginationHelper.toPageResponse(configurationMapper.toDto(page.getContent()), page.getTotalElements());
     }
 

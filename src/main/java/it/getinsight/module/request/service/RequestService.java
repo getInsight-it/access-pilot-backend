@@ -1,12 +1,16 @@
 package it.getinsight.module.request.service;
 
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.exception.BusinessException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.entity.ClientStatus;
+import it.getinsight.module.configuration.dto.ConfigurationValue;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
 import it.getinsight.module.level.client.FeignClientFactory;
 import it.getinsight.module.level.entity.LevelType;
@@ -74,6 +78,7 @@ public class RequestService {
     private final NotificationService notificationService;
     private final StorageFileService storageFileService;
     private final FeignClientFactory feignClientFactory;
+    private final ObjectMapper objectMapper;
 
     private static final String NAME_QUERY_FIND_ALL_REQUESTS_IN_ROLES = "find-all-requests-in-roles";
     private static final String NAME_QUERY_FIND_ALL_REQUESTS = "find-all-requests";
@@ -89,11 +94,13 @@ public class RequestService {
         var roleEntity = roleRepository.findById(requestDTO.role().id())
                 .orElseThrow(REQUEST_NOT_FOUND_ERROR::businessException);
         validateItemExistence(requestDTO.codeItem(), roleEntity);
+        validateRequest(requestDTO, attachments);
         var user = findOrCreateUser(principal);
         var entity = requestMapper.toEntity(requestDTO);
         entity.setRequestingUser(user);
         entity.setRole(roleEntity);
         entity.setCodeItem(requestDTO.codeItem());
+        entity.setStatus(RequestStatus.CREATED);
         entity.setProtocolCode(ProtocolUtil.generateUniqueProtocolCode());
 
         requestRepository.save(entity);
@@ -115,6 +122,7 @@ public class RequestService {
             throw APPROVERS_NOT_FOUND_ERROR.businessException();
         }
 
+        requestEntity.setStatus(RequestStatus.PENDING);
         approves.stream()
             .map(approvedDTO -> EmailDTO.builder()
                 .to(approvedDTO.email())
@@ -130,7 +138,6 @@ public class RequestService {
                 requestRepository.save(requestEntity);
                 log.info("Sending email to {}", o.to());
                 notificationService.send(o);
-                requestEntity.setStatus(RequestStatus.PENDING);
                 var variables = requestVariableService.buildVariables(requestEntity.getRequestingUser(), null, requestEntity, requestEntity.getRole(), requestEntity.getRole().getClient());
                 sendNotificationStatusToUser(requestEntity, variables);
             });
@@ -151,6 +158,10 @@ public class RequestService {
     private void validateItemExistence(String codeItem,  RoleEntity roleEntity) {
         Optional.ofNullable(roleEntity.getLevel()).ifPresent(level -> {
             var levelType = level.getType();
+
+            if (StringUtils.isBlank(codeItem)) {
+                throw CODE_ITEM_NOT_FOUND_FOR_ROLE.businessException();
+            }
 
             if (levelType == LevelType.BUILT_IN || levelType == LevelType.BUSINESS) {
                 var entityFound = itemRepository.findById(Long.parseLong(codeItem))
@@ -202,7 +213,9 @@ public class RequestService {
             var roleEntity = roleRepository.findById(entity.getRole().getId()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
             var role = keycloakClient.getRoleByNameAndClientUUID(roleEntity.getName(), roleEntity.getClient().getClientUUID());
             assignRoleToUser(entity, roleEntity, role);
-            updateUserAttributes(entity, roleEntity, role);
+            if (entity.getCodeItem() != null) {
+                updateUserAttributes(entity, roleEntity, role);
+            }
         } catch (Exception e) {
             handleAssignmentFailure(entity);
         }
@@ -379,4 +392,19 @@ public class RequestService {
         }
         return requestMapper.toDto(requestEntity);
     }
+
+    public void validateRequest(final RequestDTO requestDTO, List<MultipartFile> attachments) {
+        var requestEntity = requestMapper.toEntity(requestDTO);
+        var roleEntity = roleRepository.findById(requestEntity.getRole().getId()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
+        var configuration = objectMapper.convertValue(roleEntity.getClient().getConfiguration().getValue(), ConfigurationValue.class);
+        int total = attachments != null ? attachments.size() : 0;
+
+        boolean belowMin = configuration.minQuantity() != null && total < configuration.minQuantity();
+        boolean aboveMax = configuration.maxQuantity() != null && total > configuration.maxQuantity();
+
+        if (belowMin || aboveMax) {
+            throw ATTACHMENTS_QUANTITY_ERROR.businessException();
+        }
+    }
+
 }
