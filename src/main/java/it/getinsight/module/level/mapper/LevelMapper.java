@@ -4,7 +4,9 @@ import it.getinsight.core.dynamicquery.model.mapper.BaseGenericObjectMapper;
 import it.getinsight.core.model.mapper.BaseMapper;
 import it.getinsight.module.level.dto.LevelDTO;
 import it.getinsight.module.level.entity.LevelEntity;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface LevelMapper extends BaseMapper<LevelEntity, LevelDTO>, BaseGenericObjectMapper<LevelDTO> {

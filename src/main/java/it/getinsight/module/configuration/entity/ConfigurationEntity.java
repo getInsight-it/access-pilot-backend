@@ -3,8 +3,6 @@ package it.getinsight.module.configuration.entity;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 import it.getinsight.core.model.jpa.entity.AuditableEntity;
-import it.getinsight.module.configuration.util.HashMapConverter;
-import it.getinsight.module.notification.enums.NotificationType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
@@ -12,7 +10,6 @@ import org.hibernate.annotations.Type;
 import org.hibernate.envers.Audited;
 
 import java.io.Serial;
-import java.util.Map;
 import java.util.UUID;
 
 @Getter

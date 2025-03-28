@@ -1,6 +1,5 @@
 package it.getinsight.module.client.dto;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import it.getinsight.module.configuration.dto.ConfigurationDTO;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;

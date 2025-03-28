@@ -9,7 +9,6 @@ import it.getinsight.module.configuration.entity.ConfigurationEntity;
 import it.getinsight.module.configuration.mapper.ConfigurationFilterMapper;
 import it.getinsight.module.configuration.mapper.ConfigurationMapper;
 import it.getinsight.module.configuration.repository.ConfigurationRepository;
-import it.getinsight.module.level.entity.LevelEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;

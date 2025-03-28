@@ -4,7 +4,6 @@ import it.getinsight.module.role.entity.RoleEntity;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;

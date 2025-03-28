@@ -10,16 +10,12 @@ import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.configuration.dto.ConfigurationDTO;
 import it.getinsight.module.configuration.dto.ConfigurationFilterDTO;
 import it.getinsight.module.configuration.service.ConfigurationService;
-import it.getinsight.module.email.dto.EmailDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/v1/configurations")

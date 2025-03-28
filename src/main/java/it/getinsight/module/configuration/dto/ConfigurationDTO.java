@@ -2,6 +2,7 @@ package it.getinsight.module.configuration.dto;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.constraints.NotBlank;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.UUID;

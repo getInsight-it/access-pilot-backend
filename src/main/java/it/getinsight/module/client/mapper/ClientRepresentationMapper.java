@@ -7,9 +7,7 @@ import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import org.mapstruct.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ClientRepresentationMapper extends BaseMapper<ClientRepresentationDTO, ClientDTO>, BaseGenericObjectMapper<ClientDTO> {

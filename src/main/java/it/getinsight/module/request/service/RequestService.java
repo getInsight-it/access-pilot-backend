@@ -1,8 +1,6 @@
 package it.getinsight.module.request.service;
 
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.exception.BusinessException;
@@ -11,12 +9,12 @@ import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.entity.ClientStatus;
 import it.getinsight.module.configuration.dto.ConfigurationValue;
+import it.getinsight.module.email.dto.EmailDTO;
+import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
 import it.getinsight.module.level.client.FeignClientFactory;
 import it.getinsight.module.level.entity.LevelType;
 import it.getinsight.module.level.repository.ItemRepository;
-import it.getinsight.module.email.dto.EmailDTO;
-import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.notification.enums.NotificationType;
 import it.getinsight.module.notification.service.NotificationService;
 import it.getinsight.module.request.config.EmailNotificationProperties;

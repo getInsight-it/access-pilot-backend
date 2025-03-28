@@ -5,7 +5,9 @@ import it.getinsight.core.model.mapper.BaseMapper;
 import it.getinsight.module.web_notification.dto.WebNotificationDTO;
 import it.getinsight.module.web_notification.dto.WebNotificationFilterDTO;
 import it.getinsight.module.web_notification.entity.WebNotificationEntity;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface WebNotificationMapper extends BaseMapper<WebNotificationEntity, WebNotificationDTO>, BaseGenericObjectMapper<WebNotificationDTO> {

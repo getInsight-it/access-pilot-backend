@@ -12,7 +12,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.Assert;
 
 import java.util.List;
-import java.util.Objects;
 
 @Slf4j
 public class RequestSpecification {

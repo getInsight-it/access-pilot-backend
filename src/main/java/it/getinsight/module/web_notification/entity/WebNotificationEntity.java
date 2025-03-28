@@ -1,6 +1,5 @@
 package it.getinsight.module.web_notification.entity;
 
-import it.getinsight.module.email.entity.EmailSentEntity;
 import it.getinsight.module.notification.entity.NotificationEntity;
 import it.getinsight.module.notification.enums.NotificationType;
 import it.getinsight.module.request.entity.RequestEntity;

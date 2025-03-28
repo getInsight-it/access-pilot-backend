@@ -6,7 +6,10 @@ import it.getinsight.module.level.dto.ItemFilterDTO;
 import it.getinsight.module.level.dto.ItemHierarchyDTO;
 import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Optional;
 

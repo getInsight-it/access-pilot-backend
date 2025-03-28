@@ -6,7 +6,8 @@ import it.getinsight.module.notification.dto.NotificationDTO;
 import it.getinsight.module.notification.dto.NotificationFilterDTO;
 import it.getinsight.module.notification.entity.NotificationEntity;
 import it.getinsight.module.web_notification.dto.WebNotificationFilterDTO;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
 

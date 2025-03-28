@@ -5,7 +5,6 @@ import it.getinsight.config.FeignConfiguration;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
 import it.getinsight.module.keycloak.dto.UserRepresentationDTO;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
