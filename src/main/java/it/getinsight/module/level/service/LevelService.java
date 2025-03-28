@@ -216,6 +216,7 @@ public class LevelService {
         return itemHierarchyMapper.toDto(entity);
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
     public void delete(Long id) {
         if (levelRepository.existsById(id)) {
             var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
@@ -223,6 +224,7 @@ public class LevelService {
         }
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
     public void deleteItem(Long id, String itemId) {
         var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
         if (!LevelType.EXTERNAL.equals(levelEntity.getType())) {
