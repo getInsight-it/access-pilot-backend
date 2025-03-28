@@ -1,10 +1,9 @@
 package it.getinsight.module.configuration.util;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
-import com.fasterxml.jackson.core.type.TypeReference;
-
 
 import java.util.Map;
 

@@ -21,7 +21,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.message.MessageProperty.NOTIFICATION_NOT_FOUND_ERROR;
+import static it.getinsight.message.MessageProperty.REQUIRED_FIELD_WITH_PARAMETER;
 
 
 @Service

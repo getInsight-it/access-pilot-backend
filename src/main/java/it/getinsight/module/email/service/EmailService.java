@@ -16,13 +16,11 @@ import it.getinsight.module.notification.dto.Notification;
 import it.getinsight.module.notification.service.NotificationSender;
 import it.getinsight.module.storage.service.StorageFileService;
 import it.getinsight.module.user.repository.UserRepository;
-import it.getinsight.module.web_notification.dto.WebNotificationDTO;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;

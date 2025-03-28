@@ -4,10 +4,8 @@ import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.user.entity.UserEntity;
-import jakarta.persistence.*;
 import lombok.*;
 
-import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;

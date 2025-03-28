@@ -4,9 +4,7 @@ package it.getinsight.module.level.entity;
 import it.getinsight.core.model.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.DialectOverride;
 import org.hibernate.annotations.SQLRestriction;
-import org.hibernate.annotations.Where;
 import org.hibernate.envers.Audited;
 
 import java.util.UUID;

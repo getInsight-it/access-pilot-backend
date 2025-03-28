@@ -3,9 +3,6 @@ package it.getinsight.module.level.entity;
 import it.getinsight.core.model.jpa.entity.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.SQLJoinTableRestriction;
-import org.hibernate.annotations.SQLRestriction;
-import org.hibernate.annotations.Subselect;
 import org.hibernate.envers.Audited;
 
 import java.util.UUID;

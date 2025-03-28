@@ -4,7 +4,10 @@ import it.getinsight.core.model.jpa.entity.AuditableEntity;
 import it.getinsight.module.notification.enums.NotificationType;
 import it.getinsight.module.user.entity.UserEntity;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.envers.Audited;
 
 import java.util.UUID;

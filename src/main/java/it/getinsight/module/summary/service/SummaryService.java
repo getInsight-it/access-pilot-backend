@@ -9,7 +9,6 @@ import it.getinsight.module.role.repository.specification.RoleSpecification;
 import it.getinsight.module.role.service.RoleService;
 import it.getinsight.module.summary.SummaryDTO;
 import it.getinsight.module.user.service.UserService;
-import it.getinsight.utilitario.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
