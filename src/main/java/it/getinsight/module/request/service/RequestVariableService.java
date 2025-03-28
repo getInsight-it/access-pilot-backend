@@ -1,15 +1,20 @@
 package it.getinsight.module.request.service;
 
+import it.getinsight.module.client.dto.ClientDTO;
 import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.client.mapper.ClientMapper;
 import it.getinsight.module.level.dto.ItemDTO;
+import it.getinsight.module.level.dto.LevelDTO;
 import it.getinsight.module.level.mapper.LevelMapper;
 import it.getinsight.module.level.service.ItemService;
 import it.getinsight.module.request.config.EmailNotificationProperties;
+import it.getinsight.module.request.dto.RequestDTO;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.mapper.RequestMapper;
+import it.getinsight.module.role.dto.RoleDTO;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.mapper.RoleMapper;
+import it.getinsight.module.user.dto.UserDTO;
 import it.getinsight.module.user.entity.UserEntity;
 import it.getinsight.module.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
@@ -34,13 +39,13 @@ public class RequestVariableService {
                                               RequestEntity request, RoleEntity role, ClientEntity client) {
         return Map.of(
             "link", buildLinkVariables(),
-            "approvingUser", userMapper.toDto(approvingUser),
-            "requestingUser", userMapper.toDto(requestingUser),
-            "request", requestMapper.toDto(request),
-            "status", requestMapper.toDto(request).status().getDescription(),
-            "role", roleMapper.toDto(role),
-            "client", clientMapper.toDto(client),
-            "level", levelMapper.toDto(role.getLevel()),
+            "approvingUser", Optional.ofNullable(userMapper.toDto(approvingUser)).orElse(UserDTO.builder().build()),
+            "requestingUser", Optional.ofNullable(userMapper.toDto(requestingUser)).orElse(UserDTO.builder().build()),
+            "request", Optional.ofNullable(requestMapper.toDto(request)).orElse(RequestDTO.builder().build()),
+            "status", Optional.ofNullable(requestMapper.toDto(request).status().getDescription()).orElse(""),
+            "role", Optional.ofNullable(roleMapper.toDto(role)).orElse(RoleDTO.builder().build()),
+            "client", Optional.ofNullable(clientMapper.toDto(client)).orElse(ClientDTO.builder().build()),
+            "level", Optional.ofNullable(levelMapper.toDto(role.getLevel())).orElse(LevelDTO.builder().build()),
             "item", getItemOrDefault(role, request)
         );
     }

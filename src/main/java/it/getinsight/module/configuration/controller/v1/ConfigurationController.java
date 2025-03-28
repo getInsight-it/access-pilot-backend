@@ -5,12 +5,18 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import it.getinsight.core.pagination.PageableRequestModel;
+import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.configuration.dto.ConfigurationDTO;
+import it.getinsight.module.configuration.dto.ConfigurationFilterDTO;
 import it.getinsight.module.configuration.service.ConfigurationService;
+import it.getinsight.module.email.dto.EmailDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
@@ -63,6 +69,25 @@ public class ConfigurationController {
     public ResponseEntity<ConfigurationDTO> findById(@PathVariable Long id) {
         var configurationDTO = configurationService.findById(id);
         return ResponseEntity.ok(configurationDTO);
+    }
+
+    @GetMapping
+    @Operation(summary = "Fetches all configurations.", responses = {
+        @ApiResponse(responseCode = "200", description = "Configurations found."),
+        @ApiResponse(responseCode = "400", description = "Invalid request."),
+        @ApiResponse(responseCode = "401", description = "Unauthorized."),
+        @ApiResponse(responseCode = "403", description = "Forbidden."),
+        @ApiResponse(responseCode = "404", description = "Configuration not found."),
+        @ApiResponse(responseCode = "500", description = "Internal server error.")
+    })
+    public ResponseEntity<PageableResponseModel<ConfigurationDTO>> findConfigurations(@RequestParam(defaultValue = "1") Integer pageIndex,
+                                                                            @RequestParam(defaultValue = "10") Integer pageSize,
+                                                                            @RequestParam(defaultValue = "id") String sortField,
+                                                                            @RequestParam(defaultValue = "ASC") String sortType,
+                                                                          @ParameterObject ConfigurationFilterDTO filter
+    ) {
+        final var pageRequest = PageableRequestModel.of(pageIndex - 1, pageSize, sortType, sortField, filter);
+        return ResponseEntity.ok(configurationService.getAllConfigurations(pageRequest));
     }
 
 }
