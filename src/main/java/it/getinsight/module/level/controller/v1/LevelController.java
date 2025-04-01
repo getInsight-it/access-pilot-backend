@@ -119,6 +119,15 @@ public class LevelController {
         return ResponseEntity.ok(itemService.getItemsPaginatedByLevel(id, pageRequest));
     }
 
+
+    @Operation(summary = "Update item information", description = "Update item information")
+    @PutMapping(value = "{id}/items/{itemId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> updateItem(@PathVariable Long id, @PathVariable String itemId, @RequestBody ItemDTO itemDTO) {
+        itemService.updateItem(id, itemId, itemDTO);
+        return ResponseEntity.noContent().build();
+    }
+
     @Operation(summary = "Retrieve items of a level", description = "Retrieve items related to a level")
     @GetMapping(value = "{id}/items/{itemId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
@@ -126,6 +135,7 @@ public class LevelController {
     ) {
         return ResponseEntity.ok(levelService.getItemById(id, itemId));
     }
+
 
 
     @Operation(summary = "Create a new item", description = "Create a new item")

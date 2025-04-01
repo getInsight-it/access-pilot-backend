@@ -164,5 +164,15 @@ public class ItemService {
         return Optional.empty();
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void updateItem(Long id, String itemId, ItemDTO itemDTO) {
+        var level = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        if (LevelType.BUILT_IN.equals(level.getType())) {
+            throw CREATE_BUILT_IN_ITEM.businessException();
+        }
+        var itemEntity = itemRepository.findByLevelIdAndId(id, Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+        itemMapper.fromDto(itemDTO, itemEntity);
+        itemMapper.toDto(itemRepository.save(itemEntity));
+    }
 }
 
