@@ -190,7 +190,8 @@ public class LevelService {
         if (levelRepository.existsById(id)) {
             var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
             levelMapper.fromDto(levelDTO, levelEntity);
-            levelEntity.setId(id);
+            LevelEntity levelParent = levelRepository.findById(levelDTO.parentId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+            levelEntity.setParent(levelParent);
             levelRepository.save(levelEntity);
         }
     }
