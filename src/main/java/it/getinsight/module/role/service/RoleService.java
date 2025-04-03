@@ -14,10 +14,12 @@ import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
 import it.getinsight.module.role.dto.RoleDTO;
 import it.getinsight.module.role.dto.RoleFilterDTO;
+import it.getinsight.module.role.dto.RoleResponseDTO;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.mapper.RoleFilterMapper;
 import it.getinsight.module.role.mapper.RoleMapper;
 import it.getinsight.module.role.mapper.RoleRepresentationMapper;
+import it.getinsight.module.role.mapper.RoleResponseMapper;
 import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.user.dto.UserDTO;
 import it.getinsight.module.user.service.UserService;
@@ -45,12 +47,13 @@ public class RoleService {
     private final RoleRepository roleRepository;
     private final ClientRepository clientRepository;
     private final RoleMapper roleMapper;
+    private final RoleResponseMapper roleResponseMapper;
     private final RoleRepresentationMapper roleRepresentationMapper;
     private final RoleFilterMapper roleFilterMapper;
     private final KeycloakClient keycloakClient;
     private final UserService userService;
 
-    public List<RoleDTO> getAllRoles(String filter) {
+    public List<RoleResponseDTO> getAllRoles(String filter) {
         final var model = new RoleEntity();
         Optional.ofNullable(filter)
             .filter(StringUtils::isNotBlank)
@@ -63,11 +66,11 @@ public class RoleService {
         final var example = Example.of(model, matcher);
 
         return roleRepository.findAll(example).stream()
-            .map(roleMapper::toDto)
+            .map(roleResponseMapper::toDto)
             .toList();
     }
 
-    public PageableResponseModel<RoleDTO> getAllRolesPageable(PageableRequestModel<RoleFilterDTO> configPage) {
+    public PageableResponseModel<RoleResponseDTO> getAllRolesPageable(PageableRequestModel<RoleFilterDTO> configPage) {
         final var model = configPage
             .getFilter()
             .map(roleFilterMapper::toDto)
@@ -82,10 +85,10 @@ public class RoleService {
         final var example = Example.of(model, matcher);
 
         final var page = roleRepository.findAll(example, PaginationHelper.toPageable(configPage));
-        return PaginationHelper.toPageResponse(roleMapper.toDto(page.getContent()), page.getTotalElements());
+        return PaginationHelper.toPageResponse(roleResponseMapper.toDto(page.getContent()), page.getTotalElements());
     }
 
-    public PageableResponseModel<RoleDTO> getAllRolesPageableByName(PageableRequestModel<String> configPage) {
+    public PageableResponseModel<RoleResponseDTO> getAllRolesPageableByName(PageableRequestModel<String> configPage) {
         final var model = new RoleEntity();
         configPage.getFilter().ifPresent(model::setName);
 
@@ -98,12 +101,12 @@ public class RoleService {
         final var example = Example.of(model, matcher);
 
         final var page = roleRepository.findAll(example, PaginationHelper.toPageable(configPage));
-        return PaginationHelper.toPageResponse(roleMapper.toDto(page.getContent()), page.getTotalElements());
+        return PaginationHelper.toPageResponse(roleResponseMapper.toDto(page.getContent()), page.getTotalElements());
     }
 
-    public RoleDTO getById(Long id) {
+    public RoleResponseDTO getById(Long id) {
         var entity = roleRepository.findById(id).orElseThrow(ResourceNotFoundException::new);
-        return roleMapper.toDto(entity);
+        return roleResponseMapper.toDto(entity);
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
