@@ -394,7 +394,11 @@ public class RequestService {
     public void validateRequest(final RequestDTO requestDTO, List<MultipartFile> attachments) {
         var requestEntity = requestMapper.toEntity(requestDTO);
         var roleEntity = roleRepository.findById(requestEntity.getRole().getId()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
-        var configuration = objectMapper.convertValue(roleEntity.getClient().getConfiguration().getValue(), ConfigurationValue.class);
+
+        var configurationOp = Optional.ofNullable(roleEntity.getClient().getConfiguration());
+
+        if (configurationOp.isEmpty()) return;
+        var configuration = objectMapper.convertValue(configurationOp.get().getValue(), ConfigurationValue.class);
         int total = attachments != null ? attachments.size() : 0;
 
         boolean belowMin = configuration.minQuantity() != null && total < configuration.minQuantity();
