@@ -9,7 +9,7 @@ import lombok.Builder;
 import java.io.Serializable;
 
 @Builder
-public record RoleDTO(
+public record RoleResponseDTO(
 
     Long id,
 
@@ -27,10 +27,10 @@ public record RoleDTO(
     @Size(min = 3, max = 100)
     String description,
 
-    RoleDTO roleParent,
+    RoleResponseDTO roleParent,
 
     ClientDTO client,
 
-    String levelId
+    LevelResponseDTO level
 
 ) implements Serializable {}

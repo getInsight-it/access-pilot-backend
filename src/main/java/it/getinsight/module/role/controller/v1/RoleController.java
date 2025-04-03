@@ -10,6 +10,7 @@ import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.role.dto.RoleDTO;
 import it.getinsight.module.role.dto.RoleFilterDTO;
+import it.getinsight.module.role.dto.RoleResponseDTO;
 import it.getinsight.module.role.service.RoleService;
 import it.getinsight.module.user.dto.UserDTO;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +39,7 @@ public class RoleController {
         description = "Retrieve all roles"
     )
     @Parameter(name = "clientId", description = "Filter by client id", in = ParameterIn.QUERY, schema = @Schema(type = "string"))
-    public ResponseEntity<List<RoleDTO>> getAllRoles(@RequestParam(required = false) String clientId) {
+    public ResponseEntity<List<RoleResponseDTO>> getAllRoles(@RequestParam(required = false) String clientId) {
         return ResponseEntity.ok(roleService.getAllRoles(clientId));
     }
 
@@ -47,7 +48,7 @@ public class RoleController {
         description = "Retrieve a list of roles, with pagination, using a filter by name"
     )
     @GetMapping(path = "/paginated", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PageableResponseModel<RoleDTO>> getAllPaginated(
+    public ResponseEntity<PageableResponseModel<RoleResponseDTO>> getAllPaginated(
         @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
@@ -63,7 +64,7 @@ public class RoleController {
         description = "Retrieve a list of roles, with pagination, using a filter by name"
     )
     @GetMapping(path = "/paginated-by-name", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PageableResponseModel<RoleDTO>> getAllPaginatedByName(
+    public ResponseEntity<PageableResponseModel<RoleResponseDTO>> getAllPaginatedByName(
         @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
@@ -79,7 +80,7 @@ public class RoleController {
         description = "Retrieve a roleParent by ID"
     )
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<RoleDTO> getById(@PathVariable Long id) {
+    public ResponseEntity<RoleResponseDTO> getById(@PathVariable Long id) {
         return ResponseEntity.ok(roleService.getById(id));
     }
 
