@@ -3,6 +3,7 @@ package it.getinsight.module.level.repository;
 import it.getinsight.core.dynamicquery.repository.DynamicNativeQueryRepository;
 import it.getinsight.core.dynamicquery.repository.DynamicQueryRepository;
 import it.getinsight.module.level.entity.ItemEntity;
+import it.getinsight.module.level.entity.LevelEntity;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +32,8 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long>, Dynamic
     void softDelete(@Param("id") Long id);
 
     Boolean existsByLevelIdAndId(Long id, Long itemId);
+
+    Boolean existsItemEntityByActiveTrueAndLevel(LevelEntity level);
 
 
     List<ItemEntity> findAllByLevelIdAndParentId(Long id, Long itemId);
