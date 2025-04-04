@@ -44,6 +44,10 @@ public enum MessageProperty implements IMessageProperty {
     ERROR_CONFIGURATION_DELETE("error.configuration.delete"),
     NOTIFICATION_NOT_FOUND("notification.not.found"),
     ATTACHMENTS_QUANTITY_ERROR("attachments.quantity.error"),
+    ERROR_UPDATE_LEVEL_TYPE("error.update.level.type"),
+    ERROR_UPDATE_LEVEL_PARENT_WITH_ITEMS("error.update.level.parent.with.items"),
+    ROLE_WITH_PENDING_REQUESTS_ERROR("role.with.pending.requests"),
+
     ;
 
     private final String key;

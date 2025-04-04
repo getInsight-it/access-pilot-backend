@@ -12,6 +12,8 @@ import it.getinsight.module.client.repository.ClientRepository;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
+import it.getinsight.module.request.enuns.RequestStatus;
+import it.getinsight.module.request.repository.RequestRepository;
 import it.getinsight.module.role.dto.RoleDTO;
 import it.getinsight.module.role.dto.RoleFilterDTO;
 import it.getinsight.module.role.dto.RoleResponseDTO;
@@ -52,6 +54,7 @@ public class RoleService {
     private final RoleFilterMapper roleFilterMapper;
     private final KeycloakClient keycloakClient;
     private final UserService userService;
+    private final RequestRepository requestRepository;
 
     public List<RoleResponseDTO> getAllRoles(String filter) {
         final var model = new RoleEntity();
@@ -199,6 +202,10 @@ public class RoleService {
     @Transactional(propagation = Propagation.REQUIRED)
     public RoleDTO update(Long id, RoleDTO roleDTO) {
         var entity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
+        if (requestRepository.countByStatusAndRole(RequestStatus.PENDING, entity) > 0){
+                throw ROLE_WITH_PENDING_REQUESTS_ERROR.businessException();
+        }
+
         if (StringUtils.isNotBlank(entity.getRoleExternalId())) {
             Optional.ofNullable(keycloakClient.getRole(entity.getClient().getClientUUID(), entity.getName()))
                 .ifPresent((o) -> keycloakClient.updateRole(entity.getClient().getClientUUID(), entity.getName(), RoleRepresentationDTO.builder()
