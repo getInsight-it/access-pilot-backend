@@ -174,5 +174,14 @@ public class ItemService {
         itemMapper.fromDto(itemDTO, itemEntity);
         itemMapper.toDto(itemRepository.save(itemEntity));
     }
+
+    public Integer getCountItemsByLevel(Long id) {
+        var level = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        if (level.getType() == LevelType.EXTERNAL) {
+            return feignClientFactory.createClient(level.getExternalUrl())
+                .getCount(level.getApiKey());
+        }
+        return itemRepository.countByLevel(level);
+    }
 }
 

@@ -119,6 +119,13 @@ public class LevelController {
         return ResponseEntity.ok(itemService.getItemsPaginatedByLevel(id, pageRequest));
     }
 
+    @Operation(summary = "Retrieve items of a level", description = "Retrieve items related to a level")
+    @GetMapping(value = "{id}/items/count", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Integer> getCountItemsByLevel(@PathVariable Long id) {
+        return ResponseEntity.ok(itemService.getCountItemsByLevel(id));
+    }
+
 
     @Operation(summary = "Update item information", description = "Update item information")
     @PutMapping(value = "{id}/items/{itemId}", produces = MediaType.APPLICATION_JSON_VALUE)

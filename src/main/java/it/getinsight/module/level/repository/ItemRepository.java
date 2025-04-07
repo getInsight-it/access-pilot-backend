@@ -40,4 +40,5 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long>, Dynamic
 
     Page<ItemEntity> findAllByLevelIdAndParentId(Long id, Long itemId, Example<ItemEntity> example, Pageable pageable);
 
+    Integer countByLevel(LevelEntity level);
 }
