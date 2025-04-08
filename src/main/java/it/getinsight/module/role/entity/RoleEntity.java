@@ -6,6 +6,7 @@ import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.level.entity.LevelEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.envers.Audited;
 
 @Getter
@@ -15,6 +16,7 @@ import org.hibernate.envers.Audited;
 @Table(name = "TB_ROLE")
 @NoArgsConstructor
 @AllArgsConstructor
+@SQLRestriction(value = "ATIVO = true")
 @Builder
 @SequenceGenerator(name = "RoleEntity.sq", sequenceName = "SQ_ROLE", allocationSize = 1)
 public class RoleEntity extends AuditableEntity<Long, String> {
@@ -39,9 +41,13 @@ public class RoleEntity extends AuditableEntity<Long, String> {
     @Column(name = "DESCRICAO")
     private String description;
 
+    @Column(name = "ATIVO")
+    private Boolean active;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_ROLE_PARENT")
     private RoleEntity role;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_CLIENTE")

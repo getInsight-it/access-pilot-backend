@@ -132,6 +132,7 @@ public class RoleService {
              var roleEntity = roleOpSynchronized.get();
              roleEntity.setDescription(role.description());
              roleEntity.setClient(clientEntity);
+             roleEntity.setActive(true);
              roleEntity.setRoleExternalId(role.id());
              roleEntity.setName(role.name());
              roleRepository.save(roleEntity);
@@ -139,6 +140,7 @@ public class RoleService {
             var roleEntity = RoleEntity.builder()
                 .roleExternalId(role.id())
                 .name(role.name())
+                .active(true )
                 .description(role.description())
                 .client(clientEntity)
                 .build();
@@ -208,7 +210,7 @@ public class RoleService {
 
         if (StringUtils.isNotBlank(entity.getRoleExternalId())) {
             Optional.ofNullable(keycloakClient.getRole(entity.getClient().getClientUUID(), entity.getName()))
-                .ifPresent((o) -> keycloakClient.updateRole(entity.getClient().getClientUUID(), entity.getName(), RoleRepresentationDTO.builder()
+                .ifPresent(o -> keycloakClient.updateRole(entity.getClient().getClientUUID(), entity.getName(), RoleRepresentationDTO.builder()
                     .name(roleDTO.name())
                     .description(roleDTO.description())
                     .build()));
@@ -223,8 +225,14 @@ public class RoleService {
     @Transactional(propagation = Propagation.REQUIRED)
     public void delete(Long id) {
         var roleEntity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
-        keycloakClient.deleteRole(roleEntity.getClient().getClientUUID(), roleEntity.getName());
-        roleRepository.deleteById(id);
+        try {
+            keycloakClient.deleteRole(roleEntity.getClient().getClientUUID(), roleEntity.getName());
+        }catch (InfraException e) {
+            if(e.getCause() instanceof FeignException && ((FeignException) e.getCause()).status() == HttpStatus.NOT_FOUND.value()) {
+               log.info("Role already was deleted: {}", roleEntity.getName());
+            }
+        }
+        roleRepository.softDelete(id);
     }
 
 }
