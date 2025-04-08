@@ -44,8 +44,9 @@ public class LevelService {
     private final LevelMapper levelMapper;
     private final LevelResponseMapper levelResponseMapper;
     private final LevelHierarchyResponseMapper levelHierarchyResponseMapper;
+    private final LevelHierarchyResumedMapper levelHierarchyResumedMapper;
     private final ItemMapper itemMapper;
-    private final ItemHierarchyMapper itemHierarchyMapper;
+    private final ItemHierarchyResumedMapper itemHierarchyResumedMapper;
     private final ItemFilterMapper itemFilterMapper;
     private final LevelFilterMapper levelFilterMapper;
     private final FeignClientFactory feignClientFactory;
@@ -194,33 +195,12 @@ public class LevelService {
             }
             levelMapper.fromDto(levelDTO, levelEntity);
             LevelEntity levelParent = levelRepository.findById(levelDTO.parentId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
-            if (itemRepository.existsItemEntityByActiveTrueAndLevel(levelParent)) {
+            if (Boolean.TRUE.equals(itemRepository.existsItemEntityByActiveTrueAndLevel(levelParent))) {
                 throw  ERROR_UPDATE_LEVEL_PARENT_WITH_ITEMS.businessException();
             }
             levelEntity.setParent(levelParent);
             levelRepository.save(levelEntity);
         }
-    }
-
-
-    @Transactional(propagation = Propagation.REQUIRED)
-    public ItemDTO createItem(Long id, ItemDTO itemDTO) {
-        var level = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
-        if (LevelType.BUILT_IN.equals(level.getType())) {
-            throw CREATE_BUILT_IN_ITEM.businessException();
-        }
-        var entity = itemMapper.toEntity(itemDTO);
-        entity.setLevel(level);
-        return itemMapper.toDto(itemRepository.save(entity));
-    }
-
-    public ItemHierarchyDTO getItemById(Long id, String itemId) {
-        var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
-        if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
-            feignClientFactory.createClient(levelEntity.getExternalUrl()).getItemByExternalCode(levelEntity.getApiKey(), itemId);
-        }
-        var entity = itemRepository.findByLevelIdAndId(id, Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
-        return itemHierarchyMapper.toDto(entity);
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -231,13 +211,5 @@ public class LevelService {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
-    public void deleteItem(Long id, String itemId) {
-        var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
-        if (!LevelType.EXTERNAL.equals(levelEntity.getType())) {
-            var itemEntity = itemRepository.findByLevelIdAndId(id, Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
-            itemRepository.softDelete(itemEntity.getId());
-        }
-    }
 }
 

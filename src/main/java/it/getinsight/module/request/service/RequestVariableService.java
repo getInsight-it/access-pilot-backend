@@ -4,6 +4,8 @@ import it.getinsight.module.client.dto.ClientDTO;
 import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.client.mapper.ClientMapper;
 import it.getinsight.module.level.dto.ItemDTO;
+import it.getinsight.module.level.dto.ItemHierarchyDTO;
+import it.getinsight.module.level.dto.ItemHierarchyResumedDTO;
 import it.getinsight.module.level.dto.LevelDTO;
 import it.getinsight.module.level.mapper.LevelMapper;
 import it.getinsight.module.level.service.ItemService;
@@ -59,9 +61,9 @@ public class RequestVariableService {
         );
     }
 
-    private ItemDTO getItemOrDefault(RoleEntity role, RequestEntity request) {
+    private ItemHierarchyResumedDTO getItemOrDefault(RoleEntity role, RequestEntity request) {
         return Optional.ofNullable(request.getCodeItem())
             .flatMap(code -> itemService.findByTypeAndCodeItem(role.getLevel(), code))
-            .orElse(ItemDTO.builder().build());
+            .orElse(ItemHierarchyResumedDTO.builder().build());
     }
 }

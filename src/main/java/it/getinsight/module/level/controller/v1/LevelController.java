@@ -109,7 +109,7 @@ public class LevelController {
     @Operation(summary = "Retrieve items of a level", description = "Retrieve items related to a level")
     @GetMapping(value = "{id}/items", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<PageableResponseModel<ItemHierarchyDTO>> getItemsPaginatedByLevel(@PathVariable Long id,
+    public ResponseEntity<PageableResponseModel<ItemHierarchyResumedDTO>> getItemsPaginatedByLevel(@PathVariable Long id,
                                                                    @RequestParam(defaultValue = "1") Integer pageIndex,
                                                                    @RequestParam(defaultValue = "10") Integer pageSize,
                                                                    @RequestParam(defaultValue = "id") String sortField,
@@ -138,9 +138,9 @@ public class LevelController {
     @Operation(summary = "Retrieve items of a level", description = "Retrieve items related to a level")
     @GetMapping(value = "{id}/items/{itemId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ItemHierarchyDTO> getItemById(@PathVariable Long id, @PathVariable String itemId
+    public ResponseEntity<ItemHierarchyResumedDTO> getItemById(@PathVariable Long id, @PathVariable String itemId
     ) {
-        return ResponseEntity.ok(levelService.getItemById(id, itemId));
+        return ResponseEntity.ok(itemService.getItemById(id, itemId));
     }
 
 
@@ -150,7 +150,7 @@ public class LevelController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ItemDTO> createItem(@PathVariable Long id,
                                               @RequestBody ItemDTO itemDTO) {
-        return ResponseEntity.ok(levelService.createItem(id, itemDTO));
+        return ResponseEntity.ok(itemService.createItem(id, itemDTO));
     }
 
     @Operation(summary = "Retrieve subitems of an item", description = "Retrieve subitems related to an item")
@@ -180,7 +180,7 @@ public class LevelController {
     @DeleteMapping(value = "{id}/items/{itemId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize(value = "hasRole('ADMIN')")
     public ResponseEntity<Void> deleteItem(@PathVariable Long id, @PathVariable String itemId) {
-        levelService.deleteItem(id, itemId);
+        itemService.deleteItem(id, itemId);
         return ResponseEntity.noContent().build();
     }
 }

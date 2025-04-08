@@ -6,4 +6,4 @@ import java.io.Serializable;
 import java.util.UUID;
 
 @Builder
-public record ItemHierarchyDTO(Long id, UUID uuid, String description, String name, String externalCode, String status, LevelDTO level, ItemHierarchyDTO parent) implements Serializable {}
+public record ItemHierarchyDTO(Long id, UUID uuid, String description, String name, String externalCode, String status, LevelResponseDTO level, ItemHierarchyDTO parent) implements Serializable {}
