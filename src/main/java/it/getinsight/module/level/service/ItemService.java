@@ -5,21 +5,17 @@ import it.getinsight.core.message.CoreMessageSource;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.level.client.FeignClientFactory;
-import it.getinsight.module.level.dto.ExportationFilterDTO;
-import it.getinsight.module.level.dto.ItemDTO;
-import it.getinsight.module.level.dto.ItemFilterDTO;
-import it.getinsight.module.level.dto.ItemHierarchyDTO;
+import it.getinsight.module.level.dto.*;
 import it.getinsight.module.level.entity.ItemEntity;
 import it.getinsight.module.level.entity.LevelEntity;
 import it.getinsight.module.level.entity.LevelType;
-import it.getinsight.module.level.mapper.ItemFilterMapper;
-import it.getinsight.module.level.mapper.ItemHierarchyMapper;
-import it.getinsight.module.level.mapper.ItemMapper;
+import it.getinsight.module.level.mapper.*;
 import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.level.repository.LevelRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.stereotype.Service;
@@ -48,15 +44,20 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final FeignClientFactory feignClientFactory;
     private final ItemMapper itemMapper;
-    private final ItemHierarchyMapper itemHierarchyMapper;
+    private final ItemHierarchyResumedMapper itemHierarchyResumedMapper;
     private final ItemFilterMapper itemFilterMapper;
+    private final LevelHierarchyResumedMapper levelHierarchyResumedMapper;
 
-    public PageableResponseModel<ItemHierarchyDTO> getItemsPaginatedByLevel(Long levelId, PageableRequestModel<ItemFilterDTO> configPage) {
+    public PageableResponseModel<ItemHierarchyResumedDTO> getItemsPaginatedByLevel(Long levelId, PageableRequestModel<ItemFilterDTO> configPage) {
         var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
 
         if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
             var client = feignClientFactory.createClient(levelEntity.getExternalUrl());
-            return client.getItems(  levelEntity.getApiKey(), configPage.getPageNumber() + 1, configPage.getPageSize(), configPage.getSortField(), configPage.getSortType(), configPage.getFilter().orElse(null));
+            var page = client.getItems(levelEntity.getApiKey(), configPage.getPageNumber() + 1, configPage.getPageSize(), configPage.getSortField(), configPage.getSortType(), configPage.getFilter().orElse(null));
+            var itemsFormated = page.getItems()
+                .stream().map(o -> formatExternalItem(o, levelEntity)).toList();
+            page.setItems(itemsFormated);
+            return page;
         }
 
         var filter = configPage.getFilter();
@@ -79,7 +80,12 @@ public class ItemService {
 
 
         final var page = itemRepository.findAll(example, PaginationHelper.toPageable(configPage));
-        return PaginationHelper.toPageResponse(itemHierarchyMapper.toDto(page.getContent()), page.getTotalElements());
+        return PaginationHelper.toPageResponse(itemHierarchyResumedMapper.toDto(page.getContent()), page.getTotalElements());
+    }
+
+
+    private ItemHierarchyResumedDTO formatExternalItem(ItemHierarchyResumedDTO o, LevelEntity levelEntity) {
+        return o.withLevel(levelHierarchyResumedMapper.toDto(levelEntity)).withParent(o.parent().withLevel(levelHierarchyResumedMapper.toDto(levelEntity.getParent())));
     }
 
 
@@ -145,13 +151,13 @@ public class ItemService {
     }
 
 
-    public Optional<ItemDTO> findByTypeAndCodeItem(LevelEntity level, String codeItem) {
+    public Optional<ItemHierarchyResumedDTO> findByTypeAndCodeItem(LevelEntity level, String codeItem) {
         var levelType = level.getType();
         if (levelType == LevelType.BUILT_IN || levelType == LevelType.BUSINESS) {
             var entityFound = itemRepository.findById(Long.parseLong(codeItem))
                 .orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
             log.info("Item found for request: {}", entityFound);
-            return Optional.of(itemMapper.toDto(entityFound));
+            return Optional.of(itemHierarchyResumedMapper.toDto(entityFound));
         }
 
         if (levelType == LevelType.EXTERNAL) {
@@ -182,6 +188,37 @@ public class ItemService {
                 .getCount(level.getApiKey());
         }
         return itemRepository.countByLevel(level);
+    }
+
+    public ItemHierarchyResumedDTO getItemById(Long id, String itemId) {
+        var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
+            var itemExternal = feignClientFactory.createClient(levelEntity.getExternalUrl()).getItemByExternalCode(levelEntity.getApiKey(), itemId);
+            var itemHierarchyDTO = itemExternal.orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+            return itemHierarchyDTO.withLevel(levelHierarchyResumedMapper.toDto(levelEntity));
+        }
+        var entity = itemRepository.findByLevelIdAndId(id, Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+        return itemHierarchyResumedMapper.toDto(entity);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public ItemDTO createItem(Long id, ItemDTO itemDTO) {
+        var level = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        if (LevelType.BUILT_IN.equals(level.getType())) {
+            throw CREATE_BUILT_IN_ITEM.businessException();
+        }
+        var entity = itemMapper.toEntity(itemDTO);
+        entity.setLevel(level);
+        return itemMapper.toDto(itemRepository.save(entity));
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void deleteItem(Long id, String itemId) {
+        var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        if (!LevelType.EXTERNAL.equals(levelEntity.getType())) {
+            var itemEntity = itemRepository.findByLevelIdAndId(id, Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+            itemRepository.softDelete(itemEntity.getId());
+        }
     }
 }
 
