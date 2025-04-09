@@ -9,6 +9,7 @@ import it.getinsight.module.notification.dto.NotificationFilterDTO;
 import it.getinsight.module.notification.dto.NotificationSummaryDTO;
 import it.getinsight.module.notification.enums.NotificationType;
 import it.getinsight.module.notification.service.NotificationService;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +38,7 @@ public class NotificationController {
     )
     @PreAuthorize("hasRole('ADMIN') OR @userService.checkExternalId(#filter.externalId)")
     public ResponseEntity<PageableResponseModel<Notification>> getNotification(
-        @RequestParam(defaultValue = "1") Integer pageIndex,
+        @Min(value = 1, message = "O índice da página deve ser no mínimo 1") @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,

@@ -11,6 +11,7 @@ import it.getinsight.module.configuration.dto.ConfigurationDTO;
 import it.getinsight.module.configuration.dto.ConfigurationFilterDTO;
 import it.getinsight.module.configuration.service.ConfigurationService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
@@ -76,7 +77,9 @@ public class ConfigurationController {
         @ApiResponse(responseCode = "404", description = "Configuration not found."),
         @ApiResponse(responseCode = "500", description = "Internal server error.")
     })
-    public ResponseEntity<PageableResponseModel<ConfigurationDTO>> findConfigurations(@RequestParam(defaultValue = "1") Integer pageIndex,
+    public ResponseEntity<PageableResponseModel<ConfigurationDTO>> findConfigurations(
+                                                                            @Min(value = 1, message = "O índice da página deve ser no mínimo 1")
+                                                                            @RequestParam(defaultValue = "1") Integer pageIndex,
                                                                             @RequestParam(defaultValue = "10") Integer pageSize,
                                                                             @RequestParam(defaultValue = "id") String sortField,
                                                                             @RequestParam(defaultValue = "ASC") String sortType,

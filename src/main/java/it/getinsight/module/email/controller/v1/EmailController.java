@@ -8,6 +8,7 @@ import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.email.dto.EmailDTO;
 import it.getinsight.module.email.service.EmailService;
 import it.getinsight.module.notification.service.NotificationService;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -43,11 +44,11 @@ public class EmailController {
         }
     )
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PageableResponseModel<EmailDTO>> getNotifications(@RequestParam(defaultValue = "1") Integer pageIndex,
+    public ResponseEntity<PageableResponseModel<EmailDTO>> getNotifications(@Min(value = 1, message = "O índice da página deve ser no mínimo 1") @RequestParam(defaultValue = "1") Integer pageIndex,
                                                                                     @RequestParam(defaultValue = "10") Integer pageSize,
                                                                                     @RequestParam(defaultValue = "id") String sortField,
                                                                                     @RequestParam(defaultValue = "ASC") String sortType) {
-        final var configPage = PageableRequestModel.of(pageIndex, pageSize, sortType, sortField, EmailDTO.builder().build());
+        final var configPage = PageableRequestModel.of(pageIndex - 1, pageSize, sortType, sortField, EmailDTO.builder().build());
         return ResponseEntity.ok(emailService.getNotifications(configPage));
     }
 

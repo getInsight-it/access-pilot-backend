@@ -13,6 +13,7 @@ import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.storage.dto.StorageFileDTO;
 import it.getinsight.module.storage.dto.StorageFileFilterDTO;
 import it.getinsight.module.storage.service.StorageFileService;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.core.io.InputStreamResource;
@@ -70,7 +71,7 @@ public class StorageFileController {
             @ApiResponse(responseCode = "200")
         }
     )
-    public ResponseEntity<PageableResponseModel<StorageFileDTO>> getFilesPaginated(  @RequestParam(defaultValue = "1") Integer pageIndex,
+    public ResponseEntity<PageableResponseModel<StorageFileDTO>> getFilesPaginated(  @Min(value = 1, message = "O índice da página deve ser no mínimo 1") @RequestParam(defaultValue = "1") Integer pageIndex,
                                                                                      @RequestParam(defaultValue = "10") Integer pageSize,
                                                                                      @RequestParam(defaultValue = "id") String sortField,
                                                                                      @RequestParam(defaultValue = "ASC") String sortType,

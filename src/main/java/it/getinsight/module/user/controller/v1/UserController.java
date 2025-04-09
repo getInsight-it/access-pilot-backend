@@ -10,6 +10,7 @@ import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.user.dto.UserDTO;
 import it.getinsight.module.user.service.UserService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
@@ -48,13 +49,13 @@ public class UserController {
     @Parameter(name = "filter", hidden = true)
     @GetMapping(path = "/paginated", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<UserDTO>> getAllUsersPaginated(
-        @RequestParam(defaultValue = "1") Integer pageIndex,
+        @Min(value = 1, message = "O índice da página deve ser no mínimo 1") @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
         @ParameterObject UserDTO filter
     ) {
-        final var pageRequest = PageableRequestModel.of(pageIndex, pageSize, sortType, sortField, filter);
+        final var pageRequest = PageableRequestModel.of(pageIndex - 1, pageSize, sortType, sortField, filter);
         return ResponseEntity.ok(userService.getAllUsersPageable(pageRequest));
     }
 
@@ -64,13 +65,13 @@ public class UserController {
     )
     @GetMapping(path = "/paginated-by-name", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<UserDTO>> getAllUsersPaginatedByName(
-        @RequestParam(defaultValue = "1") Integer pageIndex,
+        @Min(value = 1, message = "O índice da página deve ser no mínimo 1") @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
         @RequestParam(required = false) String filter
     ) {
-        final var pageRequest = PageableRequestModel.of(pageIndex, pageSize, sortType, sortField, filter);
+        final var pageRequest = PageableRequestModel.of(pageIndex - 1, pageSize, sortType, sortField, filter);
         return ResponseEntity.ok(userService.getAllUsersPageableByName(pageRequest));
     }
 
