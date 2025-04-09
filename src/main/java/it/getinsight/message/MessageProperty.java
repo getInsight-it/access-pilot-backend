@@ -20,6 +20,7 @@ public enum MessageProperty implements IMessageProperty {
     APPROVERS_NOT_FOUND_ERROR("approvers.not.found"),
     ROLE_NOT_FOUND_PARENT_ERROR("role.not.found.parent"),
     ROLE_ALREADY_EXISTS_ERROR("role.already.exists"),
+    ROLE_ALREADY_EXISTS_IDP_ERROR("role.already.exists.at.idp"),
     ROLE_NOT_FOUND_ERROR("role.not.found"),
     CLIENT_NOT_PUBLISHED_ERROR("client.not.published"),
     USER_NOT_FOUND_ERROR("user.not.found"),
