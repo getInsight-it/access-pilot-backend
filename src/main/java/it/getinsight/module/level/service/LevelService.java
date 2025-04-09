@@ -194,7 +194,7 @@ public class LevelService {
                 throw  ERROR_UPDATE_LEVEL_TYPE.businessException();
             }
             levelMapper.fromDto(levelDTO, levelEntity);
-            LevelEntity levelParent = levelRepository.findById(levelDTO.parentId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+            var levelParent = levelDTO.parentId() != null ?  levelRepository.findById(levelDTO.parentId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException) : null;
             if (Boolean.TRUE.equals(itemRepository.existsItemEntityByActiveTrueAndLevel(levelParent))) {
                 throw  ERROR_UPDATE_LEVEL_PARENT_WITH_ITEMS.businessException();
             }
