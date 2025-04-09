@@ -12,6 +12,8 @@ import it.getinsight.module.client.repository.ClientRepository;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
+import it.getinsight.module.level.entity.LevelEntity;
+import it.getinsight.module.level.repository.LevelRepository;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.request.repository.RequestRepository;
 import it.getinsight.module.role.dto.RoleDTO;
@@ -25,6 +27,7 @@ import it.getinsight.module.role.mapper.RoleResponseMapper;
 import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.user.dto.UserDTO;
 import it.getinsight.module.user.service.UserService;
+import it.getinsight.utilitario.RetryUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -55,6 +58,7 @@ public class RoleService {
     private final KeycloakClient keycloakClient;
     private final UserService userService;
     private final RequestRepository requestRepository;
+    private final LevelRepository levelRepository;
 
     public List<RoleResponseDTO> getAllRoles(String filter) {
         final var model = new RoleEntity();
@@ -112,6 +116,7 @@ public class RoleService {
         return roleResponseMapper.toDto(entity);
     }
 
+
     @Transactional(propagation = Propagation.REQUIRED)
     public void synchronizeRoles(List<String> clientIds) {
         var clients = keycloakClient.getClients().stream()
@@ -121,31 +126,42 @@ public class RoleService {
         for (ClientRepresentationDTO client : clients) {
             var roles = keycloakClient.getRolesByClientUUID(client.getId());
             var clientEntity = clientRepository.findByClientId(client.getClientId()).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
-            roles.forEach(role -> synchronizeRole(role, clientEntity));
+            roles.forEach(role -> synchronizeRole(role, clientEntity, null, null));
         }
     }
 
-    private void synchronizeRole(RoleRepresentationDTO role, ClientEntity clientEntity) {
-        var roleOpSynchronized = roleRepository.findByRoleExternalId(role.id());
+    private void synchronizeRole(RoleRepresentationDTO role, ClientEntity clientEntity, LevelEntity levelEntity, RoleEntity roleParentEntity) {
+        var roleOpAlreadySynchronized = roleRepository.findByRoleExternalId(role.id());
         var roleOpNotSynchronized = roleRepository.findByNameAndClient(role.name(), clientEntity);
-        if (roleOpSynchronized.isPresent()) {
-             var roleEntity = roleOpSynchronized.get();
-             roleEntity.setDescription(role.description());
-             roleEntity.setClient(clientEntity);
-             roleEntity.setActive(true);
-             roleEntity.setRoleExternalId(role.id());
-             roleEntity.setName(role.name());
-             roleRepository.save(roleEntity);
-        }else if (roleOpNotSynchronized.isEmpty()) {
-            var roleEntity = RoleEntity.builder()
-                .roleExternalId(role.id())
-                .name(role.name())
-                .active(true )
-                .description(role.description())
-                .client(clientEntity)
-                .build();
-            roleRepository.save(roleEntity);
+        if (roleOpAlreadySynchronized.isPresent()) {
+            saveUpdatesSynchronizedRole(role, clientEntity, levelEntity, roleParentEntity, roleOpAlreadySynchronized.get());
+        } else if (roleOpNotSynchronized.isEmpty()) {
+            saveNewRoleFromIDP(role, clientEntity, levelEntity);
         }
+    }
+
+    private void saveUpdatesSynchronizedRole(RoleRepresentationDTO role, ClientEntity clientEntity, LevelEntity levelEntity, RoleEntity roleParentEntity, RoleEntity roleEntity) {
+        roleEntity.setDescription(role.description());
+        roleEntity.setClient(clientEntity);
+        roleEntity.setActive(true);
+        roleEntity.setRoleExternalId(role.id());
+        roleEntity.setName(role.name());
+        roleEntity.setRole(roleParentEntity != null ? roleParentEntity : roleEntity.getRole());
+        roleEntity.setLevel(levelEntity != null ? levelEntity : roleEntity.getLevel());
+        roleRepository.save(roleEntity);
+    }
+
+    private void saveNewRoleFromIDP(RoleRepresentationDTO role, ClientEntity clientEntity, LevelEntity levelEntity) {
+        var roleEntity = RoleEntity.builder()
+            .roleExternalId(role.id())
+            .name(role.name())
+            .active(true)
+            .level(levelEntity)
+            .description(role.description())
+            .client(clientEntity)
+            .build();
+        roleRepository.save(roleEntity);
+
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -173,23 +189,61 @@ public class RoleService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public RoleDTO createRole(RoleDTO roleDTO) {
-        if (roleDTO == null) throw ROLE_NOT_FOUND_ERROR.businessException();
+        validateRoleInput(roleDTO);
 
-        final var newRoleRepresentationDTO = Optional.of(roleDTO)
-            .map(roleRepresentationMapper::toRoleRepresentationDTO).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
+        final var roleToCreate = mapToRepresentation(roleDTO);
 
-        if (roleDTO.client() == null) throw CLIENT_NOT_FOUND_ERROR.businessException();
         try {
-            keycloakClient.createRole(roleDTO.client().clientUUID(), newRoleRepresentationDTO);
-            final var roleRepresentationDTO = keycloakClient.getRole(roleDTO.client().clientUUID(), roleDTO.name());
-            synchronizeRole(roleRepresentationDTO, clientRepository.findByClientId(roleDTO.client().clientId()).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException));
-        }catch (InfraException e) {
-            if(e.getCause() instanceof FeignException && ((FeignException) e.getCause()).status() == HttpStatus.CONFLICT.value()) {
-                throw ROLE_ALREADY_EXISTS_ERROR.businessException();
-            }
-            throw e;
+            ensureRoleDoesNotExist(roleDTO);
+            keycloakClient.createRole(roleDTO.client().clientUUID(), roleToCreate);
+            synchronizeWithDatabase(roleDTO);
+        } catch (InfraException e) {
+            log.info("Role already exists: {}", roleDTO.name());
+            throw ROLE_ALREADY_EXISTS_ERROR.businessException(e);
         }
+
         return roleDTO;
+    }
+
+    private void validateRoleInput(RoleDTO roleDTO) {
+        if (roleDTO == null) {
+            throw ROLE_NOT_FOUND_ERROR.businessException();
+        }
+        if (roleDTO.client() == null) {
+            throw CLIENT_NOT_FOUND_ERROR.businessException();
+        }
+    }
+
+    private RoleRepresentationDTO mapToRepresentation(RoleDTO roleDTO) {
+        return Optional.of(roleDTO)
+            .map(roleRepresentationMapper::toRoleRepresentationDTO)
+            .orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
+    }
+
+    private void ensureRoleDoesNotExist(RoleDTO roleDTO) {
+        final var existingRole = keycloakClient.getRole(roleDTO.client().clientUUID(), roleDTO.name());
+        if (existingRole != null) {
+            throw ROLE_ALREADY_EXISTS_IDP_ERROR.businessException();
+        }
+    }
+
+    private void synchronizeWithDatabase(RoleDTO roleDTO) {
+        final var createdRole = RetryUtils.retryOn404(2, 500, () ->
+            keycloakClient.getRole(roleDTO.client().clientUUID(), roleDTO.name())
+        );
+
+        final var level = roleDTO.levelId() != null
+            ? levelRepository.findById(roleDTO.levelId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException)
+            : null;
+
+        final var client = clientRepository.findByClientId(roleDTO.client().clientId())
+            .orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
+
+        final var parentRole = roleDTO.roleParent() != null
+            ? roleRepository.findById(roleDTO.roleParent().id()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException)
+            : null;
+
+        synchronizeRole(createdRole, client, level, parentRole);
     }
 
     public Long getTotalRoles() {
@@ -204,8 +258,8 @@ public class RoleService {
     @Transactional(propagation = Propagation.REQUIRED)
     public RoleDTO update(Long id, RoleDTO roleDTO) {
         var entity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
-        if (requestRepository.countByStatusAndRole(RequestStatus.PENDING, entity) > 0){
-                throw ROLE_WITH_PENDING_REQUESTS_ERROR.businessException();
+        if (requestRepository.countByStatusAndRole(RequestStatus.PENDING, entity) > 0) {
+            throw ROLE_WITH_PENDING_REQUESTS_ERROR.businessException();
         }
 
         if (StringUtils.isNotBlank(entity.getRoleExternalId())) {
@@ -215,6 +269,13 @@ public class RoleService {
                     .description(roleDTO.description())
                     .build()));
         }
+        if (roleDTO.levelId() != null) {
+            levelRepository.findById(roleDTO.levelId()).ifPresent(entity::setLevel);
+        }
+        if (roleDTO.roleParent() != null && roleDTO.roleParent().id() != null) {
+            roleRepository.findById(roleDTO.roleParent().id()).ifPresent(entity::setRole);
+        }
+
         entity.setName(roleDTO.name());
         entity.setDescription(roleDTO.description());
         entity.setLabel(roleDTO.label());
@@ -227,10 +288,8 @@ public class RoleService {
         var roleEntity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
         try {
             keycloakClient.deleteRole(roleEntity.getClient().getClientUUID(), roleEntity.getName());
-        }catch (InfraException e) {
-            if(e.getCause() instanceof FeignException && ((FeignException) e.getCause()).status() == HttpStatus.NOT_FOUND.value()) {
-               log.info("Role already was deleted: {}", roleEntity.getName());
-            }
+        } catch (InfraException e) {
+            log.warn("Role already was deleted from IDP: {}", roleEntity.getName());
         }
         roleRepository.softDelete(id);
     }

@@ -30,6 +30,6 @@ public record RoleDTO(
 
     ClientDTO client,
 
-    String levelId
+    Long levelId
 
 ) implements Serializable {}
