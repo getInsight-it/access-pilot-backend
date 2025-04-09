@@ -7,9 +7,11 @@ import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.dto.ClientDTO;
+import it.getinsight.module.client.dto.ClientFilterDTO;
 import it.getinsight.module.client.dto.ClientFullResponseDTO;
 import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.client.entity.ClientStatus;
+import it.getinsight.module.client.mapper.ClientFilterMapper;
 import it.getinsight.module.client.mapper.ClientFullResponseMapper;
 import it.getinsight.module.client.mapper.ClientMapper;
 import it.getinsight.module.client.mapper.ClientRepresentationMapper;
@@ -24,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.actuate.web.mappings.MappingsEndpoint;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -50,6 +53,7 @@ public class ClientService {
     public static final String IDP_KEYCLOAK_NAME_CONFIGURATION_ID = "configurationId";
     private final ClientRepository clientRepository;
     private final ClientMapper clientMapper;
+    private final ClientFilterMapper clientFilterMapper;
     private final RoleService roleService;
     private final ClientRepresentationMapper clientRepresentationMapper;
     private final KeycloakClient keycloakClient;
@@ -70,42 +74,40 @@ public class ClientService {
 
 
 //    @Cacheable(value = "clients", key = "#configPage.toString()")
-    public PageableResponseModel<ClientDTO> getAllClientsPageable(PageableRequestModel<ClientDTO> configPage) {
+    public PageableResponseModel<ClientDTO> getAllClientsPageable(PageableRequestModel<ClientFilterDTO> configPage) {
         final var model = configPage
             .getFilter()
+            .map(clientFilterMapper::toDto)
             .map(clientMapper::toEntity)
             .orElse(new ClientEntity());
+
 
         final var matcher = ExampleMatcher
             .matchingAny()
             .withIgnoreNullValues()
             .withMatcher("clientId", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("managed", ExampleMatcher.GenericPropertyMatcher::exact)
             .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains);
 
         final var example = Example.of(model, matcher);
         final var page = clientRepository.findAll(example, PaginationHelper.toPageable(configPage));
         final var clientsNotSynchronized = page.getContent().stream().filter(o -> o.getClientUUID() == null).map(clientMapper::toDto).toList();
-        final var clientsSynchronized = page.getContent().stream().filter(o -> o.getClientUUID() != null).map(o -> keycloakClient.getClientByClientUUID(o.getClientUUID())).map(obj -> clientRepresentationMapper.toDto(page.stream().filter(e -> Objects.equals(e.getClientUUID(), obj.getId())).findFirst().orElse(null), obj)).toList();
+        final var clientsSynchronized = fetchUpdatedClientFromIDP(page.getContent());
         final var dtos = Stream.concat(clientsNotSynchronized.stream(), clientsSynchronized.stream()).toList();
         return PaginationHelper.toPageResponse(dtos, page.getTotalElements());
     }
 
-    @Cacheable(value = "clients", key = "#configPage.toString()")
-    public PageableResponseModel<ClientDTO> getAllClientsPageableByName(PageableRequestModel<String> configPage) {
-        final var model = new ClientEntity();
-        configPage.getFilter().ifPresent(model::setClientId);
-
-        final var matcher = ExampleMatcher
-            .matching()
-            .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING)
-            .withIgnoreNullValues()
-            .withIgnoreCase();
-
-        final var example = Example.of(model, matcher);
-
-        final var page = clientRepository.findAll(example, PaginationHelper.toPageable(configPage));
-        return PaginationHelper.toPageResponse(clientMapper.toDto(page.getContent()), page.getTotalElements());
+    @NotNull
+    private List<ClientDTO> fetchUpdatedClientFromIDP(List<ClientEntity> page) {
+        return page.stream()
+            .filter(o -> o.getClientUUID() != null).map(o -> {
+                try {
+                    return keycloakClient.getClientByClientUUID(o.getClientUUID());
+                } catch (Exception e) {
+                    return null;
+                }
+            }).filter(Objects::nonNull)
+            .map(obj -> clientRepresentationMapper.toDto(page.stream().filter(e -> Objects.equals(e.getClientUUID(), obj.getId()))
+                .findFirst().orElse(null), obj)).toList();
     }
 
     @Cacheable(value = "clients", key = "#id")

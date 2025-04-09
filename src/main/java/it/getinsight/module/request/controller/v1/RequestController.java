@@ -14,6 +14,7 @@ import it.getinsight.module.request.dto.RequestFilterDTO;
 import it.getinsight.module.request.dto.RequestUpdateDTO;
 import it.getinsight.module.request.service.RequestService;
 import it.getinsight.module.role.dto.RoleDTO;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
@@ -80,7 +81,7 @@ public class RequestController {
         description = "Retrieve a list of requests, with pagination, using a filter by name"
     )
     public ResponseEntity<PageableResponseModel<RequestDTO>> findAllByMePaginated(
-        @RequestParam(defaultValue = "1") Integer pageIndex,
+        @Min(value = 1, message = "O índice da página deve ser no mínimo 1") @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
@@ -96,13 +97,13 @@ public class RequestController {
         description = "Retrieve a list of requests, with pagination, using a filter by name"
     )
     public ResponseEntity<PageableResponseModel<RequestDTO>> findAllPaginatedByRole(
-        @RequestParam(defaultValue = "1") Integer pageIndex,
+        @Min(value = 1, message = "O índice da página deve ser no mínimo 1") @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,
         @RequestParam String roles
     ) {
-        final var pageRequest = PageableRequestModel.of(pageIndex, pageSize, sortType, sortField, roles);
+        final var pageRequest = PageableRequestModel.of(pageIndex - 1, pageSize, sortType, sortField, roles);
         return ResponseEntity.ok(requestService.getAllRequestsByRolesDynamicQuery(pageRequest));
     }
 
@@ -112,7 +113,7 @@ public class RequestController {
         description = "Retrieve a list of requests, with pagination, using a filter by name"
     )
     public ResponseEntity<PageableResponseModel<RequestDTO>> findAllPaginated(
-        @RequestParam(defaultValue = "1") Integer pageIndex,
+        @Min(value = 1, message = "O índice da página deve ser no mínimo 1") @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,

@@ -8,6 +8,7 @@ import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.web_notification.dto.WebNotificationDTO;
 import it.getinsight.module.web_notification.dto.WebNotificationFilterDTO;
 import it.getinsight.module.web_notification.service.WebNotificationService;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
@@ -41,7 +42,7 @@ public class WebNotificationController {
     )
     @GetMapping( produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<WebNotificationDTO>> getAllPaginated(
-        @RequestParam(defaultValue = "1") Integer pageIndex,
+        @Min(value = 1, message = "O índice da página deve ser no mínimo 1") @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
         @RequestParam(defaultValue = "ASC") String sortType,

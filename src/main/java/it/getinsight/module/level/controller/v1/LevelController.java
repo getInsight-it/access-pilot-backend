@@ -10,6 +10,7 @@ import it.getinsight.module.level.service.ItemService;
 import it.getinsight.module.level.service.LevelService;
 import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
@@ -37,6 +38,7 @@ public class LevelController {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PageableResponseModel<LevelResponseDTO>> getPaginatedAllLevels(
+        @Min(value = 1, message = "O índice da página deve ser no mínimo 1")
         @RequestParam(defaultValue = "1") Integer pageIndex,
         @RequestParam(defaultValue = "10") Integer pageSize,
         @RequestParam(defaultValue = "id") String sortField,
@@ -110,6 +112,7 @@ public class LevelController {
     @GetMapping(value = "{id}/items", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PageableResponseModel<ItemHierarchyResumedDTO>> getItemsPaginatedByLevel(@PathVariable Long id,
+                                                                  @Min(value = 1, message = "O índice da página deve ser no mínimo 1")
                                                                    @RequestParam(defaultValue = "1") Integer pageIndex,
                                                                    @RequestParam(defaultValue = "10") Integer pageSize,
                                                                    @RequestParam(defaultValue = "id") String sortField,
@@ -157,6 +160,7 @@ public class LevelController {
     @GetMapping(value = "{id}/items/{itemId}/subitems", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PageableResponseModel<ItemDTO>> getSubItemsPaginatedByItem(@PathVariable Long id, @PathVariable Long itemId,
+                                                                    @Min(value = 1, message = "O índice da página deve ser no mínimo 1")
                                                                     @RequestParam(defaultValue = "1") Integer pageIndex,
                                                                     @RequestParam(defaultValue = "10") Integer pageSize,
                                                                     @RequestParam(defaultValue = "id") String sortField,
