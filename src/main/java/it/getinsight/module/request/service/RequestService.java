@@ -313,7 +313,7 @@ public class RequestService {
         }
 
         final var matcher = ExampleMatcher
-            .matchingAll()
+            .matchingAny()
             .withIgnoreNullValues()
             .withMatcher("role.name", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("role.client.name", ExampleMatcher.GenericPropertyMatcher::contains)

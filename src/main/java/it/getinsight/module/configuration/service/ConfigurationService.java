@@ -54,7 +54,7 @@ public class ConfigurationService {
             .orElse(new ConfigurationEntity());
 
         final var matcher = ExampleMatcher
-            .matchingAll()
+            .matchingAny()
             .withIgnoreNullValues()
             .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains);
