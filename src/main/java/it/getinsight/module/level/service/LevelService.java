@@ -59,7 +59,7 @@ public class LevelService {
             .orElse(new LevelEntity());
 
         final var matcher = ExampleMatcher
-            .matchingAll()
+            .matchingAny()
             .withIgnoreNullValues()
             .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains)
@@ -97,7 +97,7 @@ public class LevelService {
             .orElse(new ItemEntity());
 
         final var matcher = ExampleMatcher
-            .matchingAll()
+            .matchingAny()
             .withIgnoreNullValues()
             .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains)

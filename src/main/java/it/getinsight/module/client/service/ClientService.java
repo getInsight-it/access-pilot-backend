@@ -77,7 +77,7 @@ public class ClientService {
             .orElse(new ClientEntity());
 
         final var matcher = ExampleMatcher
-            .matchingAll()
+            .matchingAny()
             .withIgnoreNullValues()
             .withMatcher("clientId", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("managed", ExampleMatcher.GenericPropertyMatcher::exact)

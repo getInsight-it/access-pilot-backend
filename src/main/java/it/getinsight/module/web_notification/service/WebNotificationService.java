@@ -37,7 +37,7 @@ public class WebNotificationService implements NotificationSender {
             .orElse(new WebNotificationEntity());
 
         final var matcher = ExampleMatcher
-            .matchingAll()
+            .matchingAny()
             .withIgnoreNullValues()
             .withMatcher("user.externalId", ExampleMatcher.GenericPropertyMatcher::exact);
 

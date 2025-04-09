@@ -62,7 +62,7 @@ public class RoleService {
             .filter(StringUtils::isNotBlank)
             .ifPresent(o -> model.setClient(ClientEntity.builder().clientId(o).build()));
         final var matcher = ExampleMatcher
-            .matchingAll()
+            .matchingAny()
             .withIgnoreNullValues()
             .withMatcher("client.clientId", ExampleMatcher.GenericPropertyMatcher::exact);
 
@@ -80,7 +80,7 @@ public class RoleService {
             .map(roleMapper::toEntity).orElse(new RoleEntity());
 
         final var matcher = ExampleMatcher
-            .matchingAll()
+            .matchingAny()
             .withIgnoreNullValues()
             .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("client.id", ExampleMatcher.GenericPropertyMatcher::exact);

@@ -57,7 +57,7 @@ public class UserService {
             .orElse(new UserEntity());
 
         final var matcher = ExampleMatcher
-            .matchingAll()
+            .matchingAny()
             .withIgnoreNullValues()
             .withMatcher("firstName", ExampleMatcher.GenericPropertyMatcher::contains);
 

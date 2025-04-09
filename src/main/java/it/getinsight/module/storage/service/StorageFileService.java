@@ -55,7 +55,7 @@ public class StorageFileService {
             .orElse(new StorageFileEntity());
 
         final var matcher = ExampleMatcher
-            .matchingAll()
+            .matchingAny()
             .withIgnoreNullValues()
             .withMatcher("originalFilename", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("ownerId", ExampleMatcher.GenericPropertyMatcher::exact);
