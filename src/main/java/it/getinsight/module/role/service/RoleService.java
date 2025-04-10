@@ -1,7 +1,7 @@
 package it.getinsight.module.role.service;
 
 
-import feign.FeignException;
+import it.getinsight.core.exception.FeignIntegrationException;
 import it.getinsight.core.exception.InfraException;
 import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
@@ -33,7 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -221,9 +220,15 @@ public class RoleService {
     }
 
     private void ensureRoleDoesNotExist(RoleDTO roleDTO) {
-        final var existingRole = keycloakClient.getRole(roleDTO.client().clientUUID(), roleDTO.name());
-        if (existingRole != null) {
-            throw ROLE_ALREADY_EXISTS_IDP_ERROR.businessException();
+        try {
+            final var role = keycloakClient.getRole(roleDTO.client().clientUUID(), roleDTO.name());
+            if (role != null)
+                throw ROLE_ALREADY_EXISTS_IDP_ERROR.businessException();
+        } catch (FeignIntegrationException e) {
+            if (e.getHttpStatus().value() == 404) {
+                log.info("Role not found: {}", roleDTO.name());
+            }
+            throw e;
         }
     }
 
