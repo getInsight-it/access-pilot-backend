@@ -224,11 +224,8 @@ public class RoleService {
             final var role = keycloakClient.getRole(roleDTO.client().clientUUID(), roleDTO.name());
             if (role != null)
                 throw ROLE_ALREADY_EXISTS_IDP_ERROR.businessException();
-        } catch (FeignIntegrationException e) {
-            if (e.getHttpStatus().value() == 404) {
-                log.info("Role not found: {}", roleDTO.name());
-            }
-            throw e;
+        } catch (InfraException | ResourceNotFoundException e) {
+               log.info("Role not found: {}", roleDTO.name());
         }
     }
 
