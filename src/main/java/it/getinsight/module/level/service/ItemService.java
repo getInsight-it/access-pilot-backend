@@ -12,12 +12,16 @@ import it.getinsight.module.level.entity.LevelType;
 import it.getinsight.module.level.mapper.*;
 import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.level.repository.LevelRepository;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.convert.QueryByExamplePredicateBuilder;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static it.getinsight.message.MessageProperty.*;
@@ -69,20 +74,27 @@ public class ItemService {
         final var matcher = ExampleMatcher
             .matchingAny()
             .withIgnoreNullValues()
+            .withIgnoreCase()
             .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("externalCode", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("level.id", ExampleMatcher.GenericPropertyMatcher::exact)
-            .withMatcher("level.active", ExampleMatcher.GenericPropertyMatcher::exact);
-        model.setLevel(LevelEntity.builder().id(levelId).build());
-        model.setActive(true);
+            .withMatcher("externalCode", ExampleMatcher.GenericPropertyMatcher::contains);
+
         final var example = Example.of(model, matcher);
 
+        Specification<ItemEntity> spec = (root, query, cb) -> {
+            Predicate examplePredicate = QueryByExamplePredicateBuilder.getPredicate(root, cb, example);
+            Predicate levelPredicate = cb.equal(root.get("level").get("id"), levelId);
 
-        final var page = itemRepository.findAll(example, PaginationHelper.toPageable(configPage));
+            if (examplePredicate != null) {
+                return cb.and(levelPredicate, examplePredicate);
+            } else {
+                return levelPredicate;
+            }
+        };
+
+        final var page = itemRepository.findAll(spec, PaginationHelper.toPageable(configPage));
         return PaginationHelper.toPageResponse(itemHierarchyResumedMapper.toDto(page.getContent()), page.getTotalElements());
     }
-
 
     private ItemHierarchyResumedDTO formatExternalItem(ItemHierarchyResumedDTO o, LevelEntity levelEntity) {
         return o.withLevel(levelHierarchyResumedMapper.toDto(levelEntity)).withParent(o.parent().withLevel(levelHierarchyResumedMapper.toDto(levelEntity.getParent())));

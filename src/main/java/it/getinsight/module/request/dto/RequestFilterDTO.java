@@ -11,17 +11,13 @@ public record RequestFilterDTO(
 
     RequestStatus status,
 
-    Boolean managed,
-
     String description,
-
-    String finalReason,
 
     String roleName,
 
-    String clientId,
+    String protocolCode,
 
-    String clientName,
+    String clientId,
 
     String requestingUserId,
 

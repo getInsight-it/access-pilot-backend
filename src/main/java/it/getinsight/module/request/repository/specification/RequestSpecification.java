@@ -16,6 +16,8 @@ import java.util.List;
 @Slf4j
 public class RequestSpecification {
 
+    private RequestSpecification() {}
+
     public static Specification<RequestEntity> byRolesParent(List<Long> rolesParentIds) {
         return (root, query, builder) -> {
             if (rolesParentIds == null || rolesParentIds.isEmpty()) {
@@ -45,9 +47,13 @@ public class RequestSpecification {
                 p = addRoleFiltersByNames(p, root, cb, filter.getRoles().stream().map(RoleEntity::getName).toList());
                 p = addRoleFiltersByIds(p, root, cb, filter.getRoles().stream().map(RoleEntity::getId).toList());
             }
+            if (CollectionUtils.isNotEmpty(filter.getRoles()) && filter.getRoles().getFirst().getClient() != null && StringUtils.isNotBlank(filter.getRoles().getFirst().getClient().getClientId())){
+                p = addClientFiltersByClientIdWithLike(p, root, cb, filter.getRoles().getFirst().getClient().getClientId());
+            }
             p = addRequestingUserFilters(p, root, cb, filter.getRequestingUser());
             p = addStatusFilter(p, root, cb, filter.getStatus());
             p = addDescriptionFilter(p, root, cb, filter.getDescription());
+            p = addProtocolCodeFilter(p, root, cb, filter.getProtocolCode());
 
             return p;
         };
@@ -92,6 +98,15 @@ public class RequestSpecification {
         return p;
     }
 
+
+
+    private static Predicate addClientFiltersByClientIdWithLike(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, String clientId) {
+        if (StringUtils.isNotBlank(clientId)){
+            p = cb.and(p, cb.like(root.get("role").get("client").get("clientId"), "%" + clientId + "%"));
+        }
+        return p;
+    }
+
     private static Predicate addRoleFiltersByNameWithLike(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, String role) {
         if (StringUtils.isNotBlank(role)){
             p = cb.and(p, cb.like(root.get("role").get("name"), "%" + role + "%"));
@@ -129,6 +144,13 @@ public class RequestSpecification {
     private static Predicate addDescriptionFilter(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, String description) {
         if (description != null) {
             p = cb.and(p, cb.like(root.get("description"), "%" + description + "%"));
+        }
+        return p;
+    }
+
+    private static Predicate addProtocolCodeFilter(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, String protocolCode) {
+        if (protocolCode != null) {
+            p = cb.and(p, cb.like(root.get("protocolCode"), "%" + protocolCode + "%"));
         }
         return p;
     }
