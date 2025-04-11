@@ -45,7 +45,6 @@ public class RequestEntitySpecificationFilter implements Serializable {
             .requestingUser(entity.getRequestingUser())
             .approvingUser(entity.getApprovingUser())
             .description(entity.getDescription())
-            .finalReason(entity.getFinalReason())
             .protocolCode(entity.getProtocolCode())
             .uuid(entity.getUuid())
             .id(entity.getId())

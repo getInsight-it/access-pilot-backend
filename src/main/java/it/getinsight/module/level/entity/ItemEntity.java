@@ -3,6 +3,7 @@ package it.getinsight.module.level.entity;
 import it.getinsight.core.model.jpa.entity.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.envers.Audited;
 
 import java.util.UUID;
@@ -12,6 +13,7 @@ import java.util.UUID;
 @Entity
 @Audited
 @Table(name = "TB_ESFERA_ITEM")
+@SQLRestriction(value = "ATIVO = true")
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
