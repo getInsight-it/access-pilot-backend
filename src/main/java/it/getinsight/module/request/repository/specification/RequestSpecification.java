@@ -12,6 +12,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.Assert;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class RequestSpecification {
@@ -140,7 +141,7 @@ public class RequestSpecification {
     private static Predicate addRoleFiltersByNameWithIn(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, List<String> rolesNames) {
         if (!rolesNames.isEmpty()) {
             Expression<String> campo = cb.lower(root.get("role").get("name"));
-            p = cb.or(p, campo.in(rolesNames));
+            p = cb.or(p, campo.in(rolesNames.stream().map(String::toLowerCase).toList()));
         }
         return p;
     }
@@ -170,7 +171,7 @@ public class RequestSpecification {
     private static Predicate addDescriptionFilter(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, String description) {
         if (description != null) {
             Expression<String> field = cb.lower(root.get("description"));
-            p = cb.or(p, cb.like(field, "%" + description + "%"));
+            p = cb.or(p, cb.like(field, "%" + description.toLowerCase() + "%"));
         }
         return p;
     }
@@ -178,7 +179,7 @@ public class RequestSpecification {
     private static Predicate addProtocolCodeFilter(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, String protocolCode) {
         if (protocolCode != null) {
             Expression<String> field = cb.lower(root.get("protocolCode"));
-            p = cb.or(p, cb.like(field, "%" + protocolCode + "%"));
+            p = cb.or(p, cb.like(field, "%" + protocolCode.toLowerCase() + "%"));
         }
         return p;
     }
