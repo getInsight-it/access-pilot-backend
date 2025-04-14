@@ -1,6 +1,7 @@
 package it.getinsight.module.request.dto;
 
 import it.getinsight.module.request.enuns.RequestStatus;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
 import java.io.Serial;
@@ -23,6 +24,7 @@ public record RequestFilterDTO(
 
     Boolean onlyMine,
 
+    @NotNull
     String type
 ) implements Serializable {
 
