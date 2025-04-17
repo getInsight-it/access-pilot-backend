@@ -8,7 +8,6 @@ import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.entity.ClientStatus;
-import it.getinsight.module.configuration.dto.ConfigurationValue;
 import it.getinsight.module.email.dto.EmailDTO;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
@@ -92,7 +91,7 @@ public class RequestService {
         var roleEntity = roleRepository.findById(requestDTO.role().id())
                 .orElseThrow(REQUEST_NOT_FOUND_ERROR::businessException);
         validateItemExistence(requestDTO.codeItem(), roleEntity);
-        validateRequest(requestDTO, attachments);
+        //TODO: implementar validateRequest(requestDTO, attachments);
         var user = findOrCreateUser(principal);
         var entity = requestMapper.toEntity(requestDTO);
         entity.setRequestingUser(user);
@@ -389,24 +388,6 @@ public class RequestService {
             throw APPROVE_NOT_AUTHORIZED.accessForbiddenException();
         }
         return requestMapper.toDto(requestEntity);
-    }
-
-    public void validateRequest(final RequestDTO requestDTO, List<MultipartFile> attachments) {
-        var requestEntity = requestMapper.toEntity(requestDTO);
-        var roleEntity = roleRepository.findById(requestEntity.getRole().getId()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
-
-        var configurationOp = Optional.ofNullable(roleEntity.getClient().getConfiguration());
-
-        if (configurationOp.isEmpty()) return;
-        var configuration = objectMapper.convertValue(configurationOp.get().getValue(), ConfigurationValue.class);
-        int total = attachments != null ? attachments.size() : 0;
-
-        boolean belowMin = configuration.minQuantity() != null && total < configuration.minQuantity();
-        boolean aboveMax = configuration.maxQuantity() != null && total > configuration.maxQuantity();
-
-        if (belowMin || aboveMax) {
-            throw ATTACHMENTS_QUANTITY_ERROR.businessException();
-        }
     }
 
 }

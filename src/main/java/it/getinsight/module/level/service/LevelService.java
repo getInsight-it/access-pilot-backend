@@ -4,7 +4,6 @@ import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.message.CoreMessageSource;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
-import it.getinsight.module.level.client.FeignClientFactory;
 import it.getinsight.module.level.dto.*;
 import it.getinsight.module.level.entity.ItemEntity;
 import it.getinsight.module.level.entity.LevelEntity;
@@ -44,12 +43,9 @@ public class LevelService {
     private final LevelMapper levelMapper;
     private final LevelResponseMapper levelResponseMapper;
     private final LevelHierarchyResponseMapper levelHierarchyResponseMapper;
-    private final LevelHierarchyResumedMapper levelHierarchyResumedMapper;
     private final ItemMapper itemMapper;
-    private final ItemHierarchyResumedMapper itemHierarchyResumedMapper;
     private final ItemFilterMapper itemFilterMapper;
     private final LevelFilterMapper levelFilterMapper;
-    private final FeignClientFactory feignClientFactory;
 
     public PageableResponseModel<LevelResponseDTO> getAllPaginatedLevels(PageableRequestModel<LevelFilterDTO> configPage) {
         final var filter = configPage.getFilter();

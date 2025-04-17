@@ -4,7 +4,7 @@ package it.getinsight.module.configuration.dto;
 import java.io.Serial;
 import java.io.Serializable;
 
-public record ConfigurationFilterDTO(
+public record AttachmentConfigurationFilterDTO(
     String name,
     String description
 ) implements Serializable {

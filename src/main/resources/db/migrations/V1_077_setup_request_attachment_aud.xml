@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_077" author="luan.rodrigues@getinsight.it">
+
+        <createTable tableName="TB_SOLICITACAO_ARQUIVO_AUD">
+            <column name="ID" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="UUID" type="UUID"/>
+
+            <column name="ID_SOLICITACAO" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="FK_SOLICITACAO_ARQUIVO_SOLICITACAO"
+                             referencedTableName="TB_SOLICITACAO" referencedColumnNames="ID"/>
+            </column>
+
+            <column name="ID_ARQUIVO" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="FK_SOLICITACAO_ARQUIVO_STORAGE"
+                             referencedTableName="TB_STORAGE_FILE" referencedColumnNames="ID"/>
+            </column>
+
+            <column name="ID_CONFIGURACAO" type="BIGINT">
+                <constraints nullable="true" foreignKeyName="FK_SOLICITACAO_ARQUIVO_CONFIG"
+                             referencedTableName="TB_CONFIGURACAO_ANEXO" referencedColumnNames="ID"/>
+            </column>
+
+            <column name="TIPO_ARQUIVO" type="VARCHAR(255)"/>
+
+            <column name="DESCRICAO" type="VARCHAR(1000)"/>
+
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_CRIACAO" type="TIMESTAMP"/>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP"/>
+        </createTable>
+
+        <createSequence sequenceName="SQ_SOLICITACAO_ARQUIVO" startValue="1" incrementBy="1"/>
+
+        <rollback>
+            <dropTable tableName="TB_SOLICITACAO_ARQUIVO_AUD"/>
+            <dropSequence sequenceName="SQ_SOLICITACAO_ARQUIVO"/>
+        </rollback>
+
+    </changeSet>
+
+</databaseChangeLog>

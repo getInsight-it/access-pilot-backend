@@ -1,10 +1,13 @@
 package it.getinsight.module.client.dto;
 
+import it.getinsight.module.configuration.dto.AttachmentConfigurationDTO;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Builder
 public record ClientDTO(
@@ -21,11 +24,9 @@ public record ClientDTO(
     @Size(min = 3, max = 100)
     String clientId,
 
-    @NotEmpty
-    @Size(min = 3, max = 100)
     String clientUUID,
 
-    @NotEmpty
+    @NotNull(message = "managed is required")
     Boolean managed,
 
     String status,
@@ -34,12 +35,9 @@ public record ClientDTO(
     @Size(min = 3, max = 100)
     String description,
 
-    @NotEmpty
     @Size(min = 3, max = 255)
     String baseUrl,
 
-    @NotEmpty
-    @Size(min = 3, max = 100)
-    Long configurationId
+    List<AttachmentConfigurationDTO> configurations
 
 ) implements Serializable {}
