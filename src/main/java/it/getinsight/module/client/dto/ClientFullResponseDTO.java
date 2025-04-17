@@ -1,11 +1,12 @@
 package it.getinsight.module.client.dto;
 
-import it.getinsight.module.configuration.dto.ConfigurationDTO;
+import it.getinsight.module.configuration.dto.AttachmentConfigurationDTO;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Builder
 public record ClientFullResponseDTO(
@@ -39,6 +40,6 @@ public record ClientFullResponseDTO(
     @Size(min = 3, max = 255)
     String baseUrl,
 
-    ConfigurationDTO configuration
+    List<AttachmentConfigurationDTO> configurations
 
 ) implements Serializable {}

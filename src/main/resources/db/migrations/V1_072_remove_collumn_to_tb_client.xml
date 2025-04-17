@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_072" author="luan.rodrigues@getinsight.it">
+
+        <dropForeignKeyConstraint baseTableName="TB_CLIENTE" constraintName="FK_CLIENTE_CONFIGURACAO" />
+        <dropColumn tableName="TB_CLIENTE" columnName="CONFIGURACAO_ID"/>
+
+
+        <rollback>
+            <addColumn tableName="TB_CLIENTE">
+                <column name="CONFIGURACAO_ID" type="BIGINT">
+                    <constraints nullable="true"/>
+                </column>
+            </addColumn>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

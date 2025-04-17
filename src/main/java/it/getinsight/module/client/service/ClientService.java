@@ -1,6 +1,5 @@
 package it.getinsight.module.client.service;
 
-import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.exception.BusinessException;
 import it.getinsight.core.helper.PaginationHelper;
@@ -16,7 +15,10 @@ import it.getinsight.module.client.mapper.ClientFullResponseMapper;
 import it.getinsight.module.client.mapper.ClientMapper;
 import it.getinsight.module.client.mapper.ClientRepresentationMapper;
 import it.getinsight.module.client.repository.ClientRepository;
-import it.getinsight.module.configuration.entity.ConfigurationEntity;
+import it.getinsight.module.configuration.entity.AttachmentConfigurationEntity;
+import it.getinsight.module.configuration.mapper.AttachmentConfigurationMapper;
+import it.getinsight.module.configuration.repository.AttachmentConfigurationRepository;
+import it.getinsight.module.configuration.service.AttachmentConfigurationService;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.config.KeycloakProperties;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
@@ -24,6 +26,7 @@ import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -37,10 +40,13 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static it.getinsight.message.MessageProperty.ATTACHMENTS_NAME_DUPLICATE_ERROR;
 import static it.getinsight.message.MessageProperty.CLIENT_NOT_FOUND_ERROR;
 
 
@@ -61,6 +67,9 @@ public class ClientService {
     private final KeycloakProperties keycloakProperties;
     private final MappingsEndpoint mappingsEndpoint;
     private final ClientFullResponseMapper clientFullResponseMapper;
+    private final AttachmentConfigurationRepository attachmentConfigurationRepository;
+    private final AttachmentConfigurationMapper attachmentConfigurationMapper;
+    private final AttachmentConfigurationService attachmentConfigurationService;
 
 
     public List<ClientDTO> getAllClientsDynamicQuery() {
@@ -138,12 +147,10 @@ public class ClientService {
     @CacheEvict(value = "clients", allEntries = true)
     public ClientEntity synchronize(ClientRepresentationDTO client) {
         var entity = clientRepository.findByClientId(client.getClientId()).orElse(new ClientEntity());
-        var configurationId = client.getAttributes().get(IDP_KEYCLOAK_NAME_CONFIGURATION_ID);
         entity.setClientUUID(client.getId());
         entity.setDescription(client.getDescription());
         entity.setClientId(client.getClientId());
         entity.setManaged("true".equals(client.getAttributes().get(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED)));
-        entity.setConfiguration(configurationId == null ? null : ConfigurationEntity.builder().id(Long.parseLong(configurationId)).build());
         entity.setBaseUrl(client.getBaseUrl());
         var clientEntity = clientRepository.save(entity);
         roleService.synchronizeRoles(Collections.singletonList(client.getClientId()));
@@ -153,16 +160,34 @@ public class ClientService {
     @Transactional(propagation = Propagation.REQUIRED)
     public ClientDTO create(ClientDTO dto) {
         var entity = clientMapper.toEntity(dto);
+        var opConfigurations = Optional.ofNullable(entity.getConfigurations()).filter(CollectionUtils::isNotEmpty);
         entity.setClientId(dto.clientId().toLowerCase());
         if (clientRepository.existsByClientId(entity.getClientId())) {
-            throw new BusinessException("Client already exists");
+            throw CLIENT_NOT_FOUND_ERROR.businessException();
+        }
+        if (opConfigurations.isPresent()){
+            entity.getConfigurations().forEach(o -> o.setClient(entity));
+            validateAttachment(entity.getConfigurations());
         }
 
+        var clientEntity = clientRepository.save(entity);
+        opConfigurations.ifPresent(attachmentConfigurationRepository::saveAll);
         if (Boolean.TRUE.equals(dto.managed())) {
             return handleManagedClient(entity);
-        } else {
-            return clientMapper.toDto(clientRepository.save(entity));
         }
+        return clientMapper.toDto(clientEntity);
+    }
+
+    private static void validateAttachment(List<AttachmentConfigurationEntity> configurations) {
+        Optional.ofNullable(configurations)
+            .orElse(Collections.emptyList())
+            .stream()
+            .collect(Collectors.groupingBy(AttachmentConfigurationEntity::getName))
+            .forEach((nome, lista) -> {
+                if (lista.size() > 1) {
+                    throw ATTACHMENTS_NAME_DUPLICATE_ERROR.businessException();
+                }
+            });
     }
 
     private ClientDTO handleManagedClient(ClientEntity entity) {
@@ -194,6 +219,12 @@ public class ClientService {
         Optional.of(entityUpdated).map(clientMapper::toDto).ifPresent(o -> clientRepresentationMapper.fromDtoRepresentation(o, client));
         keycloakClient.updateClient(client.getId(), client);
         handleManagedClient(entityUpdated);
+        if(CollectionUtils.isNotEmpty(clientUpdatedDTO.configurations())){
+            var attachmentConfigurationEntities = attachmentConfigurationMapper.toEntity(clientUpdatedDTO.configurations());
+            attachmentConfigurationEntities.forEach(o -> o.setClient(entityUpdated));
+            validateAttachment(attachmentConfigurationEntities);
+            attachmentConfigurationRepository.saveAll(attachmentConfigurationEntities   );
+        }
     }
 
     @Cacheable(value = "getTotalClients")
@@ -238,5 +269,17 @@ public class ClientService {
             .filter(obj -> BooleanUtils.isTrue(attached)  ? resourceAccess.entrySet().stream().anyMatch(e -> Objects.equals(e.getKey(), obj.getClientId())) : resourceAccess.entrySet().stream().noneMatch(e -> Objects.equals(e.getKey(), obj.getClientId())) )
             .map(clientMapper::toDto)
             .toList();
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void importAttachmentConfigurations(Long clientId, MultipartFile file) {
+            var client = clientRepository.findById(clientId).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
+            attachmentConfigurationService.importAttachmentConfiguration(client, file);
+    }
+
+
+    public byte[] exportAttachmentConfigurations(Long clientId) {
+        var client = clientRepository.findById(clientId).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
+        return attachmentConfigurationService.toCsv(client.getConfigurations());
     }
 }

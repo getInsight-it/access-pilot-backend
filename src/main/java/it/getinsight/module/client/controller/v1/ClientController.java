@@ -10,14 +10,17 @@ import it.getinsight.module.client.dto.ClientFilterDTO;
 import it.getinsight.module.client.dto.ClientFullResponseDTO;
 import it.getinsight.module.client.dto.ClientStatusUpdateDTO;
 import it.getinsight.module.client.service.ClientService;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -96,13 +99,59 @@ public class ClientController {
         return ResponseEntity.noContent().build();
     }
 
+
+    @Operation(
+        summary = "Import attachments configurations",
+        description = """
+        Imports attachment configurations from a CSV file.
+
+        The CSV must contain the following headers:
+        - name (required)
+        - description (free text, may contain commas or line breaks)
+        - required (true/false)
+        - allowedExtensions (semicolon-separated values, e.g., PDF;JPG;PNG)
+
+        ⚠️ Notes:
+        - Fields containing commas or line breaks must be enclosed in double quotes.
+        - The first line must be the header row with the column names.
+
+        ✅ Recommended export instructions:
+        - **Excel**: Use "Save As" and select **CSV UTF-8 (Comma delimited)** format.
+        - **Google Sheets**: Go to "File" → "Download" → "Comma-separated values (.csv, current sheet)".
+        - **LibreOffice**: Use "Save As" → "Text CSV (.csv)" and check the UTF-8 encoding option. Use `"` as text delimiter and `,` as field separator.
+
+        Example CSV row:
+        "doc_passport","Passport, driver's license.","true","PDF,JPG"
+        """
+    )
+    @PostMapping(value = "{id}/import-attachments-configurations", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize(value = "hasRole('ADMIN')")
+    public ResponseEntity<Void> importConfigurations(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        clientService.importAttachmentConfigurations(id,file);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Export attachments configurations",
+        description = "Exports attachment configurations in CSV format for a given client."
+    )
+    @GetMapping(value = "{id}/export-attachments-configurations", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<byte[]> exportConfigurations(@PathVariable Long id) {
+        byte[] csv = clientService.exportAttachmentConfigurations(id);
+
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=attachments_configurations.csv")
+            .body(csv);
+    }
+
     @Operation(
         summary = "Create a new client",
         description = "Create a new client"
     )
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize(value = "hasRole('ADMIN')")
-    public ResponseEntity<ClientDTO> create(@RequestBody ClientDTO clientDTO) {
+    public ResponseEntity<ClientDTO> create(@RequestBody @Valid ClientDTO clientDTO) {
         return ResponseEntity.ok(clientService.create(clientDTO));
     }
 

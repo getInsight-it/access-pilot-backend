@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_075" author="luan.rodrigues@getinsight.it">
+
+        <renameTable oldTableName="TB_CONFIGURACAO_AUD" newTableName="TB_CONFIGURACAO_ANEXO_AUD"/>
+
+        <dropColumn tableName="TB_CONFIGURACAO_ANEXO_AUD" columnName="VALOR"/>
+
+        <addColumn tableName="TB_CONFIGURACAO_ANEXO_AUD">
+            <column name="OBRIGATORIO" type="BOOLEAN"/>
+        </addColumn>
+        <addColumn tableName="TB_CONFIGURACAO_ANEXO_AUD">
+            <column name="CLIENTE_ID" type="BIGINT"/>
+        </addColumn>
+
+        <addColumn tableName="TB_CONFIGURACAO_ANEXO_AUD">
+            <column name="EXTENSOES_PERMITIDAS" type="VARCHAR(255)"/>
+        </addColumn>
+
+        <rollback>
+
+            <renameTable oldTableName="TB_CONFIGURACAO_ANEXO_AUD" newTableName="TB_CONFIGURACAO_AUD"/>
+
+
+            <addColumn tableName="TB_CONFIGURACAO_AUD">
+                <column name="VALOR" type="JSONB"/>
+            </addColumn>
+
+            <dropColumn tableName="TB_CONFIGURACAO_AUD" columnName="CLIENTE_ID"/>
+
+            <dropColumn tableName="TB_CONFIGURACAO_AUD" columnName="OBRIGATORIO"/>
+            <dropColumn tableName="TB_CONFIGURACAO_AUD" columnName="EXTENSOES_PERMITIDAS"/>
+
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

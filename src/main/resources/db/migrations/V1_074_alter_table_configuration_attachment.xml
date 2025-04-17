@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_074" author="luan.rodrigues@getinsight.it">
+
+        <renameTable oldTableName="TB_CONFIGURACAO" newTableName="TB_CONFIGURACAO_ANEXO"/>
+
+        <renameSequence oldSequenceName="SQ_CONFIGURATION" newSequenceName="SQ_CONFIGURACAO_ANEXO"/>
+
+        <dropColumn tableName="TB_CONFIGURACAO_ANEXO" columnName="VALOR"/>
+
+        <delete tableName="TB_CONFIGURACAO_ANEXO"/>
+
+        <addColumn tableName="TB_CONFIGURACAO_ANEXO">
+            <column name="CLIENTE_ID" type="BIGINT" >
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="TB_CONFIGURACAO_ANEXO">
+            <column name="OBRIGATORIO" type="BOOLEAN"/>
+        </addColumn>
+
+        <addColumn tableName="TB_CONFIGURACAO_ANEXO">
+            <column name="EXTENSOES_PERMITIDAS" type="VARCHAR(255)"/>
+        </addColumn>
+        <addForeignKeyConstraint constraintName="FK_CONFIGURACAO_ANEXO_CLIENTE" baseTableName="TB_CONFIGURACAO_ANEXO" baseColumnNames="CLIENTE_ID" referencedTableName="TB_CLIENTE" referencedColumnNames="ID" />
+
+        <rollback>
+
+            <renameTable oldTableName="TB_CONFIGURACAO_ANEXO" newTableName="TB_CONFIGURACAO"/>
+
+            <renameSequence oldSequenceName="SQ_CONFIGURACAO_ANEXO" newSequenceName="SQ_CONFIGURATION"/>
+
+            <addColumn tableName="TB_CONFIGURACAO">
+                <column name="VALOR" type="JSONB"/>
+            </addColumn>
+
+            <dropForeignKeyConstraint baseTableName="TB_CONFIGURACAO_ANEXO" constraintName="FK_CONFIGURACAO_ANEXO_CLIENTE"/>
+            <dropColumn tableName="TB_CONFIGURACAO" columnName="OBRIGATORIO"/>
+            <dropColumn tableName="TB_CONFIGURACAO" columnName="EXTENSOES_PERMITIDAS"/>
+            <dropColumn tableName="TB_CONFIGURACAO" columnName="CLIENTE_ID"/>
+
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
