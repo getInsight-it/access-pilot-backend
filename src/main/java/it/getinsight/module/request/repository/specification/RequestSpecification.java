@@ -12,7 +12,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.Assert;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class RequestSpecification {
@@ -124,7 +123,7 @@ public class RequestSpecification {
 
     private static Predicate addClientFiltersByClientNameWithLike(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, String clientName) {
         if (StringUtils.isNotBlank(clientName)){
-            Expression<String> campo = cb.lower(root.get("role").get("client").get("name"));
+            Expression<String> campo = cb.lower(root.get("role").get("client").get("key"));
             p = cb.or(p, cb.like(campo, "%" + clientName.toLowerCase() + "%"));
         }
         return p;
@@ -132,7 +131,7 @@ public class RequestSpecification {
 
     private static Predicate addRoleFiltersByNameWithLike(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, String role) {
         if (StringUtils.isNotBlank(role)){
-            Expression<String> campo = cb.lower(root.get("role").get("name"));
+            Expression<String> campo = cb.lower(root.get("role").get("key"));
             p = cb.or(p, cb.like(campo, "%" + role.toLowerCase() + "%"));
         }
         return p;
@@ -140,7 +139,7 @@ public class RequestSpecification {
 
     private static Predicate addRoleFiltersByNameWithIn(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, List<String> rolesNames) {
         if (!rolesNames.isEmpty()) {
-            Expression<String> campo = cb.lower(root.get("role").get("name"));
+            Expression<String> campo = cb.lower(root.get("role").get("key"));
             p = cb.or(p, campo.in(rolesNames.stream().map(String::toLowerCase).toList()));
         }
         return p;

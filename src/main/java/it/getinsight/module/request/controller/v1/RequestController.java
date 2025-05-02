@@ -20,6 +20,7 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -40,11 +41,11 @@ public class RequestController {
     @Operation(summary = "Creates a new request.",
         description = "Creates a new request with the given requestDTO"
     )
-    public ResponseEntity<Void> create(@RequestPart(name = "attachments", required = false)
-                                       List<MultipartFile> attachments,
-                                       @RequestPart(name = "request")
-                                       @Parameter(schema = @Schema(implementation = RequestCreateDTO.class))
-                                       String request) {
+    public ResponseEntity<Void> create(
+        @RequestParam MultiValueMap<String, MultipartFile>  attachments,
+        @RequestPart(name = "request")
+        @Parameter(schema = @Schema(implementation = RequestCreateDTO.class))
+        String request) {
         try {
             final var requestCreateDTO = objectMapper.readValue(request, RequestCreateDTO.class);
             RequestDTO requestDTO = RequestDTO.builder().description(requestCreateDTO.description()).codeItem(requestCreateDTO.codeItem()).role(RoleDTO.builder().id(requestCreateDTO.roleId()).build()).build();
@@ -78,7 +79,7 @@ public class RequestController {
     @GetMapping(path = "/me/paginated", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
         summary = "Retrieve the paginated list of requests associated with the authenticated user",
-        description = "Retrieve a list of requests, with pagination, using a filter by name"
+        description = "Retrieve a list of requests, with pagination, using a filter by key"
     )
     public ResponseEntity<PageableResponseModel<RequestDTO>> findAllByMePaginated(
         @Min(value = 1, message = "O índice da página deve ser no mínimo 1") @RequestParam(defaultValue = "1") Integer pageIndex,
@@ -94,7 +95,7 @@ public class RequestController {
     @GetMapping(path = "/paginated-by-roles", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
         summary = "Retrieve the paginated list of requests associated with the authenticated user",
-        description = "Retrieve a list of requests, with pagination, using a filter by name"
+        description = "Retrieve a list of requests, with pagination, using a filter by key"
     )
     public ResponseEntity<PageableResponseModel<RequestDTO>> findAllPaginatedByRole(
         @Min(value = 1, message = "O índice da página deve ser no mínimo 1") @RequestParam(defaultValue = "1") Integer pageIndex,
@@ -110,7 +111,7 @@ public class RequestController {
     @GetMapping(path = "/paginated", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
         summary = "Retrieve the paginated list of requests associated with the authenticated user",
-        description = "Retrieve a list of requests, with pagination, using a filter by name"
+        description = "Retrieve a list of requests, with pagination, using a filter by key"
     )
     public ResponseEntity<PageableResponseModel<RequestDTO>> findAllPaginated(
         @Min(value = 1, message = "O índice da página deve ser no mínimo 1") @RequestParam(defaultValue = "1") Integer pageIndex,

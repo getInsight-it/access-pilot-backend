@@ -3,8 +3,6 @@ package it.getinsight.module.request.service;
 import it.getinsight.module.client.dto.ClientDTO;
 import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.client.mapper.ClientMapper;
-import it.getinsight.module.level.dto.ItemDTO;
-import it.getinsight.module.level.dto.ItemHierarchyDTO;
 import it.getinsight.module.level.dto.ItemHierarchyResumedDTO;
 import it.getinsight.module.level.dto.LevelDTO;
 import it.getinsight.module.level.mapper.LevelMapper;

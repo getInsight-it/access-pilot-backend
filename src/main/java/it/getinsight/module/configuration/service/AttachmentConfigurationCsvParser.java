@@ -8,16 +8,18 @@ import it.getinsight.module.configuration.enums.FileExtensionType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.csv.QuoteMode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static it.getinsight.message.MessageProperty.ERROR_EXPORT_CSV;
 import static it.getinsight.message.MessageProperty.ERROR_IMPORT_CSV;
 
 @Service
@@ -50,11 +52,11 @@ public class AttachmentConfigurationCsvParser {
 
     private Optional<AttachmentConfigurationEntity> convertToEntity(CSVRecord csvRecord, ClientEntity client) {
         try {
-            if (csvRecord.get("name").isBlank()) {
+            if (csvRecord.get("key").isBlank()) {
                 throw ERROR_IMPORT_CSV.businessException();
             }
 
-            String name = csvRecord.get("name");
+            String key = csvRecord.get("key");
             String description = csvRecord.get("description");
             Boolean required = Boolean.parseBoolean(csvRecord.get("required"));
 
@@ -66,7 +68,7 @@ public class AttachmentConfigurationCsvParser {
 
             return Optional.of(
                 AttachmentConfigurationEntity.builder()
-                    .name(name)
+                    .key(key)
                     .description(description)
                     .required(required)
                     .allowedExtensions(allowedExtensions)
@@ -76,6 +78,37 @@ public class AttachmentConfigurationCsvParser {
         } catch (Exception e) {
             log.warn("Erro ao processar linha do CSV: {}", csvRecord, e);
             return Optional.empty();
+        }
+    }
+
+    public byte [] toCsv(List<AttachmentConfigurationEntity> configs) {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+             OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
+             CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT
+                 .builder()
+                 .setHeader("key", "description", "required", "allowedExtensions")
+                 .setDelimiter(',')
+                 .setQuote('\"')
+                 .setQuoteMode(QuoteMode.ALL)
+                 .setRecordSeparator("\n")
+                 .get())
+        ) {
+            for (AttachmentConfigurationEntity config : configs) {
+                csvPrinter.printRecord(
+                    config.getKey(),
+                    config.getDescription(),
+                    config.getRequired(),
+                    config.getAllowedExtensions() != null
+                        ? config.getAllowedExtensions().stream()
+                        .map(Enum::name)
+                        .collect(Collectors.joining(","))
+                        : ""
+                );
+            }
+            csvPrinter.flush();
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw ERROR_EXPORT_CSV.businessException();
         }
     }
 }

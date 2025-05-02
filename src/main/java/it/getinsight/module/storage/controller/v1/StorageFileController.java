@@ -16,6 +16,8 @@ import it.getinsight.module.storage.service.StorageFileService;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -80,8 +82,8 @@ public class StorageFileController {
 
     @GetMapping("/name/{name}")
     @Operation(
-        summary = "Retrieve a file by its name",
-        description = "Retrieve a file by its name",
+        summary = "Retrieve a file by its key",
+        description = "Retrieve a file by its key",
         responses = {
             @ApiResponse(responseCode = "200", content = {
                 @Content(schema = @Schema(implementation = StorageFileDTO.class))
@@ -109,10 +111,27 @@ public class StorageFileController {
                                                 @RequestParam Boolean isPublic,
                                                 @RequestParam Boolean ephemeral,
                                                 @RequestParam(required = false) UUID ownerId) {
-        storageFileService.save(attachments, bucket, isPublic, ephemeral, ownerId);
+        storageFileService.saveAll(attachments, bucket, isPublic, ephemeral, ownerId);
         return ResponseEntity.status(201).build();
     }
 
+    @GetMapping("/download/{id}")
+    @Operation(
+        summary = "Download a file by its ID",
+        description = "Download a file by its ID",
+        responses = {
+            @ApiResponse(responseCode = "200")
+        }
+    )
+    public ResponseEntity<InputStreamResource> downloadFile(@PathVariable Long id,
+                                                            @RequestParam(defaultValue = "true") Boolean registerDownload) {
+        var storageFile = storageFileService.findById(id);
+        var resource = storageFileService.download(storageFile.id(), registerDownload);
 
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + storageFile.originalFilename() + "\"")
+            .contentType(MediaType.parseMediaType(storageFile.mimeType()))
+            .body(resource);
+    }
 
 }

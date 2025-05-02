@@ -15,7 +15,7 @@
         <addColumn tableName="TB_CONFIGURACAO_ANEXO_AUD">
             <column name="CLIENTE_ID" type="BIGINT"/>
         </addColumn>
-
+        <renameColumn tableName="TB_CONFIGURACAO_ANEXO_AUD" oldColumnName="NOME" newColumnName="KEY"/>
         <addColumn tableName="TB_CONFIGURACAO_ANEXO_AUD">
             <column name="EXTENSOES_PERMITIDAS" type="VARCHAR(255)"/>
         </addColumn>
@@ -24,7 +24,7 @@
 
             <renameTable oldTableName="TB_CONFIGURACAO_ANEXO_AUD" newTableName="TB_CONFIGURACAO_AUD"/>
 
-
+            <renameColumn tableName="TB_CONFIGURACAO_AUD" oldColumnName="KEY" newColumnName="NOME"/>
             <addColumn tableName="TB_CONFIGURACAO_AUD">
                 <column name="VALOR" type="JSONB"/>
             </addColumn>

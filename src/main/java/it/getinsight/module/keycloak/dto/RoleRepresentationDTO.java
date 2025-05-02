@@ -9,7 +9,7 @@ import java.util.Map;
 @Builder
 public record RoleRepresentationDTO(
     @JsonProperty("id") String id,
-    @JsonProperty("name") String name,
+    @JsonProperty("key") String name,
     @JsonProperty("description") String description,
     @JsonProperty("scopeParamRequired") Boolean scopeParamRequired,
     @JsonProperty("composites") CompositesDTO composites,

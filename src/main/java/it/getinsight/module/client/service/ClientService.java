@@ -15,6 +15,7 @@ import it.getinsight.module.client.mapper.ClientFullResponseMapper;
 import it.getinsight.module.client.mapper.ClientMapper;
 import it.getinsight.module.client.mapper.ClientRepresentationMapper;
 import it.getinsight.module.client.repository.ClientRepository;
+import it.getinsight.module.configuration.dto.AttachmentConfigurationDTO;
 import it.getinsight.module.configuration.entity.AttachmentConfigurationEntity;
 import it.getinsight.module.configuration.mapper.AttachmentConfigurationMapper;
 import it.getinsight.module.configuration.repository.AttachmentConfigurationRepository;
@@ -46,8 +47,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static it.getinsight.message.MessageProperty.ATTACHMENTS_NAME_DUPLICATE_ERROR;
-import static it.getinsight.message.MessageProperty.CLIENT_NOT_FOUND_ERROR;
+import static it.getinsight.message.MessageProperty.*;
 
 
 @Service
@@ -56,7 +56,6 @@ import static it.getinsight.message.MessageProperty.CLIENT_NOT_FOUND_ERROR;
 public class ClientService {
 
     public static final String IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED = "acl.client.managed";
-    public static final String IDP_KEYCLOAK_NAME_CONFIGURATION_ID = "configurationId";
     private final ClientRepository clientRepository;
     private final ClientMapper clientMapper;
     private final ClientFilterMapper clientFilterMapper;
@@ -182,7 +181,7 @@ public class ClientService {
         Optional.ofNullable(configurations)
             .orElse(Collections.emptyList())
             .stream()
-            .collect(Collectors.groupingBy(AttachmentConfigurationEntity::getName))
+            .collect(Collectors.groupingBy(AttachmentConfigurationEntity::getKey))
             .forEach((nome, lista) -> {
                 if (lista.size() > 1) {
                     throw ATTACHMENTS_NAME_DUPLICATE_ERROR.businessException();
@@ -219,13 +218,32 @@ public class ClientService {
         Optional.of(entityUpdated).map(clientMapper::toDto).ifPresent(o -> clientRepresentationMapper.fromDtoRepresentation(o, client));
         keycloakClient.updateClient(client.getId(), client);
         handleManagedClient(entityUpdated);
-        if(CollectionUtils.isNotEmpty(clientUpdatedDTO.configurations())){
-            var attachmentConfigurationEntities = attachmentConfigurationMapper.toEntity(clientUpdatedDTO.configurations());
-            attachmentConfigurationEntities.forEach(o -> o.setClient(entityUpdated));
+        processAttachmentConfigurations(clientUpdatedDTO.configurations(), entityUpdated);
+    }
+
+    private void processAttachmentConfigurations(List<AttachmentConfigurationDTO> configurations, ClientEntity entityUpdated) {
+        if (CollectionUtils.isNotEmpty(configurations)) {
+            var attachmentConfigurationEntities = configurations.stream()
+                .map(configuration -> {
+                    AttachmentConfigurationEntity entity = (configuration.id() != null)
+                        ? attachmentConfigurationRepository.findById(configuration.id())
+                        .map(existing -> {
+                            attachmentConfigurationMapper.fromDto(configuration, existing);
+                            return existing;
+                        })
+                        .orElseThrow(ERROR_CONFIGURATION_NOT_FOUND::businessException)
+                        : attachmentConfigurationMapper.toEntity(configuration);
+
+                    entity.setClient(entityUpdated);
+                    return entity;
+                })
+                .toList();
+
             validateAttachment(attachmentConfigurationEntities);
-            attachmentConfigurationRepository.saveAll(attachmentConfigurationEntities   );
+            attachmentConfigurationRepository.saveAll(attachmentConfigurationEntities);
         }
     }
+
 
     @Cacheable(value = "getTotalClients")
     public long getTotalClients() {

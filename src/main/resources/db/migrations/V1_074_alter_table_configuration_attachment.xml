@@ -19,6 +19,8 @@
             </column>
         </addColumn>
 
+        <renameColumn tableName="TB_CONFIGURACAO_ANEXO" oldColumnName="NOME" newColumnName="KEY"/>
+
         <addColumn tableName="TB_CONFIGURACAO_ANEXO">
             <column name="OBRIGATORIO" type="BOOLEAN"/>
         </addColumn>
@@ -42,6 +44,7 @@
             <dropColumn tableName="TB_CONFIGURACAO" columnName="OBRIGATORIO"/>
             <dropColumn tableName="TB_CONFIGURACAO" columnName="EXTENSOES_PERMITIDAS"/>
             <dropColumn tableName="TB_CONFIGURACAO" columnName="CLIENTE_ID"/>
+            <renameColumn tableName="TB_CONFIGURACAO" oldColumnName="KEY" newColumnName="NOME"/>
 
         </rollback>
     </changeSet>

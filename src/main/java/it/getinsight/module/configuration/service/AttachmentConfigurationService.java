@@ -5,21 +5,17 @@ import it.getinsight.module.configuration.dto.AttachmentConfigurationDTO;
 import it.getinsight.module.configuration.entity.AttachmentConfigurationEntity;
 import it.getinsight.module.configuration.mapper.AttachmentConfigurationMapper;
 import it.getinsight.module.configuration.repository.AttachmentConfigurationRepository;
+import it.getinsight.module.configuration.service.validador.AttachmentConfigurationValidator;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.QuoteMode;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 import static it.getinsight.message.MessageProperty.ERROR_CONFIGURATION_NOT_FOUND;
 import static it.getinsight.message.MessageProperty.ERROR_EXPORT_CSV;
@@ -32,6 +28,7 @@ public class AttachmentConfigurationService {
     private final AttachmentConfigurationRepository attachmentConfigurationRepository;
     private final AttachmentConfigurationMapper attachmentConfigurationMapper;
     private final AttachmentConfigurationCsvParser attachmentConfigurationCsvParser;
+    private final AttachmentConfigurationValidator attachmentConfigurationValidator;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void delete(Long id) {
@@ -52,33 +49,13 @@ public class AttachmentConfigurationService {
 
 
     public byte[] toCsv(List<AttachmentConfigurationEntity> configs) {
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
-             OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
-             CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT
-                 .builder()
-                 .setHeader("name", "description", "required", "allowedExtensions")
-                 .setDelimiter(',')
-                 .setQuote('\"')
-                 .setQuoteMode(QuoteMode.ALL)
-                 .setRecordSeparator("\n")
-                 .get())
-        ) {
-            for (AttachmentConfigurationEntity config : configs) {
-                csvPrinter.printRecord(
-                    config.getName(),
-                    config.getDescription(),
-                    config.getRequired(),
-                    config.getAllowedExtensions() != null
-                        ? config.getAllowedExtensions().stream()
-                        .map(Enum::name)
-                        .collect(Collectors.joining(","))
-                        : ""
-                );
-            }
-            csvPrinter.flush();
-            return out.toByteArray();
-        } catch (IOException e) {
-            throw ERROR_EXPORT_CSV.businessException();
+        return Optional.of(attachmentConfigurationCsvParser.toCsv(configs)).orElseThrow(ERROR_EXPORT_CSV::businessException);
+    }
+
+
+    public void validate(List<AttachmentConfigurationEntity> config, MultiValueMap<String, MultipartFile> attachments) {
+        if(CollectionUtils.isNotEmpty(config)) {
+            attachmentConfigurationValidator.validate(config, attachments);
         }
     }
 

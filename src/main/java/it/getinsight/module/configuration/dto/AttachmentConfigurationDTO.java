@@ -14,12 +14,13 @@ public record AttachmentConfigurationDTO(
     Long id,
     UUID uuid,
     @NotEmpty
-    String name,
+    String key,
     @Size(min = 3, max = 255)
     String description,
     @NotNull
     Boolean required,
-    Set<FileExtensionType> allowedExtensions
+    Set<FileExtensionType> allowedExtensions,
+    Boolean active
 ) implements Serializable {
     @Serial
     private static final long serialVersionUID = -6731357049354425215L;

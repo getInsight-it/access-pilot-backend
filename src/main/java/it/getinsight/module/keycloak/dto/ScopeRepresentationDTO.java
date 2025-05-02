@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public record ScopeRepresentationDTO(
-    @JsonProperty("name") String name,
+    @JsonProperty("key") String name,
     @JsonProperty("displayName") String displayName,
     @JsonProperty("iconUri") String iconUri,
     @JsonProperty("id") String id,

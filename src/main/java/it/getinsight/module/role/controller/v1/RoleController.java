@@ -46,7 +46,7 @@ public class RoleController {
 
     @Operation(
         summary = "Retrieve the paginated list of roles",
-        description = "Retrieve a list of roles, with pagination, using a filter by name"
+        description = "Retrieve a list of roles, with pagination, using a filter by key"
     )
     @GetMapping(path = "/paginated", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<RoleResponseDTO>> getAllPaginated(
@@ -62,7 +62,7 @@ public class RoleController {
 
     @Operation(
         summary = "Retrieve the paginated list of roles",
-        description = "Retrieve a list of roles, with pagination, using a filter by name"
+        description = "Retrieve a list of roles, with pagination, using a filter by key"
     )
     @GetMapping(path = "/paginated-by-name", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<RoleResponseDTO>> getAllPaginatedByName(
