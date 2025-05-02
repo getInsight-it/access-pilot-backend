@@ -5,21 +5,25 @@ import it.getinsight.core.message.CoreMessageSource;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.level.client.FeignClientFactory;
-import it.getinsight.module.level.dto.*;
+import it.getinsight.module.level.dto.ExportationFilterDTO;
+import it.getinsight.module.level.dto.ItemDTO;
+import it.getinsight.module.level.dto.ItemFilterDTO;
+import it.getinsight.module.level.dto.ItemHierarchyResumedDTO;
 import it.getinsight.module.level.entity.ItemEntity;
 import it.getinsight.module.level.entity.LevelEntity;
 import it.getinsight.module.level.entity.LevelType;
-import it.getinsight.module.level.mapper.*;
+import it.getinsight.module.level.mapper.ItemFilterMapper;
+import it.getinsight.module.level.mapper.ItemHierarchyResumedMapper;
+import it.getinsight.module.level.mapper.ItemMapper;
+import it.getinsight.module.level.mapper.LevelHierarchyResumedMapper;
 import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.level.repository.LevelRepository;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
-import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.convert.QueryByExamplePredicateBuilder;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -34,7 +38,6 @@ import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static it.getinsight.message.MessageProperty.*;
@@ -75,7 +78,7 @@ public class ItemService {
             .matchingAny()
             .withIgnoreNullValues()
             .withIgnoreCase()
-            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher("key", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("externalCode", ExampleMatcher.GenericPropertyMatcher::contains);
 
@@ -142,7 +145,7 @@ public class ItemService {
         try {
             var items = itemRepository.findAllByLevelNameIn(filter.namesLevels());
             OutputStreamWriter writer = new OutputStreamWriter(response.getOutputStream(), StandardCharsets.UTF_8);
-            writer.write("id,uuid,parentId,levelId,name,description,externalCode\n");
+            writer.write("id,uuid,parentId,levelId,key,description,externalCode\n");
 
             for (ItemEntity item : items) {
                 writer.write(MessageFormat.format("{0},{1},{2},{3},{4},{5},{6}\n",

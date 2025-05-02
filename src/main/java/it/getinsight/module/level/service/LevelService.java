@@ -57,7 +57,7 @@ public class LevelService {
         final var matcher = ExampleMatcher
             .matchingAny()
             .withIgnoreNullValues()
-            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher("key", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("externalUrl", ExampleMatcher.GenericPropertyMatcher::contains);
 
@@ -95,7 +95,7 @@ public class LevelService {
         final var matcher = ExampleMatcher
             .matchingAny()
             .withIgnoreNullValues()
-            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher("key", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("externalCode", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("level.id", ExampleMatcher.GenericPropertyMatcher::exact)
@@ -160,7 +160,7 @@ public class LevelService {
         try {
             var levels = levelRepository.findByNameIn(filter.namesLevels());
             OutputStreamWriter writer = new OutputStreamWriter(response.getOutputStream(), StandardCharsets.UTF_8);
-            writer.write("id,uuid,parentId,sigla,name,description,type,apiKey\n");
+            writer.write("id,uuid,parentId,sigla,key,description,type,apiKey\n");
             for (LevelEntity level : levels) {
                 writer.write(MessageFormat.format("{0},{1},{2},{3},{4},{5},{6},{7}\n",
                     level.getId(),

@@ -26,7 +26,7 @@ class AccessPilotSentryUserProvider implements SentryUserProvider {
 
                 if (principal instanceof JwtAuthenticationToken jwt) {
                     user.setId(jwt.getToken().getId());
-                    user.setName(jwt.getToken().getClaimAsString("name"));
+                    user.setName(jwt.getToken().getClaimAsString("key"));
                     user.setEmail(jwt.getToken().getClaimAsString("email"));
                     user.setUsername(jwt.getToken().getClaimAsString("preferred_username"));
                     user.setUnknown(jwt.getTokenAttributes());

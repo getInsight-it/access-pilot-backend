@@ -13,7 +13,7 @@ import java.util.Map;
 @Setter
 public class ClientRepresentationDTO{
     @JsonProperty("id") String id;
-    @JsonProperty("name") String name;
+    @JsonProperty("key") String name;
     @JsonProperty("description") String description;
     @JsonProperty("clientId") String clientId;
     @JsonProperty("enabled") Boolean enabled;

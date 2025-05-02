@@ -1,7 +1,6 @@
 package it.getinsight.module.role.service;
 
 
-import it.getinsight.core.exception.FeignIntegrationException;
 import it.getinsight.core.exception.InfraException;
 import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
@@ -85,7 +84,7 @@ public class RoleService {
         final var matcher = ExampleMatcher
             .matchingAny()
             .withIgnoreNullValues()
-            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher("key", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("client.id", ExampleMatcher.GenericPropertyMatcher::exact);
 
         final var example = Example.of(model, matcher);

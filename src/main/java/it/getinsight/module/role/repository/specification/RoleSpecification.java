@@ -26,7 +26,7 @@ public class RoleSpecification {
                     }
                     return builder.and(
                         builder.equal(root.get("client").get("clientId"), clientId),
-                        root.get("name").in(roleNames)
+                        root.get("key").in(roleNames)
                     );
                 })
                 .filter(Objects::nonNull)

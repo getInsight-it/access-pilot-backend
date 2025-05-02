@@ -10,7 +10,7 @@ import java.util.UUID;
 @Builder
 public record StorageFileFilterDTO(
 
-    @Schema(description = "File name")
+    @Schema(description = "File key")
     String originalFilename,
 
     @Schema(description = "File ID")

@@ -27,10 +27,6 @@
                              referencedTableName="TB_CONFIGURACAO_ANEXO" referencedColumnNames="ID"/>
             </column>
 
-            <column name="TIPO_ARQUIVO" type="VARCHAR(255)"/>
-
-            <column name="DESCRICAO" type="VARCHAR(1000)"/>
-
             <column name="ATIVO" type="BOOLEAN"/>
 
             <column name="CRIADO_POR" type="VARCHAR(255)"/>

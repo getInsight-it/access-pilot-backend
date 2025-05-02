@@ -31,8 +31,8 @@ public class AttachmentConfigurationEntity extends AuditableEntity<Long, String>
     @Column(name = "UUID", nullable = false)
     private UUID uuid;
 
-    @Column(name = "NOME", nullable = false)
-    private String name;
+    @Column(name = "CHAVE", nullable = false)
+    private String key;
 
     @Column(name = "DESCRICAO")
     private String description;
@@ -48,7 +48,7 @@ public class AttachmentConfigurationEntity extends AuditableEntity<Long, String>
     @JoinColumn(name = "CLIENTE_ID", nullable = false)
     private ClientEntity client;
 
-    @Column(name = "ATIVO")
+    @Column(name = "ATIVO" , nullable = false)
     private Boolean active;
 
     @PrePersist

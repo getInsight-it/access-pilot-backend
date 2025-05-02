@@ -19,11 +19,11 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "TB_SOLICITACAO_ARQUIVO")
-@SequenceGenerator(name = "RequestFileEntity.sq", sequenceName = "SQ_SOLICITACAO_ARQUIVO", allocationSize = 1)
-public class RequestFileEntity extends AuditableEntity<Long, String> {
+@SequenceGenerator(name = "RequestAttachmentEntity.sq", sequenceName = "SQ_SOLICITACAO_ARQUIVO", allocationSize = 1)
+public class RequestAttachmentEntity extends AuditableEntity<Long, String> {
 
     @Id
-    @GeneratedValue(generator = "RequestFileEntity.sq", strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(generator = "RequestAttachmentEntity.sq", strategy = GenerationType.SEQUENCE)
     private Long id;
 
     @Column(name = "UUID")
@@ -40,12 +40,6 @@ public class RequestFileEntity extends AuditableEntity<Long, String> {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_CONFIGURACAO")
     private AttachmentConfigurationEntity configuration;
-
-    @Column(name = "TIPO_ARQUIVO")
-    private String fileType;
-
-    @Column(name = "DESCRICAO")
-    private String description;
 
     @Column(name = "ATIVO")
     private Boolean active;

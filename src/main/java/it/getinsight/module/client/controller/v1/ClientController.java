@@ -55,7 +55,7 @@ public class ClientController {
 
     @Operation(
         summary = "Retrieve the paginated list of clients",
-        description = "Retrieve a list of clients, with pagination, using a name filter"
+        description = "Retrieve a list of clients, with pagination, using a key filter"
     )
     @GetMapping(path = "/paginated", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<ClientDTO>> getAllClientsPaginated(
@@ -106,7 +106,7 @@ public class ClientController {
         Imports attachment configurations from a CSV file.
 
         The CSV must contain the following headers:
-        - name (required)
+        - key (required)
         - description (free text, may contain commas or line breaks)
         - required (true/false)
         - allowedExtensions (semicolon-separated values, e.g., PDF;JPG;PNG)

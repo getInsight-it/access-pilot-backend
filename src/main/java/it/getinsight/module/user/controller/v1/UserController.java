@@ -40,9 +40,9 @@ public class UserController {
 
     @Operation(
         summary = "Retrieve the paginated list of users",
-        description = "Retrieve a list of users with pagination, using filters by name, status, quantity, and/or value"
+        description = "Retrieve a list of users with pagination, using filters by key, status, quantity, and/or value"
     )
-    @Parameter(name = "name", description = "Filter by name", in = ParameterIn.QUERY, schema = @Schema(type = "string"))
+    @Parameter(name = "key", description = "Filter by key", in = ParameterIn.QUERY, schema = @Schema(type = "string"))
     @Parameter(name = "status", description = "Filter by status", in = ParameterIn.QUERY, schema = @Schema(type = "boolean"))
     @Parameter(name = "quantity", description = "Filter by quantity", in = ParameterIn.QUERY, schema = @Schema(type = "integer"))
     @Parameter(name = "value", description = "Filter by value", in = ParameterIn.QUERY, schema = @Schema(type = "float"))
@@ -61,7 +61,7 @@ public class UserController {
 
     @Operation(
         summary = "Retrieve the paginated list of users",
-        description = "Retrieve a list of users with pagination, using a filter by name"
+        description = "Retrieve a list of users with pagination, using a filter by key"
     )
     @GetMapping(path = "/paginated-by-name", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<UserDTO>> getAllUsersPaginatedByName(

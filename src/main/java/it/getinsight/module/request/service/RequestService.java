@@ -1,13 +1,14 @@
 package it.getinsight.module.request.service;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.exception.BusinessException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.entity.ClientStatus;
+import it.getinsight.module.configuration.entity.AttachmentConfigurationEntity;
+import it.getinsight.module.configuration.service.AttachmentConfigurationService;
 import it.getinsight.module.email.dto.EmailDTO;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
@@ -20,10 +21,12 @@ import it.getinsight.module.request.config.EmailNotificationProperties;
 import it.getinsight.module.request.dto.RequestDTO;
 import it.getinsight.module.request.dto.RequestFilterDTO;
 import it.getinsight.module.request.dto.RequestUpdateDTO;
+import it.getinsight.module.request.entity.RequestAttachmentEntity;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.request.mapper.RequestFilterMapper;
 import it.getinsight.module.request.mapper.RequestMapper;
+import it.getinsight.module.request.repository.RequestAttachmentFileRepository;
 import it.getinsight.module.request.repository.RequestRepository;
 import it.getinsight.module.request.repository.specification.RequestEntitySpecificationFilter;
 import it.getinsight.module.request.repository.specification.RequestSpecification;
@@ -32,6 +35,7 @@ import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.role.repository.specification.RoleSpecification;
 import it.getinsight.module.role.service.RoleService;
+import it.getinsight.module.storage.entity.StorageFileEntity;
 import it.getinsight.module.storage.service.StorageFileService;
 import it.getinsight.module.user.entity.UserEntity;
 import it.getinsight.module.user.mapper.UserMapper;
@@ -52,6 +56,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
@@ -70,12 +75,13 @@ public class RequestService {
     private final KeycloakClient keycloakClient;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final RequestAttachmentFileRepository requestAttachmentRepository;
+    private final AttachmentConfigurationService attachmentConfigurationService;
     private final RoleService roleService;
     private final UserService userService;
     private final NotificationService notificationService;
     private final StorageFileService storageFileService;
     private final FeignClientFactory feignClientFactory;
-    private final ObjectMapper objectMapper;
 
     private static final String NAME_QUERY_FIND_ALL_REQUESTS_IN_ROLES = "find-all-requests-in-roles";
     private static final String NAME_QUERY_FIND_ALL_REQUESTS = "find-all-requests";
@@ -86,12 +92,13 @@ public class RequestService {
     private final ItemRepository itemRepository;
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public RequestDTO createRequest(final RequestDTO requestDTO, List<MultipartFile> attachments) {
+    public RequestDTO createRequest(final RequestDTO requestDTO, MultiValueMap<String, MultipartFile> attachments) {
         var principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        var roleEntity = roleRepository.findById(requestDTO.role().id())
-                .orElseThrow(REQUEST_NOT_FOUND_ERROR::businessException);
+        var roleEntity = roleRepository.findById(requestDTO.role().id()).orElseThrow(REQUEST_NOT_FOUND_ERROR::businessException);
+        var configurations = roleEntity.getClient().getConfigurations();
         validateItemExistence(requestDTO.codeItem(), roleEntity);
-        //TODO: implementar validateRequest(requestDTO, attachments);
+        attachmentConfigurationService.validate(configurations, attachments);
+
         var user = findOrCreateUser(principal);
         var entity = requestMapper.toEntity(requestDTO);
         entity.setRequestingUser(user);
@@ -101,11 +108,35 @@ public class RequestService {
         entity.setProtocolCode(ProtocolUtil.generateUniqueProtocolCode());
 
         requestRepository.save(entity);
-        storageFileService.save(attachments, PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET, false, false, entity.getUuid());
-
+        saveRequestFiles(attachments, configurations, entity);
         sendNotifications(entity);
 
         return requestMapper.toDto(entity);
+    }
+
+    private void saveRequestFiles(MultiValueMap<String, MultipartFile> attachments,
+                                  List<AttachmentConfigurationEntity> configurations,
+                                  RequestEntity request) {
+
+        for (AttachmentConfigurationEntity config : configurations) {
+            List<MultipartFile> files = attachments.get(config.getKey());
+            if (files == null || files.isEmpty()) continue;
+
+            var storageFileEntities = storageFileService.saveAll(files, PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET, false, false, request.getUuid());
+
+            for (StorageFileEntity storageFileEntity : storageFileEntities) {
+                var requestFile = RequestAttachmentEntity.builder()
+                    .request(request)
+                    .file(storageFileEntity)
+                    .configuration(config)
+                    .uuid(UUID.randomUUID())
+                    .active(true)
+                    .build();
+                requestAttachmentRepository.save(requestFile);
+            }
+
+        }
+
     }
 
     private void sendNotifications(RequestEntity requestEntity) {
@@ -145,7 +176,7 @@ public class RequestService {
         return userRepository.findByExternalId(userId).orElseGet(() -> {
             UserEntity user = new UserEntity();
             user.setExternalId(userId);
-            user.setFirstName(principal.getClaimAsString("name"));
+            user.setFirstName(principal.getClaimAsString("key"));
             user.setLastName(principal.getClaimAsString("family_name"));
             user.setEmail(principal.getClaimAsString("email"));
             return userRepository.save(user);

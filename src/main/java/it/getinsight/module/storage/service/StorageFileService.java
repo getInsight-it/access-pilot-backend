@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -70,33 +71,38 @@ public class StorageFileService {
             .orElseThrow(() -> new InfraException("Arquivo não encontrado")));
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
-    public void save(List<MultipartFile> attachments, String bucket, Boolean isPublic, Boolean ephemeral, UUID ownerId) {
-        if (attachments == null || attachments.isEmpty()) {
-            return;
+    @Transactional
+    public List<StorageFileEntity> saveAll(List<MultipartFile> attachments, String bucket, Boolean isPublic, Boolean ephemeral, UUID ownerId) {
+        var files = new ArrayList<StorageFileEntity>();
+        if (attachments != null && !attachments.isEmpty()){
+            attachments.forEach(file -> {
+                try {
+                    var fileUploaded = upload(bucket, isPublic, ephemeral, ownerId, file.getOriginalFilename(),
+                        file.getContentType(), file.getSize(), file.getInputStream());
+                    files.add(fileUploaded);
+                } catch (IOException e) {
+                    throw new InfraException("Erro ao salvar arquivo", e);
+                }
+            });
         }
-        for (MultipartFile file : attachments) {
-            try {
-                upload(bucket, isPublic, ephemeral, ownerId, file.getOriginalFilename(), file.getContentType(), file.getSize(), file.getInputStream());
-            } catch (IOException e) {
-                throw new InfraException("Erro ao salvar arquivo");
-            }
-        }
+
+        return files;
     }
 
-    public void upload(String bucket,
-                        Boolean isPublic,
-                        Boolean ephemeral,
-                        UUID ownerId,
-                        String originalFilename,
-                        String contentType,
-                        Long size,
-                        InputStream inputStream) {
 
-        if (ownerId == null){
+    public StorageFileEntity upload(String bucket,
+                                    Boolean isPublic,
+                                    Boolean ephemeral,
+                                    UUID ownerId,
+                                    String originalFilename,
+                                    String contentType,
+                                    Long size,
+                                    InputStream inputStream) {
+        if (ownerId == null) {
             throw new BusinessException("OwnerId não informada");
         }
-        var storageFileEntity = StorageFileEntity.builder()
+
+        var entity = StorageFileEntity.builder()
             .bucket(bucket)
             .excluded(false)
             .isPublic(isPublic)
@@ -109,11 +115,11 @@ public class StorageFileService {
             .fileId(UUID.randomUUID())
             .build();
 
-        storageFileEntity = storageRepository.save(storageFileEntity);
-
-        storageProvider.uploadFile(storageFileEntity, inputStream);
-
+        entity = storageRepository.save(entity);
+        storageProvider.uploadFile(entity, inputStream);
+        return entity;
     }
+
 
     @Transactional(propagation = Propagation.REQUIRED)
     public InputStreamResource download(Long fileId, boolean registerDownload) {

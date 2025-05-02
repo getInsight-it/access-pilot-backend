@@ -1,9 +1,7 @@
 package it.getinsight.module.level.client;
 
 import it.getinsight.core.pagination.PageableResponseModel;
-import it.getinsight.module.level.dto.ItemDTO;
 import it.getinsight.module.level.dto.ItemFilterDTO;
-import it.getinsight.module.level.dto.ItemHierarchyDTO;
 import it.getinsight.module.level.dto.ItemHierarchyResumedDTO;
 import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.http.MediaType;
