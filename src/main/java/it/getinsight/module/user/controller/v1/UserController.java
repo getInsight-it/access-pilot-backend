@@ -42,7 +42,7 @@ public class UserController {
         summary = "Retrieve the paginated list of users",
         description = "Retrieve a list of users with pagination, using filters by key, status, quantity, and/or value"
     )
-    @Parameter(name = "key", description = "Filter by key", in = ParameterIn.QUERY, schema = @Schema(type = "string"))
+    @Parameter(name = "name", description = "Filter by name", in = ParameterIn.QUERY, schema = @Schema(type = "string"))
     @Parameter(name = "status", description = "Filter by status", in = ParameterIn.QUERY, schema = @Schema(type = "boolean"))
     @Parameter(name = "quantity", description = "Filter by quantity", in = ParameterIn.QUERY, schema = @Schema(type = "integer"))
     @Parameter(name = "value", description = "Filter by value", in = ParameterIn.QUERY, schema = @Schema(type = "float"))

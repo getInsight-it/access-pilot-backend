@@ -78,7 +78,7 @@ public class ItemService {
             .matchingAny()
             .withIgnoreNullValues()
             .withIgnoreCase()
-            .withMatcher("key", ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("externalCode", ExampleMatcher.GenericPropertyMatcher::contains);
 

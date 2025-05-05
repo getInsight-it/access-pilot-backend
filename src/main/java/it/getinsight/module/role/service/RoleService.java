@@ -84,7 +84,7 @@ public class RoleService {
         final var matcher = ExampleMatcher
             .matchingAny()
             .withIgnoreNullValues()
-            .withMatcher("key", ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("client.id", ExampleMatcher.GenericPropertyMatcher::exact);
 
         final var example = Example.of(model, matcher);

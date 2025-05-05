@@ -57,7 +57,7 @@ public class LevelService {
         final var matcher = ExampleMatcher
             .matchingAny()
             .withIgnoreNullValues()
-            .withMatcher("key", ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("externalUrl", ExampleMatcher.GenericPropertyMatcher::contains);
 
@@ -95,7 +95,7 @@ public class LevelService {
         final var matcher = ExampleMatcher
             .matchingAny()
             .withIgnoreNullValues()
-            .withMatcher("key", ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("externalCode", ExampleMatcher.GenericPropertyMatcher::contains)
             .withMatcher("level.id", ExampleMatcher.GenericPropertyMatcher::exact)
