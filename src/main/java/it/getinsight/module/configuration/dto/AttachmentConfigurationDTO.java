@@ -4,12 +4,14 @@ import it.getinsight.module.configuration.enums.FileExtensionType;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Set;
 import java.util.UUID;
 
+@Builder
 public record AttachmentConfigurationDTO(
     Long id,
     UUID uuid,

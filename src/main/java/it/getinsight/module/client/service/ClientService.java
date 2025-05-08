@@ -289,10 +289,9 @@ public class ClientService {
             .toList();
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
-    public void importAttachmentConfigurations(Long clientId, MultipartFile file) {
-            var client = clientRepository.findById(clientId).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
-            attachmentConfigurationService.importAttachmentConfiguration(client, file);
+
+    public List<AttachmentConfigurationDTO> previewAttachmentConfiguration(MultipartFile file) {
+            return attachmentConfigurationService.previewAttachmentConfiguration(file);
     }
 
 

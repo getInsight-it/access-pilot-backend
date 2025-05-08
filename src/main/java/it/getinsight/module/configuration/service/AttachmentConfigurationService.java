@@ -1,6 +1,5 @@
 package it.getinsight.module.configuration.service;
 
-import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.configuration.dto.AttachmentConfigurationDTO;
 import it.getinsight.module.configuration.entity.AttachmentConfigurationEntity;
 import it.getinsight.module.configuration.mapper.AttachmentConfigurationMapper;
@@ -42,9 +41,8 @@ public class AttachmentConfigurationService {
     }
 
 
-    public void importAttachmentConfiguration(ClientEntity client, MultipartFile file) {
-        var configs = attachmentConfigurationCsvParser.parse(client, file);
-        attachmentConfigurationRepository.saveAll(configs);
+    public List<AttachmentConfigurationDTO> previewAttachmentConfiguration(MultipartFile file) {
+        return attachmentConfigurationCsvParser.parseToDTO(file);
     }
 
 
