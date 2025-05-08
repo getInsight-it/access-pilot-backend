@@ -2,7 +2,7 @@ package it.getinsight.module.configuration.service;
 
 import it.getinsight.core.exception.BusinessException;
 import it.getinsight.core.message.CoreMessageSource;
-import it.getinsight.module.client.entity.ClientEntity;
+import it.getinsight.module.configuration.dto.AttachmentConfigurationDTO;
 import it.getinsight.module.configuration.entity.AttachmentConfigurationEntity;
 import it.getinsight.module.configuration.enums.FileExtensionType;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ import static it.getinsight.message.MessageProperty.ERROR_IMPORT_CSV;
 @Slf4j
 public class AttachmentConfigurationCsvParser {
 
-    public List<AttachmentConfigurationEntity> parse(ClientEntity client, MultipartFile file) {
+    public List<AttachmentConfigurationDTO> parseToDTO(MultipartFile file) {
         try (Reader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8)) {
             CSVFormat format = CSVFormat.DEFAULT.builder()
                 .setDelimiter(',')
@@ -37,20 +37,20 @@ public class AttachmentConfigurationCsvParser {
                 .get();
 
             Iterable<CSVRecord> records = format.parse(reader);
-            List<AttachmentConfigurationEntity> configs = new ArrayList<>();
+            List<AttachmentConfigurationDTO> list = new ArrayList<>();
 
             for (CSVRecord csvRecord : records) {
-                convertToEntity(csvRecord, client).ifPresent(configs::add);
+                convertToEntity(csvRecord).ifPresent(list::add);
             }
 
-            return configs;
+            return list;
 
         } catch (Exception e) {
             throw new BusinessException(CoreMessageSource.get().message(ERROR_IMPORT_CSV.key()), e);
         }
     }
 
-    private Optional<AttachmentConfigurationEntity> convertToEntity(CSVRecord csvRecord, ClientEntity client) {
+    private Optional<AttachmentConfigurationDTO> convertToEntity(CSVRecord csvRecord) {
         try {
             if (csvRecord.get("key").isBlank()) {
                 throw ERROR_IMPORT_CSV.businessException();
@@ -67,12 +67,11 @@ public class AttachmentConfigurationCsvParser {
                 .collect(Collectors.toSet());
 
             return Optional.of(
-                AttachmentConfigurationEntity.builder()
+                AttachmentConfigurationDTO.builder()
                     .key(key)
                     .description(description)
                     .required(required)
                     .allowedExtensions(allowedExtensions)
-                    .client(client)
                     .build()
             );
         } catch (Exception e) {

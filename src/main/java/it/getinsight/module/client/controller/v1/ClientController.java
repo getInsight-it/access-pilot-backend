@@ -10,6 +10,7 @@ import it.getinsight.module.client.dto.ClientFilterDTO;
 import it.getinsight.module.client.dto.ClientFullResponseDTO;
 import it.getinsight.module.client.dto.ClientStatusUpdateDTO;
 import it.getinsight.module.client.service.ClientService;
+import it.getinsight.module.configuration.dto.AttachmentConfigurationDTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -101,34 +102,19 @@ public class ClientController {
 
 
     @Operation(
-        summary = "Import attachments configurations",
+        summary = "Preview attachment configurations from CSV",
         description = """
-        Imports attachment configurations from a CSV file.
+        Parses a CSV file and returns a preview in JSON format without saving.
 
-        The CSV must contain the following headers:
-        - key (required)
-        - description (free text, may contain commas or line breaks)
-        - required (true/false)
-        - allowedExtensions (semicolon-separated values, e.g., PDF;JPG;PNG)
+        Useful for validating and adjusting the data before persisting.
 
-        ⚠️ Notes:
-        - Fields containing commas or line breaks must be enclosed in double quotes.
-        - The first line must be the header row with the column names.
-
-        ✅ Recommended export instructions:
-        - **Excel**: Use "Save As" and select **CSV UTF-8 (Comma delimited)** format.
-        - **Google Sheets**: Go to "File" → "Download" → "Comma-separated values (.csv, current sheet)".
-        - **LibreOffice**: Use "Save As" → "Text CSV (.csv)" and check the UTF-8 encoding option. Use `"` as text delimiter and `,` as field separator.
-
-        Example CSV row:
-        "doc_passport","Passport, driver's license.","true","PDF,JPG"
+        ⚠️ Same CSV format rules apply as in the import operation.
         """
     )
-    @PostMapping(value = "{id}/import-attachments-configurations", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/attachments-configurations-import-preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize(value = "hasRole('ADMIN')")
-    public ResponseEntity<Void> importConfigurations(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
-        clientService.importAttachmentConfigurations(id,file);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<List<AttachmentConfigurationDTO>> previewImport(@RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(clientService.previewAttachmentConfiguration(file));
     }
 
     @Operation(
