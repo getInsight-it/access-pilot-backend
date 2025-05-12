@@ -198,8 +198,8 @@ public class RequestService {
             }
 
             if (levelType == LevelType.EXTERNAL) {
-                var opItemDtoFound = feignClientFactory.createClient(level.getExternalUrl())
-                    .getItemByExternalCode(level.getApiKey(), codeItem).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+                var opItemDtoFound = Optional.of(feignClientFactory.createClient(level.getExternalUrl())
+                    .getItemByExternalCode(level.getApiKey(), codeItem)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
                 log.info("Item found for request: {}", opItemDtoFound);
             }
         });

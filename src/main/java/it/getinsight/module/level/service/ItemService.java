@@ -36,9 +36,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static it.getinsight.message.MessageProperty.*;
 
@@ -176,8 +176,8 @@ public class ItemService {
         }
 
         if (levelType == LevelType.EXTERNAL) {
-            var opItemDtoFound = feignClientFactory.createClient(level.getExternalUrl())
-                .getItemByExternalCode(level.getApiKey(), codeItem).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+            var opItemDtoFound = Optional.of(feignClientFactory.createClient(level.getExternalUrl())
+                .getItemByExternalCode(level.getApiKey(), codeItem)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
             log.info("Item found for request: {}", opItemDtoFound);
             return Optional.of(opItemDtoFound);
         }
@@ -208,7 +208,7 @@ public class ItemService {
     public ItemHierarchyResumedDTO getItemById(Long id, String itemId) {
         var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
         if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
-            var itemExternal = feignClientFactory.createClient(levelEntity.getExternalUrl()).getItemByExternalCode(levelEntity.getApiKey(), itemId);
+            var itemExternal = Optional.of(feignClientFactory.createClient(levelEntity.getExternalUrl()).getItemByExternalCode(levelEntity.getApiKey(), itemId));
             var itemHierarchyDTO = itemExternal.orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
             return itemHierarchyDTO.withLevel(levelHierarchyResumedMapper.toDto(levelEntity));
         }
@@ -235,5 +235,53 @@ public class ItemService {
             itemRepository.softDelete(itemEntity.getId());
         }
     }
+
+    public List<ItemHierarchyResumedDTO> getItemHierarchy(Long levelId, String itemId) {
+        var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        if (levelEntity == null) {
+            throw LEVEL_NOT_FOUND_ERROR.businessException();
+        }
+
+        if (levelEntity.getType() != null && LevelType.EXTERNAL.equals(levelEntity.getType())) {
+            return getExternalHierarchy(levelEntity, itemId);
+        }
+        var item = itemRepository.findById(Long.valueOf(itemId))
+            .orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+
+        if (!levelEntity.getId().equals(levelId)) {
+            throw ITEM_NOT_FOUND_ERROR.businessException();
+        }
+
+        var hierarchy = Stream.iterate(item, Objects::nonNull, ItemEntity::getParent)
+            .collect(Collectors.toList());
+
+        Collections.reverse(hierarchy);
+
+        return hierarchy.stream()
+            .map(itemHierarchyResumedMapper::toDto)
+            .toList();
+    }
+
+    public List<ItemHierarchyResumedDTO> getExternalHierarchy(LevelEntity levelEntity, String itemId) {
+        List<ItemHierarchyResumedDTO> hierarchy = new ArrayList<>();
+        ItemHierarchyResumedDTO currentItem = null;
+        LevelEntity currentLevel = null;
+
+        do {
+            var client = feignClientFactory.createClient(levelEntity.getExternalUrl());
+            currentItem = client.getItemByExternalCode(
+                currentLevel == null ? levelEntity.getApiKey() : currentLevel.getApiKey(),
+                currentItem == null ? itemId : String.valueOf(currentItem.id()));
+            hierarchy.add(currentItem);
+            currentItem = currentItem.parent();
+            currentLevel = levelEntity.getParent();
+        }while (currentItem != null);
+
+        Collections.reverse(hierarchy);
+        return hierarchy;
+    }
+
+
+
 }
 
