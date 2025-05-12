@@ -30,6 +30,7 @@ public enum MessageProperty implements IMessageProperty {
     ERROR_IMPORT_CSV("error.import"),
     ERROR_EXPORT_CSV("error.export"),
     LEVEL_NOT_FOUND_ERROR("level.not.found"),
+    LEVEL_NOT_ATTACHED_ERROR("level.not.attached"),
     UPDATE_BUILT_IN_LEVEL("error.update.built.in.level"),
     UPDATE_BUILT_IN_ITEM("error.update.built.in.level.parent"),
     CREATE_BUILT_IN_ITEM("error.create.built.in.level.parent"),

@@ -122,6 +122,13 @@ public class LevelController {
         return ResponseEntity.ok(itemService.getItemsPaginatedByLevel(id, pageRequest));
     }
 
+
+    @GetMapping("/levels/{levelId}/items/{itemId}/hierarchy")
+    public ResponseEntity<List<ItemHierarchyResumedDTO>> getItemHierarchy(@PathVariable Long levelId, @PathVariable String itemId) {
+        return ResponseEntity.ok(itemService.getItemHierarchy(levelId, itemId));
+    }
+
+
     @Operation(summary = "Retrieve items of a level", description = "Retrieve items related to a level")
     @GetMapping(value = "{id}/items/count", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")

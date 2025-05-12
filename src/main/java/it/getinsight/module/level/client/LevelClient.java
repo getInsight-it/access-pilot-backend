@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.Optional;
 
 
 public interface LevelClient {
@@ -25,7 +24,7 @@ public interface LevelClient {
     );
 
     @GetMapping(value = "/{itemExternalCode}", produces = MediaType.APPLICATION_JSON_VALUE)
-    Optional<ItemHierarchyResumedDTO> getItemByExternalCode(@RequestHeader(name = "apiKey", required = false) String apiKey, @PathVariable String itemExternalCode);
+    ItemHierarchyResumedDTO getItemByExternalCode(@RequestHeader(name = "apiKey", required = false) String apiKey, @PathVariable String itemExternalCode);
 
 
     @GetMapping(value = "/count", produces = MediaType.APPLICATION_JSON_VALUE)
