@@ -22,6 +22,10 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.csv.QuoteMode;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.jpa.convert.QueryByExamplePredicateBuilder;
@@ -31,9 +35,9 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.*;
@@ -105,41 +109,54 @@ public class ItemService {
 
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void importLevels(MultipartFile file) {
+    public void importItems(Long levelId,MultipartFile file) {
         try {
             var itemsMap = new HashMap<Long, ItemEntity>();
-            var levelsMap = new HashMap<Long, LevelEntity>();
+            var level = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+            try (Reader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8)) {
 
-            List<ItemEntity> items = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))
-                .lines()
-                .skip(1)
-                .map(line -> {
-                    String[] values = line.split(",");
-                    Long levelId = Long.parseLong(values[0]);
-                    Long id = Long.parseLong(values[1]);
-                    Long parentId = values[2].isEmpty() ? null : Long.parseLong(values[2]);
-                    var parent = parentId != null ? itemsMap.get(parentId) : null;
-                    var level = levelsMap.getOrDefault(levelId, levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException));
+                CSVFormat format = CSVFormat.DEFAULT.builder()
+                    .setHeader("id", "parentId", "name", "description", "externalCode")
+                    .setSkipHeaderRecord(true)
+                    .setDelimiter(',')
+                    .setQuote('"')
+                    .setQuoteMode(QuoteMode.ALL)
+                    .setRecordSeparator("\n")
+                    .get();
+
+                try (CSVParser csvParser = format.parse(reader)) {
+
+                    List<ItemEntity> items = new ArrayList<>();
+
+                    for (CSVRecord csvRecord : csvParser) {
+                        Long id = Long.parseLong(csvRecord.get("id"));
+                        String parentIdStr = csvRecord.get("parentId");
+                        Long parentId = parentIdStr.isEmpty() ? null : Long.parseLong(parentIdStr);
+                        var parent = parentId != null ? itemsMap.get(parentId) : null;
 
 
-                    var item = ItemEntity.builder()
-                        .parent(parent)
-                        .level(level)
-                        .name(values[2])
-                        .description(values[4])
-                        .externalCode(values.length > 5 ? values[5] : null)
-                        .build();
+                        var item = ItemEntity.builder()
+                            .parent(parent)
+                            .level(level)
+                            .name(csvRecord.get("name"))
+                            .description(csvRecord.isSet("description") ? csvRecord.get("description") : null)
+                            .externalCode(csvRecord.isSet("externalCode") ? csvRecord.get("externalCode") : null)
+                            .build();
 
-                    itemsMap.put(id, item);
-                    levelsMap.put(levelId, level);
-                    return item;
-                }).toList();
-            itemRepository.saveAll(items);
+                        itemsMap.put(id, item);
+                        items.add(item);
+                    }
+                    items.forEach(this::validateItemBeforeCreate);
+                    itemRepository.saveAll(items);
+                }
+            }
+
         } catch (Exception e) {
             log.error(CoreMessageSource.get().message(ERROR_IMPORT_CSV.key()), e);
             throw ERROR_IMPORT_CSV.businessException();
         }
     }
+
 
     public void exportItems(ExportationFilterDTO filter, HttpServletResponse response) {
         try {
@@ -216,15 +233,22 @@ public class ItemService {
         return itemHierarchyResumedMapper.toDto(entity);
     }
 
+
     @Transactional(propagation = Propagation.REQUIRED)
     public ItemDTO createItem(Long id, ItemDTO itemDTO) {
         var level = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
-        if (LevelType.BUILT_IN.equals(level.getType())) {
-            throw CREATE_BUILT_IN_ITEM.businessException();
-        }
         var entity = itemMapper.toEntity(itemDTO);
         entity.setLevel(level);
+        validateItemBeforeCreate(entity);
         return itemMapper.toDto(itemRepository.save(entity));
+    }
+
+    private void validateItemBeforeCreate(ItemEntity entity) {
+        if (LevelType.BUILT_IN.equals(entity.getLevel().getType()))
+            throw CREATE_BUILT_IN_ITEM.businessException();
+
+        if(itemRepository.existsItemEntityByActiveTrueAndLevelAndName(entity.getLevel(), entity.getName()))
+            throw ITEM_ALREADY_EXISTS_ERROR.businessException();
     }
 
     @Transactional(propagation = Propagation.REQUIRED)

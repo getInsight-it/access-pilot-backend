@@ -84,9 +84,9 @@ public class LevelController {
     }
 
     @Operation(summary = "Import items", description = "Import items")
-    @PostMapping(value = "/items/importation", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> importItems(@RequestParam("file") MultipartFile file) {
-        itemService.importLevels(file);
+    @PostMapping(value = "{levelId}/items/importation", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> importItems( @PathVariable Long levelId,@RequestParam("file") MultipartFile file) {
+        itemService.importItems(levelId,file);
         return ResponseEntity.ok().build();
     }
 
@@ -123,7 +123,7 @@ public class LevelController {
     }
 
 
-    @GetMapping("/levels/{levelId}/items/{itemId}/hierarchy")
+    @GetMapping("/{levelId}/items/{itemId}/hierarchy")
     public ResponseEntity<List<ItemHierarchyResumedDTO>> getItemHierarchy(@PathVariable Long levelId, @PathVariable String itemId) {
         return ResponseEntity.ok(itemService.getItemHierarchy(levelId, itemId));
     }
