@@ -37,6 +37,7 @@ public enum MessageProperty implements IMessageProperty {
     CREATE_BUILT_IN_LEVEL("error.create.built.in.level"),
     ROLE_INVALID_CODE_ERROR("role.invalid.code"),
     ITEM_NOT_FOUND_ERROR("item.not.found"),
+    ITEM_ALREADY_EXISTS_ERROR("item.already.exists"),
     CODE_ITEM_NOT_FOUND_FOR_ROLE("code.item.not.found.for.role"),
     LEVEL_ALREADY_EXISTS_ERROR("level.already.exists"),
     ERROR_WRITING_JSON("error.writing.json"),

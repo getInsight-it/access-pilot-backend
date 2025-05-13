@@ -22,6 +22,7 @@ public record AttachmentConfigurationDTO(
     @NotNull
     Boolean required,
     Set<FileExtensionType> allowedExtensions,
+    String icon,
     Boolean active
 ) implements Serializable {
     @Serial

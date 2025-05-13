@@ -36,6 +36,7 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long>, JpaSpec
 
     Boolean existsItemEntityByActiveTrueAndLevel(LevelEntity level);
 
+    boolean existsItemEntityByActiveTrueAndLevelAndName(LevelEntity level, String name);
 
     List<ItemEntity> findAllByLevelIdAndParentId(Long id, Long itemId);
 

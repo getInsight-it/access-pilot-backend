@@ -58,6 +58,7 @@ public class AttachmentConfigurationCsvParser {
 
             String key = csvRecord.get("key");
             String description = csvRecord.get("description");
+            String icon = csvRecord.get("icon");
             Boolean required = Boolean.parseBoolean(csvRecord.get("required"));
 
             Set<FileExtensionType> allowedExtensions = Arrays.stream(csvRecord.get("allowedExtensions").split(","))
@@ -70,6 +71,7 @@ public class AttachmentConfigurationCsvParser {
                 AttachmentConfigurationDTO.builder()
                     .key(key)
                     .description(description)
+                    .icon(icon)
                     .required(required)
                     .allowedExtensions(allowedExtensions)
                     .build()

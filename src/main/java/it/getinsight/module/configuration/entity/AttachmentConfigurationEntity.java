@@ -51,6 +51,9 @@ public class AttachmentConfigurationEntity extends AuditableEntity<Long, String>
     @Column(name = "ATIVO" , nullable = false)
     private Boolean active;
 
+    @Column(name = "ICON")
+    private String icon;
+
     @PrePersist
     public void prePersist() {
         this.uuid = UUID.randomUUID();
