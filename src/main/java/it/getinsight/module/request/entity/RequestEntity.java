@@ -1,6 +1,7 @@
 package it.getinsight.module.request.entity;
 
 import it.getinsight.core.model.jpa.entity.AuditableEntity;
+import it.getinsight.module.level.entity.LevelEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.request.util.ProtocolUtil;
 import it.getinsight.module.role.entity.RoleEntity;
@@ -51,6 +52,10 @@ public class RequestEntity extends AuditableEntity<Long, String> {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_ROLE", referencedColumnName = "ID")
     private RoleEntity role;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ESFERA_ID", referencedColumnName = "ID")
+    private LevelEntity level;
 
     @Column(name = "CODIGO_ITEM")
     private String codeItem;

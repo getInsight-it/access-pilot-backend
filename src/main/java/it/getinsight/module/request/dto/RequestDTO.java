@@ -1,6 +1,7 @@
 package it.getinsight.module.request.dto;
 
 import it.getinsight.module.client.dto.ClientDTO;
+import it.getinsight.module.level.dto.LevelHierarchyResumedDTO;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.role.dto.RoleDTO;
 import it.getinsight.module.user.dto.UserDTO;
@@ -34,6 +35,8 @@ public record RequestDTO(
     String codeItem,
 
     RoleDTO role,
+
+    LevelHierarchyResumedDTO level,
 
     ClientDTO client,
 
