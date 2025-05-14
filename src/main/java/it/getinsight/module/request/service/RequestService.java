@@ -103,6 +103,7 @@ public class RequestService {
         var entity = requestMapper.toEntity(requestDTO);
         entity.setRequestingUser(user);
         entity.setRole(roleEntity);
+        entity.setLevel(roleEntity.getLevel());
         entity.setCodeItem(requestDTO.codeItem());
         entity.setStatus(RequestStatus.CREATED);
         entity.setProtocolCode(ProtocolUtil.generateUniqueProtocolCode());
@@ -274,7 +275,7 @@ public class RequestService {
         return String.join("|",
             roleEntity.getClient().getClientId(),
             role.name(),
-            entity.getRole().getLevel().getName(),
+            entity.getLevel().getName(),
             entity.getCodeItem()
         );
     }
