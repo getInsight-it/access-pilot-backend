@@ -18,6 +18,7 @@ import it.getinsight.module.request.repository.RequestRepository;
 import it.getinsight.module.role.dto.RoleDTO;
 import it.getinsight.module.role.dto.RoleFilterDTO;
 import it.getinsight.module.role.dto.RoleResponseDTO;
+import it.getinsight.module.role.dto.RoleUpdateHierarchyDTO;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.mapper.RoleFilterMapper;
 import it.getinsight.module.role.mapper.RoleMapper;
@@ -175,14 +176,13 @@ public class RoleService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void updateRoles(List<RoleDTO> roles) {
-        for (RoleDTO role : roles) {
+    public void updateHierarchyRoles(List<RoleUpdateHierarchyDTO> roles) {
+        for (RoleUpdateHierarchyDTO role : roles) {
             final var entity = roleRepository.findById(role.id()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
-            roleMapper.fromDto(role, entity);
-            final var roleEntityParent = role.roleParent() != null ? roleRepository.findById(role.roleParent().id()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::businessException) : null;
-            final var levelEntity = role.levelId() != null ? levelRepository.findById(role.levelId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException) : null;
+            final var roleEntityParent = role.parentId() != null ? roleRepository.findById(role.parentId()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::businessException) : null;
+            final var clientEntity = role.clientId() != null ? clientRepository.findById(role.clientId()).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException) : null;
             entity.setRole(roleEntityParent);
-            entity.setLevel(levelEntity);
+            entity.setClient(clientEntity);
             roleRepository.save(entity);
         }
     }

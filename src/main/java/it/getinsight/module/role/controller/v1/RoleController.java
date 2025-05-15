@@ -11,6 +11,7 @@ import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.role.dto.RoleDTO;
 import it.getinsight.module.role.dto.RoleFilterDTO;
 import it.getinsight.module.role.dto.RoleResponseDTO;
+import it.getinsight.module.role.dto.RoleUpdateHierarchyDTO;
 import it.getinsight.module.role.service.RoleService;
 import it.getinsight.module.user.dto.UserDTO;
 import jakarta.validation.constraints.Min;
@@ -111,8 +112,8 @@ public class RoleController {
         }
     )
     @PreAuthorize(value = "hasRole('ADMIN')")
-    public ResponseEntity<Void> updateRoles(@RequestBody List<RoleDTO> roles) {
-        roleService.updateRoles(roles);
+    public ResponseEntity<Void> updateRoles(@RequestBody List<RoleUpdateHierarchyDTO> roles) {
+        roleService.updateHierarchyRoles(roles);
         return ResponseEntity.noContent().build();
     }
 
