@@ -1,10 +1,12 @@
 package it.getinsight.module.request.service;
 
 import it.getinsight.module.request.dto.RequestAttachmentDTO;
+import it.getinsight.module.request.entity.RequestAttachmentEntity;
 import it.getinsight.module.request.mapper.RequestAttachmentMapper;
 import it.getinsight.module.request.repository.RequestAttachmentFileRepository;
 import it.getinsight.module.request.repository.RequestRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
