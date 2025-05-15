@@ -179,8 +179,10 @@ public class RoleService {
         for (RoleDTO role : roles) {
             final var entity = roleRepository.findById(role.id()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
             roleMapper.fromDto(role, entity);
-            final var roleEntityParent = role.roleParent() != null ? roleRepository.findById(role.roleParent().id()).orElseThrow(() -> new ResourceNotFoundException("Role parent not found")) : null;
+            final var roleEntityParent = role.roleParent() != null ? roleRepository.findById(role.roleParent().id()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::businessException) : null;
+            final var levelEntity = role.levelId() != null ? levelRepository.findById(role.levelId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException) : null;
             entity.setRole(roleEntityParent);
+            entity.setLevel(levelEntity);
             roleRepository.save(entity);
         }
     }
