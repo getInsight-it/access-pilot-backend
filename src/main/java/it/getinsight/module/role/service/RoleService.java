@@ -125,17 +125,17 @@ public class RoleService {
         for (ClientRepresentationDTO client : clients) {
             var roles = keycloakClient.getRolesByClientUUID(client.getId());
             var clientEntity = clientRepository.findByClientId(client.getClientId()).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
-            roles.forEach(role -> synchronizeRole(role, clientEntity, null, null));
+            roles.forEach(role -> synchronizeRole(role, clientEntity, null, null, null));
         }
     }
 
-    private void synchronizeRole(RoleRepresentationDTO role, ClientEntity clientEntity, LevelEntity levelEntity, RoleEntity roleParentEntity) {
+    private void synchronizeRole(RoleRepresentationDTO role, ClientEntity clientEntity, LevelEntity levelEntity, RoleEntity roleEntity, RoleEntity roleParentEntity) {
         var roleOpAlreadySynchronized = roleRepository.findByRoleExternalId(role.id());
         var roleOpNotSynchronized = roleRepository.findByNameAndClient(role.name(), clientEntity);
         if (roleOpAlreadySynchronized.isPresent()) {
             saveUpdatesSynchronizedRole(role, clientEntity, levelEntity, roleParentEntity, roleOpAlreadySynchronized.get());
         } else if (roleOpNotSynchronized.isEmpty()) {
-            saveNewRoleFromIDP(role, clientEntity, levelEntity);
+            saveNewRoleFromIDP(role,roleEntity, clientEntity, levelEntity);
         }
     }
 
@@ -150,10 +150,11 @@ public class RoleService {
         roleRepository.save(roleEntity);
     }
 
-    private void saveNewRoleFromIDP(RoleRepresentationDTO role, ClientEntity clientEntity, LevelEntity levelEntity) {
+    private void saveNewRoleFromIDP(RoleRepresentationDTO role, RoleEntity roleEntityUnsaved, ClientEntity clientEntity, LevelEntity levelEntity) {
         var roleEntity = RoleEntity.builder()
             .roleExternalId(role.id())
             .name(role.name())
+            .label(roleEntityUnsaved.getLabel())
             .active(true)
             .level(levelEntity)
             .description(role.description())
@@ -196,7 +197,10 @@ public class RoleService {
         try {
             ensureRoleDoesNotExist(roleDTO);
             keycloakClient.createRole(roleDTO.client().clientUUID(), roleToCreate);
-            synchronizeWithDatabase(roleDTO);
+            var roleEntity = roleMapper.toEntity(roleDTO);
+            roleEntity.setLabel(roleDTO.label());
+            roleEntity.setIcon(roleDTO.icon());
+            synchronizeWithDatabase(roleMapper.toEntity(roleDTO));
         } catch (InfraException e) {
             log.info("Role already exists: {}", roleDTO.name());
             throw ROLE_ALREADY_EXISTS_ERROR.businessException(e);
@@ -230,23 +234,23 @@ public class RoleService {
         }
     }
 
-    private void synchronizeWithDatabase(RoleDTO roleDTO) {
+    private void synchronizeWithDatabase(RoleEntity roleEntity) {
         final var createdRole = RetryUtils.retryOn404(2, 500, () ->
-            keycloakClient.getRole(roleDTO.client().clientUUID(), roleDTO.name())
+            keycloakClient.getRole(roleEntity.getClient().getClientUUID(), roleEntity.getName())
         );
 
-        final var level = roleDTO.levelId() != null
-            ? levelRepository.findById(roleDTO.levelId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException)
+        final var level = roleEntity.getLevel() != null
+            ? levelRepository.findById(roleEntity.getLevel().getId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException)
             : null;
 
-        final var client = clientRepository.findByClientId(roleDTO.client().clientId())
+        final var client = clientRepository.findByClientId(roleEntity.getClient().getClientId())
             .orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
 
-        final var parentRole = roleDTO.roleParent() != null
-            ? roleRepository.findById(roleDTO.roleParent().id()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException)
+        final var parentRole = roleEntity.getRole() != null
+            ? roleRepository.findById(roleEntity.getRole().getId()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException)
             : null;
 
-        synchronizeRole(createdRole, client, level, parentRole);
+        synchronizeRole(createdRole, client, level, roleEntity, parentRole);
     }
 
     public Long getTotalRoles() {
