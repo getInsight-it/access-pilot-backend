@@ -181,13 +181,15 @@ public class ClientService {
         Optional.ofNullable(configurations)
             .orElse(Collections.emptyList())
             .stream()
-            .collect(Collectors.groupingBy(AttachmentConfigurationEntity::getKey))
+            .collect(Collectors.groupingBy(AttachmentConfigurationEntity::getName))
             .forEach((nome, lista) -> {
-                if (lista.size() > 1) {
-                    throw ATTACHMENTS_NAME_DUPLICATE_ERROR.businessException();
+                long actives = lista.stream().filter(AttachmentConfigurationEntity::getActive).count();
+                if (actives > 1) {
+                    throw ATTACHMENTS_MULTIPLE_ACTIVE_ERROR.bind(nome).businessException();
                 }
             });
     }
+
 
     private ClientDTO handleManagedClient(ClientEntity entity) {
         var existingClients = keycloakClient.getClientsByClientId(entity.getClientId());

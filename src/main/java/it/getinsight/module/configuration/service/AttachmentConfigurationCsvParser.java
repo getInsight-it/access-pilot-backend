@@ -52,13 +52,13 @@ public class AttachmentConfigurationCsvParser {
 
     private Optional<AttachmentConfigurationDTO> convertToEntity(CSVRecord csvRecord) {
         try {
-            if (csvRecord.get("key").isBlank()) {
+            if (csvRecord.get("name").isBlank()) {
                 throw ERROR_IMPORT_CSV.businessException();
             }
 
-            String key = csvRecord.get("key");
-            String description = csvRecord.get("description");
-            String icon = csvRecord.get("icon");
+            String key = csvRecord.get("name");
+            String description = csvRecord.isSet("description") ? csvRecord.get("description") : null;
+            String icon = csvRecord.isSet("icon") ? csvRecord.get("icon") : null;
             Boolean required = Boolean.parseBoolean(csvRecord.get("required"));
 
             Set<FileExtensionType> allowedExtensions = Arrays.stream(csvRecord.get("allowedExtensions").split(","))
@@ -69,7 +69,7 @@ public class AttachmentConfigurationCsvParser {
 
             return Optional.of(
                 AttachmentConfigurationDTO.builder()
-                    .key(key)
+                    .name(key)
                     .description(description)
                     .icon(icon)
                     .required(required)
@@ -77,7 +77,7 @@ public class AttachmentConfigurationCsvParser {
                     .build()
             );
         } catch (Exception e) {
-            log.warn("Erro ao processar linha do CSV: {}", csvRecord, e);
+            log.warn("Error parsing csv record: {}", csvRecord, e);
             return Optional.empty();
         }
     }
@@ -87,7 +87,7 @@ public class AttachmentConfigurationCsvParser {
              OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
              CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT
                  .builder()
-                 .setHeader("key", "description", "required", "allowedExtensions")
+                 .setHeader("key", "description", "required", "allowedExtensions", "icon")
                  .setDelimiter(',')
                  .setQuote('\"')
                  .setQuoteMode(QuoteMode.ALL)
