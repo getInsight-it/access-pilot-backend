@@ -16,6 +16,7 @@ public record AttachmentConfigurationDTO(
     Long id,
     UUID uuid,
     @NotEmpty
+    String name,
     String key,
     @Size(min = 3, max = 255)
     String description,

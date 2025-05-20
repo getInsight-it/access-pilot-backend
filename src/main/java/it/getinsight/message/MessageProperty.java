@@ -51,6 +51,7 @@ public enum MessageProperty implements IMessageProperty {
     ATTACHMENTS_EXTENSION_NOT_ALLOWED_ERROR("attachments.extension.not.allowed.error"),
     ATTACHMENTS_REQUIRED_ERROR("attachments.required.error"),
     ATTACHMENTS_NAME_DUPLICATE_ERROR("attachments.name.duplicate.error"),
+    ATTACHMENTS_MULTIPLE_ACTIVE_ERROR("attachments.multiple.active.error"),
     ERROR_UPDATE_LEVEL_TYPE("error.update.level.type"),
     ERROR_UPDATE_LEVEL_PARENT_WITH_ITEMS("error.update.level.parent.with.items"),
     ROLE_WITH_PENDING_REQUESTS_ERROR("role.with.pending.requests"),

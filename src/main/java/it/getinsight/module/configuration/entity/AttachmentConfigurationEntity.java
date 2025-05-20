@@ -6,6 +6,7 @@ import it.getinsight.module.configuration.converter.FileExtensionTypeSetConverte
 import it.getinsight.module.configuration.enums.FileExtensionType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.envers.Audited;
 
@@ -34,6 +35,9 @@ public class AttachmentConfigurationEntity extends AuditableEntity<Long, String>
     @Column(name = "CHAVE", nullable = false)
     private String key;
 
+    @Column(name = "NOME", nullable = false)
+    private String name;
+
     @Column(name = "DESCRICAO")
     private String description;
 
@@ -58,5 +62,8 @@ public class AttachmentConfigurationEntity extends AuditableEntity<Long, String>
     public void prePersist() {
         this.uuid = UUID.randomUUID();
         this.active = true;
+        this.key = StringUtils.normalizeSpace(this.name)
+            .replace(" ", "_")
+            .toLowerCase();
     }
 }
