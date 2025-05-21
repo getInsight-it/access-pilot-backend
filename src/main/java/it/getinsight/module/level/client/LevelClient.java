@@ -23,6 +23,16 @@ public interface LevelClient {
                                                             @SpringQueryMap ItemFilterDTO filterDTO
     );
 
+    @GetMapping(value = "/{id}/subitems", produces = MediaType.APPLICATION_JSON_VALUE)
+    PageableResponseModel<ItemHierarchyResumedDTO> getSubItems(@RequestHeader(name = "apiKey", required = false) String apiKey,
+                                                               @PathVariable String itemId,
+                                                            @RequestParam(defaultValue = "1") Integer pageIndex,
+                                                            @RequestParam(defaultValue = "10") Integer pageSize,
+                                                            @RequestParam(defaultValue = "id") String sortField,
+                                                            @RequestParam(defaultValue = "ASC") String sortType,
+                                                            @SpringQueryMap ItemFilterDTO filterDTO
+                                                               );
+
     @GetMapping(value = "/{itemExternalCode}", produces = MediaType.APPLICATION_JSON_VALUE)
     ItemHierarchyResumedDTO getItemByExternalCode(@RequestHeader(name = "apiKey", required = false) String apiKey, @PathVariable String itemExternalCode);
 
