@@ -83,32 +83,6 @@ public class LevelService {
         return levelRepository.findById(id).map(levelHierarchyResponseMapper::toDto).orElse(null);
     }
 
-
-
-    public PageableResponseModel<ItemDTO> getSubItemsPaginatedByLevel(Long levelId,Long itemId, PageableRequestModel<ItemFilterDTO> configPage) {
-        var filter = configPage.getFilter();
-        var model = filter
-            .map(itemFilterMapper::toDto)
-            .map(itemMapper::toEntity)
-            .orElse(new ItemEntity());
-
-        final var matcher = ExampleMatcher
-            .matchingAny()
-            .withIgnoreNullValues()
-            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("externalCode", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("level.id", ExampleMatcher.GenericPropertyMatcher::exact)
-            .withMatcher("parent.id", ExampleMatcher.GenericPropertyMatcher::exact);
-
-        model.setParent(ItemEntity.builder().id(itemId).build());
-        model.setLevel(LevelEntity.builder().id(levelId).build());
-
-        final var example = Example.of(model, matcher);
-        final var page = itemRepository.findAll(example, PaginationHelper.toPageable(configPage));
-        return PaginationHelper.toPageResponse(itemMapper.toDto(page.getContent()), page.getTotalElements());
-    }
-
     @Transactional(propagation = Propagation.REQUIRED)
     public LevelDTO create(LevelDTO levelDTO) {
         if (LevelType.BUILT_IN.equals(levelDTO.type())) {

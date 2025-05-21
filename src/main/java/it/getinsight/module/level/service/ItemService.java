@@ -107,6 +107,38 @@ public class ItemService {
         return o.withLevel(levelHierarchyResumedMapper.toDto(levelEntity)).withParent(o.parent().withLevel(levelHierarchyResumedMapper.toDto(levelEntity.getParent())));
     }
 
+    public PageableResponseModel<ItemHierarchyResumedDTO> getSubItemsPaginatedByLevel(Long levelId, Long itemId, PageableRequestModel<ItemFilterDTO> configPage) {
+        var filter = configPage.getFilter();
+        var model = filter
+            .map(itemFilterMapper::toDto)
+            .map(itemMapper::toEntity)
+            .orElse(new ItemEntity());
+
+
+        final var matcher = ExampleMatcher
+            .matchingAny()
+            .withIgnoreNullValues()
+            .withIgnoreCase()
+            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher("externalCode", ExampleMatcher.GenericPropertyMatcher::contains);
+
+        final var example = Example.of(model, matcher);
+
+        Specification<ItemEntity> spec = (root, query, cb) -> {
+            Predicate examplePredicate = QueryByExamplePredicateBuilder.getPredicate(root, cb, example);
+            Predicate levelPredicate = cb.equal(root.get("level").get("id"), levelId);
+            Predicate itemParentPredicate = cb.equal(root.get("parent").get("id"), itemId);
+
+            if (examplePredicate != null) {
+                return cb.and(levelPredicate,itemParentPredicate, examplePredicate);
+            } else {
+                return cb.and(levelPredicate, itemParentPredicate);
+            }
+        };
+        final var page = itemRepository.findAll(spec, PaginationHelper.toPageable(configPage));
+        return PaginationHelper.toPageResponse(itemHierarchyResumedMapper.toDto(page.getContent()), page.getTotalElements());
+    }
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void importItems(Long levelId,MultipartFile file) {
