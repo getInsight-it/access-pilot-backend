@@ -166,7 +166,7 @@ public class LevelController {
     @Operation(summary = "Retrieve subitems of an item", description = "Retrieve subitems related to an item")
     @GetMapping(value = "{id}/items/{itemId}/subitems", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<PageableResponseModel<ItemDTO>> getSubItemsPaginatedByItem(@PathVariable Long id, @PathVariable Long itemId,
+    public ResponseEntity<PageableResponseModel<ItemHierarchyResumedDTO>> getSubItemsPaginatedByItem(@PathVariable Long id, @PathVariable Long itemId,
                                                                     @Min(value = 1, message = "O índice da página deve ser no mínimo 1")
                                                                     @RequestParam(defaultValue = "1") Integer pageIndex,
                                                                     @RequestParam(defaultValue = "10") Integer pageSize,
@@ -175,7 +175,7 @@ public class LevelController {
                                                                     @ParameterObject ItemFilterDTO filterDTO
                                                                     ) {
         final var pageRequest = PageableRequestModel.of(pageIndex - 1, pageSize, sortType, sortField, filterDTO);
-        return ResponseEntity.ok(levelService.getSubItemsPaginatedByLevel(id,itemId, pageRequest));
+        return ResponseEntity.ok(itemService.getSubItemsPaginatedByLevel(id,itemId, pageRequest));
     }
 
 
