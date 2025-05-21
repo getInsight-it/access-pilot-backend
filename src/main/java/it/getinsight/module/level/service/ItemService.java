@@ -107,7 +107,19 @@ public class ItemService {
         return o.withLevel(levelHierarchyResumedMapper.toDto(levelEntity)).withParent(o.parent().withLevel(levelHierarchyResumedMapper.toDto(levelEntity.getParent())));
     }
 
-    public PageableResponseModel<ItemHierarchyResumedDTO> getSubItemsPaginatedByLevel(Long levelId, Long itemId, PageableRequestModel<ItemFilterDTO> configPage) {
+    public PageableResponseModel<ItemHierarchyResumedDTO> getSubItemsPaginatedByLevel(Long levelId, String itemId, PageableRequestModel<ItemFilterDTO> configPage) {
+        var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+
+        if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
+            var levelEntityParent = levelRepository.findByParent(levelEntity).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+            var client = feignClientFactory.createClient(levelEntity.getExternalUrl());
+            var page = client.getSubItems(levelEntity.getApiKey(),itemId, configPage.getPageNumber() + 1, configPage.getPageSize(), configPage.getSortField(), configPage.getSortType(), configPage.getFilter().orElse(null));
+            var itemsFormated = page.getItems()
+                .stream().map(o -> formatExternalItem(o, levelEntityParent)).toList();
+            page.setItems(itemsFormated);
+            return page;
+        }
+
         var filter = configPage.getFilter();
         var model = filter
             .map(itemFilterMapper::toDto)
