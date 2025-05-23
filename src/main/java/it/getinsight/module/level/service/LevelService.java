@@ -5,7 +5,6 @@ import it.getinsight.core.message.CoreMessageSource;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.level.dto.*;
-import it.getinsight.module.level.entity.ItemEntity;
 import it.getinsight.module.level.entity.LevelEntity;
 import it.getinsight.module.level.entity.LevelType;
 import it.getinsight.module.level.mapper.*;
@@ -14,6 +13,7 @@ import it.getinsight.module.level.repository.LevelRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.stereotype.Service;
@@ -167,6 +167,9 @@ public class LevelService {
             var levelParent = levelDTO.parentId() != null ?  levelRepository.findById(levelDTO.parentId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException) : null;
             if (Boolean.TRUE.equals(itemRepository.existsItemEntityByActiveTrueAndLevel(levelEntity)) && Boolean.TRUE.equals(itemRepository.existsItemEntityByActiveTrueAndLevel(levelParent))) {
                 throw  ERROR_UPDATE_LEVEL_PARENT_WITH_ITEMS.businessException();
+            }
+            if(StringUtils.isNotBlank(levelDTO.apiKey()) && !levelDTO.apiKey().equals(levelEntity.getApiKey())) {
+                levelEntity.setApiKey(levelDTO.apiKey());
             }
             levelEntity.setParent(levelParent);
             levelRepository.save(levelEntity);
