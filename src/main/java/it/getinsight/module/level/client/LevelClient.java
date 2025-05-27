@@ -1,44 +1,104 @@
 package it.getinsight.module.level.client;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.Feign;
+import feign.jackson.JacksonDecoder;
+import feign.jackson.JacksonEncoder;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.level.dto.ItemFilterDTO;
 import it.getinsight.module.level.dto.ItemHierarchyResumedDTO;
-import org.springframework.cloud.openfeign.SpringQueryMap;
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestParam;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+@Component
+@RequiredArgsConstructor
+public class LevelClient {
+
+    private final ObjectMapper objectMapper;
+
+    record ApiConfig(String baseUrl, String extraPath) {
+
+        public static ApiConfig from(String url) {
+            if (url == null || url.isBlank()) {
+                throw new IllegalArgumentException("URL não pode ser nula ou vazia");
+            }
+
+            url = url.trim();
+
+            int protocolEnd = url.indexOf("://");
+            if (protocolEnd == -1) {
+                throw new IllegalArgumentException("URL deve conter http:// ou https://");
+            }
+
+            int start = protocolEnd + 3;
+            int pathStart = url.indexOf("/", start);
+
+            String baseUrl = (pathStart == -1) ? url : url.substring(0, pathStart);
+            String extraPath = (pathStart == -1) ? "" : url.substring(pathStart).replaceAll("/+$", "");
+
+            return new ApiConfig(baseUrl, extraPath);
+        }
+    }
 
 
 
-public interface LevelClient {
+    private GenericClient createGenericClient(String baseUrl) {
+        return Feign.builder()
+                .contract(new feign.Contract.Default())
+                .decoder(new JacksonDecoder(objectMapper))
+                .encoder(new JacksonEncoder(objectMapper))
+                .target(GenericClient.class, baseUrl);
+    }
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    PageableResponseModel<ItemHierarchyResumedDTO> getItems(@RequestHeader(name = "apiKey", required = false) String apiKey,
-                                                            @RequestParam(defaultValue = "1") Integer pageIndex,
-                                                            @RequestParam(defaultValue = "10") Integer pageSize,
-                                                            @RequestParam(defaultValue = "id") String sortField,
-                                                            @RequestParam(defaultValue = "ASC") String sortType,
-                                                            @SpringQueryMap ItemFilterDTO filterDTO
-    );
+    public PageableResponseModel<ItemHierarchyResumedDTO> getItems(String url,
+                                                                   String apiKey, Integer pageIndex, Integer pageSize,
+                                                                   String sortField, String sortType,
+                                                                   ItemFilterDTO filterDTO) {
+        var client = createGenericClient(ApiConfig.from(url).baseUrl());
 
-    @GetMapping(value = "/{id}/subitems", produces = MediaType.APPLICATION_JSON_VALUE)
-    PageableResponseModel<ItemHierarchyResumedDTO> getSubItems(@RequestHeader(name = "apiKey", required = false) String apiKey,
-                                                               @PathVariable String itemId,
-                                                            @RequestParam(defaultValue = "1") Integer pageIndex,
-                                                            @RequestParam(defaultValue = "10") Integer pageSize,
-                                                            @RequestParam(defaultValue = "id") String sortField,
-                                                            @RequestParam(defaultValue = "ASC") String sortType,
-                                                            @SpringQueryMap ItemFilterDTO filterDTO
-                                                               );
+        Map<String, Object> query = new HashMap<>();
+        query.put("pageIndex", pageIndex);
+        query.put("pageSize", pageSize);
+        query.put("sortField", sortField);
+        query.put("sortType", sortType);
+        query.putAll(objectMapper.convertValue(filterDTO, new TypeReference<>() {}));
 
-    @GetMapping(value = "/{itemExternalCode}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ItemHierarchyResumedDTO getItemByExternalCode(@RequestHeader(name = "apiKey", required = false) String apiKey, @PathVariable String itemExternalCode);
+        return client.getDynamicPaginated(ApiConfig.from(url).extraPath().concat("/items"), apiKey, query);
+    }
 
+    public PageableResponseModel<ItemHierarchyResumedDTO> getSubItems(String url, String itemId,
+                                                                   String apiKey, Integer pageIndex, Integer pageSize,
+                                                                   String sortField, String sortType,
+                                                                   ItemFilterDTO filterDTO) {
 
-    @GetMapping(value = "/count", produces = MediaType.APPLICATION_JSON_VALUE)
-    Integer getCount(@RequestHeader(name = "apiKey", required = false) String apiKey);
+        var client = createGenericClient(ApiConfig.from(url).baseUrl());
 
+        Map<String, Object> query = new HashMap<>();
+        query.put("pageIndex", pageIndex);
+        query.put("pageSize", pageSize);
+        query.put("sortField", sortField);
+        query.put("sortType", sortType);
+        query.putAll(objectMapper.convertValue(filterDTO, new TypeReference<>() {}));
+
+        String path = String.format("%s/%s/subitems", ApiConfig.from(url).extraPath(), itemId);
+        return client.getDynamicPaginated(path, apiKey, query);
+    }
+
+    public ItemHierarchyResumedDTO getItemByExternalCode(String url,
+                                                         String apiKey, String code) {
+        GenericClient client = createGenericClient(url);
+        String path = String.format("%s/items/%s", ApiConfig.from(url).extraPath(), code);
+        return client.getDynamic(path, apiKey, Collections.emptyMap());
+    }
+
+    public Integer getCountLevel(String url, String apiKey) {
+        GenericClient client = createGenericClient(url);
+        String path = String.format("%s/count", ApiConfig.from(url).extraPath());
+        return client.getCountDynamic(path, apiKey);
+    }
 }
-

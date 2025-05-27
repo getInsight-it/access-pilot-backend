@@ -8,7 +8,6 @@ import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.level.dto.*;
 import it.getinsight.module.level.service.ItemService;
 import it.getinsight.module.level.service.LevelService;
-import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +26,6 @@ import java.util.List;
 @RequestMapping("/v1/levels")
 @Tag(name = "Level", description = "Operations on levels.")
 @RequiredArgsConstructor
-@PermitAll
 public class LevelController {
 
     private final LevelService levelService;
