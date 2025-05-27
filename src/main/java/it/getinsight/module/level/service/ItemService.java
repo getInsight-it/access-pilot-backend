@@ -4,7 +4,7 @@ import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.message.CoreMessageSource;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
-import it.getinsight.module.level.client.FeignClientFactory;
+import it.getinsight.module.level.client.LevelClient;
 import it.getinsight.module.level.dto.ExportationFilterDTO;
 import it.getinsight.module.level.dto.ItemDTO;
 import it.getinsight.module.level.dto.ItemFilterDTO;
@@ -54,7 +54,7 @@ public class ItemService {
 
     private final LevelRepository levelRepository;
     private final ItemRepository itemRepository;
-    private final FeignClientFactory feignClientFactory;
+    private final LevelClient levelClient;
     private final ItemMapper itemMapper;
     private final ItemHierarchyResumedMapper itemHierarchyResumedMapper;
     private final ItemFilterMapper itemFilterMapper;
@@ -64,8 +64,7 @@ public class ItemService {
         var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
 
         if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
-            var client = feignClientFactory.createClient(levelEntity.getExternalUrl());
-            var page = client.getItems(levelEntity.getApiKey(), configPage.getPageNumber() + 1, configPage.getPageSize(), configPage.getSortField(), configPage.getSortType(), configPage.getFilter().orElse(null));
+            var page = levelClient.getItems(levelEntity.getExternalUrl(), levelEntity.getApiKey(), configPage.getPageNumber() + 1, configPage.getPageSize(), configPage.getSortField(), configPage.getSortType(), configPage.getFilter().orElse(null));
             var itemsFormated = page.getItems()
                 .stream().map(o -> formatExternalItem(o, levelEntity)).toList();
             page.setItems(itemsFormated);
@@ -104,7 +103,15 @@ public class ItemService {
     }
 
     private ItemHierarchyResumedDTO formatExternalItem(ItemHierarchyResumedDTO o, LevelEntity levelEntity) {
-        return o.withLevel(levelHierarchyResumedMapper.toDto(levelEntity)).withParent(o.parent().withLevel(levelHierarchyResumedMapper.toDto(levelEntity.getParent())));
+         var levelParent = levelRepository.findById(levelEntity.getParent().getId()).orElse(null);
+        var resumedDTO = o.withLevel(levelHierarchyResumedMapper.toDto(levelEntity));
+        if (o.parent() != null) {
+            resumedDTO = resumedDTO.withParent(o.parent());
+        }
+        if (levelParent != null) {
+            resumedDTO = resumedDTO.withLevel(levelHierarchyResumedMapper.toDto(levelParent));
+        }
+        return resumedDTO;
     }
 
     public PageableResponseModel<ItemHierarchyResumedDTO> getSubItemsPaginatedByLevel(Long levelId, String itemId, PageableRequestModel<ItemFilterDTO> configPage) {
@@ -112,8 +119,7 @@ public class ItemService {
 
         if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
             var levelEntityParent = levelRepository.findByParent(levelEntity).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
-            var client = feignClientFactory.createClient(levelEntity.getExternalUrl());
-            var page = client.getSubItems(levelEntity.getApiKey(),itemId, configPage.getPageNumber() + 1, configPage.getPageSize(), configPage.getSortField(), configPage.getSortType(), configPage.getFilter().orElse(null));
+            var page = levelClient.getSubItems(levelEntity.getExternalUrl(),levelEntity.getApiKey(),itemId, configPage.getPageNumber() + 1, configPage.getPageSize(), configPage.getSortField(), configPage.getSortType(), configPage.getFilter().orElse(null));
             var itemsFormated = page.getItems()
                 .stream().map(o -> formatExternalItem(o, levelEntityParent)).toList();
             page.setItems(itemsFormated);
@@ -237,8 +243,7 @@ public class ItemService {
         }
 
         if (levelType == LevelType.EXTERNAL) {
-            var opItemDtoFound = Optional.of(feignClientFactory.createClient(level.getExternalUrl())
-                .getItemByExternalCode(level.getApiKey(), codeItem)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+            var opItemDtoFound = Optional.of(levelClient.getItemByExternalCode(level.getExternalUrl(),level.getApiKey(), codeItem)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
             log.info("Item found for request: {}", opItemDtoFound);
             return Optional.of(opItemDtoFound);
         }
@@ -260,8 +265,7 @@ public class ItemService {
     public Integer getCountItemsByLevel(Long id) {
         var level = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
         if (level.getType() == LevelType.EXTERNAL) {
-            return feignClientFactory.createClient(level.getExternalUrl())
-                .getCount(level.getApiKey());
+            return levelClient.getCountLevel(level.getExternalUrl(), level.getApiKey());
         }
         return itemRepository.countByLevel(level);
     }
@@ -269,7 +273,7 @@ public class ItemService {
     public ItemHierarchyResumedDTO getItemById(Long id, String itemId) {
         var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
         if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
-            var itemExternal = Optional.of(feignClientFactory.createClient(levelEntity.getExternalUrl()).getItemByExternalCode(levelEntity.getApiKey(), itemId));
+            var itemExternal = Optional.of(levelClient.getItemByExternalCode(levelEntity.getExternalUrl(),levelEntity.getApiKey(), itemId));
             var itemHierarchyDTO = itemExternal.orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
             return itemHierarchyDTO.withLevel(levelHierarchyResumedMapper.toDto(levelEntity));
         }
@@ -336,8 +340,7 @@ public class ItemService {
         LevelEntity currentLevel = null;
 
         do {
-            var client = feignClientFactory.createClient(levelEntity.getExternalUrl());
-            currentItem = client.getItemByExternalCode(
+            currentItem = levelClient.getItemByExternalCode(levelEntity.getExternalUrl(),
                 currentLevel == null ? levelEntity.getApiKey() : currentLevel.getApiKey(),
                 currentItem == null ? itemId : String.valueOf(currentItem.id()));
             hierarchy.add(currentItem);

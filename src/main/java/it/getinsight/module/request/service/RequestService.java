@@ -12,7 +12,7 @@ import it.getinsight.module.configuration.service.AttachmentConfigurationService
 import it.getinsight.module.email.dto.EmailDTO;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
-import it.getinsight.module.level.client.FeignClientFactory;
+import it.getinsight.module.level.client.LevelClient;
 import it.getinsight.module.level.entity.LevelType;
 import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.notification.enums.NotificationType;
@@ -81,7 +81,6 @@ public class RequestService {
     private final UserService userService;
     private final NotificationService notificationService;
     private final StorageFileService storageFileService;
-    private final FeignClientFactory feignClientFactory;
 
     private static final String NAME_QUERY_FIND_ALL_REQUESTS_IN_ROLES = "find-all-requests-in-roles";
     private static final String NAME_QUERY_FIND_ALL_REQUESTS = "find-all-requests";
@@ -90,6 +89,7 @@ public class RequestService {
     private final RequestVariableService requestVariableService;
     private final EmailNotificationProperties emailNotificationProperties;
     private final ItemRepository itemRepository;
+    private final LevelClient levelClient;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public RequestDTO createRequest(final RequestDTO requestDTO, MultiValueMap<String, MultipartFile> attachments) {
@@ -199,8 +199,7 @@ public class RequestService {
             }
 
             if (levelType == LevelType.EXTERNAL) {
-                var opItemDtoFound = Optional.of(feignClientFactory.createClient(level.getExternalUrl())
-                    .getItemByExternalCode(level.getApiKey(), codeItem)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+                var opItemDtoFound = Optional.of(levelClient.getItemByExternalCode(level.getExternalUrl(),level.getApiKey(), codeItem)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
                 log.info("Item found for request: {}", opItemDtoFound);
             }
         });
