@@ -71,8 +71,8 @@ public class LevelClient {
         return client.getDynamicPaginated(ApiConfig.from(url).extraPath().concat("/items"), apiKey, query);
     }
 
-    public PageableResponseModel<ItemHierarchyResumedDTO> getSubItems(String url, String itemId,
-                                                                   String apiKey, Integer pageIndex, Integer pageSize,
+    public PageableResponseModel<ItemHierarchyResumedDTO> getSubItems(String url, String apiKey, String itemId,
+                                                                    Integer pageIndex, Integer pageSize,
                                                                    String sortField, String sortType,
                                                                    ItemFilterDTO filterDTO) {
 
@@ -85,7 +85,7 @@ public class LevelClient {
         query.put("sortType", sortType);
         query.putAll(objectMapper.convertValue(filterDTO, new TypeReference<>() {}));
 
-        String path = String.format("%s/%s/subitems", ApiConfig.from(url).extraPath(), itemId);
+        String path = String.format("%s/items/%s/subitems", ApiConfig.from(url).extraPath(), itemId);
         return client.getDynamicPaginated(path, apiKey, query);
     }
 

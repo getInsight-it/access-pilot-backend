@@ -118,7 +118,7 @@ public class ItemService {
         var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
 
         if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
-            var levelEntityParent = levelRepository.findByParent(levelEntity).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+            var levelEntityParent = levelEntity.getParent();
             var page = levelClient.getSubItems(levelEntity.getExternalUrl(),levelEntity.getApiKey(),itemId, configPage.getPageNumber() + 1, configPage.getPageSize(), configPage.getSortField(), configPage.getSortType(), configPage.getFilter().orElse(null));
             var itemsFormated = page.getItems()
                 .stream().map(o -> formatExternalItem(o, levelEntityParent)).toList();
