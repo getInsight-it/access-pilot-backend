@@ -59,7 +59,7 @@ public class LevelClient {
                                                                    String apiKey, Integer pageIndex, Integer pageSize,
                                                                    String sortField, String sortType,
                                                                    ItemFilterDTO filterDTO) {
-        var client = createGenericClient(ApiConfig.from(url).baseUrl());
+        GenericClient client = createGenericClient(ApiConfig.from(url).baseUrl());
 
         Map<String, Object> query = new HashMap<>();
         query.put("pageIndex", pageIndex);
@@ -76,7 +76,7 @@ public class LevelClient {
                                                                    String sortField, String sortType,
                                                                    ItemFilterDTO filterDTO) {
 
-        var client = createGenericClient(ApiConfig.from(url).baseUrl());
+        GenericClient client = createGenericClient(ApiConfig.from(url).baseUrl());
 
         Map<String, Object> query = new HashMap<>();
         query.put("pageIndex", pageIndex);
@@ -91,13 +91,13 @@ public class LevelClient {
 
     public ItemHierarchyResumedDTO getItemByExternalCode(String url,
                                                          String apiKey, String code) {
-        GenericClient client = createGenericClient(url);
+        GenericClient client = createGenericClient(ApiConfig.from(url).baseUrl());
         String path = String.format("%s/items/%s", ApiConfig.from(url).extraPath(), code);
         return client.getDynamic(path, apiKey, Collections.emptyMap());
     }
 
     public Integer getCountLevel(String url, String apiKey) {
-        GenericClient client = createGenericClient(url);
+        GenericClient client = createGenericClient(ApiConfig.from(url).baseUrl());
         String path = String.format("%s/count", ApiConfig.from(url).extraPath());
         return client.getCountDynamic(path, apiKey);
     }
