@@ -12,6 +12,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.Assert;
 
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 public class RequestSpecification {
@@ -80,7 +81,7 @@ public class RequestSpecification {
             } else {
                 p = addRoleFiltersByIdWithIn(p, root, cb, roles);
             }
-            roles.forEach(o -> log.info("Role: {}", o));
+            roles.stream().filter(Objects::nonNull).forEach(o -> log.info("Role: {}", o));
         }
         return p;
     }
