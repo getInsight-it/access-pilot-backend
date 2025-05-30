@@ -20,7 +20,7 @@ public record UserRepresentationDTO(String self, String id, Long createdTimestam
                                     List<String> disableableCredentialTypes, Map<String, Boolean> access) {
 
     public UserRepresentationDTO withLevelAttributes(List<String> newLevelAttributes) {
-        attributes.putIfAbsent("levelAttributes", new HashSet<>(newLevelAttributes).stream().toList());
+        attributes.put("levelAttributes", newLevelAttributes.stream().distinct().toList());
         return new UserRepresentationDTO(
             self, id, createdTimestamp, firstName, lastName, email, username, enabled, totp, emailVerified, attributes, credentials, requiredActions, federatedIdentities, socialLinks, realmRoles,
             clientRoles, clientConsents, notBefore, applicationRoles, federationLink, serviceAccountClientId,

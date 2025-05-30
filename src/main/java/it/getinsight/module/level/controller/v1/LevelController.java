@@ -31,7 +31,6 @@ public class LevelController {
     private final LevelService levelService;
     private final ItemService itemService;
 
-
     @Operation(summary = "Retrieve the list of levels", description = "Retrieve all levels")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")

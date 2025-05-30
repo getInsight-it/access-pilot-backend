@@ -46,8 +46,6 @@ public class LevelService {
     private final LevelMapper levelMapper;
     private final LevelResponseMapper levelResponseMapper;
     private final LevelHierarchyResponseMapper levelHierarchyResponseMapper;
-    private final ItemMapper itemMapper;
-    private final ItemFilterMapper itemFilterMapper;
     private final LevelFilterMapper levelFilterMapper;
 
     public PageableResponseModel<LevelResponseDTO> getAllPaginatedLevels(PageableRequestModel<LevelFilterDTO> configPage) {

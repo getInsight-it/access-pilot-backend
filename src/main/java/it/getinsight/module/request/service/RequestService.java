@@ -13,6 +13,7 @@ import it.getinsight.module.email.dto.EmailDTO;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
 import it.getinsight.module.level.client.LevelClient;
+import it.getinsight.module.level.dto.ItemHierarchyResumedDTO;
 import it.getinsight.module.level.entity.LevelType;
 import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.notification.enums.NotificationType;
@@ -61,6 +62,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 
+import static com.nimbusds.openid.connect.sdk.assurance.claims.ISO3166_1Alpha2CountryCode.RO;
 import static it.getinsight.message.MessageProperty.*;
 
 
@@ -111,7 +113,7 @@ public class RequestService {
         requestRepository.save(entity);
         saveRequestFiles(attachments, configurations, entity);
         sendNotifications(entity);
-
+        log.info("Creating request for user {} with role {}", user.getEmail(), roleEntity.getName());
         return requestMapper.toDto(entity);
     }
 
@@ -121,7 +123,10 @@ public class RequestService {
 
         for (AttachmentConfigurationEntity config : configurations) {
             List<MultipartFile> files = attachments.get(config.getKey());
-            if (files == null || files.isEmpty()) continue;
+            if (files == null || files.isEmpty()){
+                log.warn("No attachments found for configuration key {}", config.getKey());
+                continue;
+            }
 
             var storageFileEntities = storageFileService.saveAll(files, PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET, false, false, request.getUuid());
 
@@ -135,7 +140,7 @@ public class RequestService {
                     .build();
                 requestAttachmentRepository.save(requestFile);
             }
-
+                log.info("Saved {} files for request {}", storageFileEntities.size(), request.getUuid());
         }
 
     }
@@ -148,6 +153,7 @@ public class RequestService {
             .toList();
 
         if (approves.isEmpty()) {
+            log.warn("No approvers found for role {}", roleEntity.getName());
             throw APPROVERS_NOT_FOUND_ERROR.businessException();
         }
 
@@ -180,6 +186,7 @@ public class RequestService {
             user.setFirstName(principal.getClaimAsString("key"));
             user.setLastName(principal.getClaimAsString("family_name"));
             user.setEmail(principal.getClaimAsString("email"));
+            log.info("Creating new user in database: {}", user.getEmail());
             return userRepository.save(user);
         });
     }
@@ -189,6 +196,7 @@ public class RequestService {
             var levelType = level.getType();
 
             if (StringUtils.isBlank(codeItem)) {
+                log.warn("Request received without codeItem for role {}", roleEntity.getName());
                 throw CODE_ITEM_NOT_FOUND_FOR_ROLE.businessException();
             }
 
@@ -231,6 +239,7 @@ public class RequestService {
             sendNotificationStatusToUser(requestEntity, variables);
         } else if (List.of(RequestStatus.REJECTED, RequestStatus.CANCELED).contains(requestEntity.getStatus())) {
             sendNotificationStatusToUser(requestEntity, variables);
+            log.info("User {} is updating request {} to status {}", approvingUserDTO.email(), id, status);
             requestRepository.save(requestEntity);
         }
     }
@@ -240,12 +249,14 @@ public class RequestService {
         try {
             var roleEntity = roleRepository.findById(entity.getRole().getId()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
             var role = keycloakClient.getRoleByNameAndClientUUID(roleEntity.getName(), roleEntity.getClient().getClientUUID());
-            assignRoleToUser(entity, roleEntity, role);
             if (entity.getCodeItem() != null) {
                 updateUserAttributes(entity, roleEntity, role);
             }
+            log.info("Assigning role {} to user {}", role.name(), entity.getRequestingUser().getExternalId());
+            assignRoleToUser(entity, roleEntity, role);
         } catch (Exception e) {
-            handleAssignmentFailure(entity);
+            log.error("Error assigning role to user {}", entity.getRequestingUser().getExternalId(), e);
+            throw REQUEST_ERROR_WHEN_TRYING_TO_ASSIGN_ROLE.businessException();
         }
     }
 
@@ -260,31 +271,24 @@ public class RequestService {
 
     private void updateUserAttributes(RequestEntity entity, RoleEntity roleEntity, RoleRepresentationDTO role) {
         var user = keycloakClient.getUsers(entity.getRequestingUser().getExternalId());
-        String levelAccess = buildLevelAccess(entity, roleEntity, role);
+        var item = levelClient.getItemByExternalCode(entity.getLevel().getExternalUrl(), entity.getLevel().getApiKey(), entity.getCodeItem());
+        String levelAccess = String.join("::",
+            roleEntity.getClient().getClientId(),
+            role.name(),
+            entity.getLevel().getName(),
+            item.name());
 
         var levelAttributes = new ArrayList<>(user.attributes().getOrDefault("levelAttributes", Collections.emptyList()));
 
         if (!levelAttributes.contains(levelAccess)) {
             levelAttributes.add(levelAccess);
+            log.info("Assigning level attribute '{}' to user {}", levelAccess, entity.getRequestingUser().getExternalId());
             keycloakClient.updateUser(entity.getRequestingUser().getExternalId(), user.withLevelAttributes(levelAttributes));
         }
     }
 
-    private String buildLevelAccess(RequestEntity entity, RoleEntity roleEntity, RoleRepresentationDTO role) {
-        return String.join("|",
-            roleEntity.getClient().getClientId(),
-            role.name(),
-            entity.getLevel().getName(),
-            entity.getCodeItem()
-        );
-    }
-
-    private void handleAssignmentFailure(RequestEntity entity) {
-        entity.setStatus(RequestStatus.ROLES_NOT_ASSIGNED);
-        requestRepository.save(entity);
-    }
-
     public PageableResponseModel<RequestDTO> getAllRequestsMine(PageableRequestModel<RequestFilterDTO> configPage) {
+        log.debug("Fetching requests with filters: {}", configPage.getFilter());
         Optional<RequestFilterDTO> filter = configPage
             .getFilter();
         final var model = filter
@@ -360,31 +364,51 @@ public class RequestService {
         return PaginationHelper.toPageResponse(requestMapper.toDto(page.getContent()), page.getTotalElements());
     }
 
-    public void sendNotificationStatusToUser(RequestEntity requestEntity, Map<String, Object> variables) {
-        var requestingUserDTO = Optional.of(requestEntity.getRequestingUser()).map(userMapper::toDto).orElseThrow(() -> new BusinessException("Não foi possivel util o usuário"));
-        notificationService.send(EmailDTO.builder()
-            .to(requestingUserDTO.email())
+public void sendNotificationStatusToUser(RequestEntity requestEntity, Map<String, Object> variables) {
+    var user = requestEntity.getRequestingUser();
+    if (user == null) {
+        log.error("Request {} has no requesting user", requestEntity.getId());
+        throw ERROR_READING_JSON.businessException();
+    }
+
+    var userDTO = userMapper.toDto(user);
+    var userId = userDTO.id();
+    var userEmail = userDTO.email();
+    var protocolCode = requestEntity.getProtocolCode();
+
+    log.info("Sending status update notifications for request {} to user {}", requestEntity.getId(), userEmail);
+
+    notificationService.send(buildEmailNotification(variables, userEmail, userId));
+    notificationService.send(buildWebNotification(requestEntity, userId, protocolCode));
+}
+
+    private WebNotificationDTO buildWebNotification(RequestEntity requestEntity, Long userId, String protocolCode) {
+        return WebNotificationDTO.builder()
+            .userId(userId)
+            .title("protocolo: " + protocolCode)
+            .uuid(UUID.randomUUID().toString())
+            .requestId(requestEntity.getId())
+            .isOpened(false)
+            .type(NotificationType.WEB)
+            .priority(1L)
+            .description(requestEntity.getDescription())
+            .build();
+    }
+
+    private EmailDTO buildEmailNotification(Map<String, Object> variables, String userEmail, Long userId) {
+        return EmailDTO.builder()
+            .to(userEmail)
             .subject(emailNotificationProperties.getStatusRequest().getSubject())
             .templateName("status-request.html")
-            .userId(requestingUserDTO.id())
+            .userId(userId)
             .isOpened(false)
             .uuid(UUID.randomUUID().toString())
             .type(NotificationType.EMAIL)
             .variables(variables)
             .isHtml(true)
-            .build());
-        notificationService.send(
-            WebNotificationDTO.builder()
-                .userId(requestingUserDTO.id())
-                .title("protocolo: " + requestEntity.getProtocolCode())
-                .uuid(UUID.randomUUID().toString())
-                .requestId(requestEntity.getId())
-                .isOpened(false)
-                .type(NotificationType.WEB)
-                .priority(1L)
-                .description(requestEntity.getDescription())
-                .build());
+            .build();
     }
+
 
     public Long getTotalRequestsByStatus(RequestStatus status) {
         Example<RequestEntity> example = Example.of(RequestEntity.builder().status(status).build());
@@ -416,6 +440,7 @@ public class RequestService {
         boolean userExists = approvingUsersDTO.stream().anyMatch(obj -> obj.id().equals(approvingUserDTO.id()));
         boolean isRequestingUser = requestEntity.getRequestingUser().getExternalId().equals(principal.getSubject());
         if (!isRequestingUser && !userExists) {
+            log.warn("Unauthorized access attempt to request {} by user {}", id, principal.getSubject());
             throw APPROVE_NOT_AUTHORIZED.accessForbiddenException();
         }
         return requestMapper.toDto(requestEntity);

@@ -10,8 +10,7 @@ public enum RequestStatus {
     PENDING("request.status.pending"),
     REJECTED("request.status.rejected"),
     APPROVED("request.status.approved"),
-    CANCELED("request.status.canceled"),
-    ROLES_NOT_ASSIGNED("request.status.roles.not.assigned");
+    CANCELED("request.status.canceled");
 
 
     private String key;
