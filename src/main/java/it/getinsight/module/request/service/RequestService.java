@@ -109,6 +109,9 @@ public class RequestService {
         entity.setCodeItem(requestDTO.codeItem());
         entity.setStatus(RequestStatus.CREATED);
         entity.setProtocolCode(ProtocolUtil.generateUniqueProtocolCode());
+        if (Objects.isNull(entity.getRole().getRole())) {
+            throw ROLE_NOT_FOUND_PARENT_ERROR.businessException();
+        }
 
         requestRepository.save(entity);
         saveRequestFiles(attachments, configurations, entity);
