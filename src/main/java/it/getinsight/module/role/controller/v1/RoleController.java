@@ -41,8 +41,11 @@ public class RoleController {
         description = "Retrieve all roles"
     )
     @Parameter(name = "clientId", description = "Filter by client id", in = ParameterIn.QUERY, schema = @Schema(type = "string"))
-    public ResponseEntity<List<RoleResponseDTO>> getAllRoles(@RequestParam(required = false) String clientId) {
-        return ResponseEntity.ok(roleService.getAllRoles(clientId));
+    public ResponseEntity<List<RoleResponseDTO>> getAllRoles(
+        @RequestParam(required = false) String clientId,
+        @RequestParam(required = false) Boolean hasParent
+        ) {
+        return ResponseEntity.ok(roleService.getAllRoles(clientId,hasParent));
     }
 
     @Operation(
