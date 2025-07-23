@@ -2,7 +2,6 @@ package it.getinsight.module.request.service;
 
 
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
-import it.getinsight.core.exception.BusinessException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
@@ -13,7 +12,7 @@ import it.getinsight.module.email.dto.EmailDTO;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
 import it.getinsight.module.level.client.LevelClient;
-import it.getinsight.module.level.dto.ItemHierarchyResumedDTO;
+
 import it.getinsight.module.level.entity.LevelType;
 import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.notification.enums.NotificationType;
@@ -62,7 +61,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 
-import static com.nimbusds.openid.connect.sdk.assurance.claims.ISO3166_1Alpha2CountryCode.RO;
 import static it.getinsight.message.MessageProperty.*;
 
 

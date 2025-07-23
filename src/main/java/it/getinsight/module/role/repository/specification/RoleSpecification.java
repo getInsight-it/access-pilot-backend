@@ -2,6 +2,7 @@ package it.getinsight.module.role.repository.specification;
 
 import it.getinsight.module.role.entity.RoleEntity;
 import jakarta.persistence.criteria.Predicate;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
@@ -11,6 +12,8 @@ import java.util.Objects;
 import static it.getinsight.utilitario.JwtUtils.extractRoles;
 
 public class RoleSpecification {
+
+    private RoleSpecification(){}
 
     public static Specification<RoleEntity> byResourceAccess(Map<String, List<String>> resourceAccess) {
         return (root, query, builder) -> {
@@ -34,6 +37,21 @@ public class RoleSpecification {
 
             return builder.or(predicates.toArray(new Predicate[0]));
         };
+    }
+
+    public static Specification<RoleEntity> hasClientId(String clientId) {
+        return (root, query, cb) ->
+            StringUtils.isNotBlank(clientId)
+                ? cb.equal(root.get("client").get("clientId"), clientId)
+                : null;
+    }
+
+    public static Specification<RoleEntity> hasParent(Boolean hasParent) {
+        if (hasParent == null) return null;
+
+        return hasParent
+            ? (root, query, cb) -> cb.isNotNull(root.get("role"))
+            : (root, query, cb) -> cb.isNull(root.get("role"));
     }
 
 }

@@ -7,3 +7,5 @@ SELECT r.ID,
        CLIENT_ID
 FROM TB_ROLE as r
          inner join TB_CLIENTE as c on r.ID_CLIENTE = c.ID
+AND (:clientId IS NULL OR r.ID_CLIENTE = :clientId)
+AND (:roleId IS NULL OR :hasParent)

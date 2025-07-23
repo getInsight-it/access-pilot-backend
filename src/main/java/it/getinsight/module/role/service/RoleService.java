@@ -33,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.module.role.repository.specification.RoleSpecification.*;
 
 
 @Service
@@ -59,19 +61,8 @@ public class RoleService {
     private final RequestRepository requestRepository;
     private final LevelRepository levelRepository;
 
-    public List<RoleResponseDTO> getAllRoles(String filter) {
-        final var model = new RoleEntity();
-        Optional.ofNullable(filter)
-            .filter(StringUtils::isNotBlank)
-            .ifPresent(o -> model.setClient(ClientEntity.builder().clientId(o).build()));
-        final var matcher = ExampleMatcher
-            .matchingAny()
-            .withIgnoreNullValues()
-            .withMatcher("client.clientId", ExampleMatcher.GenericPropertyMatcher::exact);
-
-        final var example = Example.of(model, matcher);
-
-        return roleRepository.findAll(example).stream()
+    public List<RoleResponseDTO> getAllRoles(String filter, Boolean hasParent) {
+        return roleRepository.findAll(Specification.where(hasClientId(filter)).and(hasParent(hasParent))).stream()
             .map(roleResponseMapper::toDto)
             .toList();
     }
