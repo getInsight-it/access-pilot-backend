@@ -28,6 +28,7 @@ import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.user.dto.UserDTO;
 import it.getinsight.module.user.service.UserService;
 import it.getinsight.utilitario.RetryUtils;
+import it.getinsight.utilitario.StringValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -206,6 +207,10 @@ public class RoleService {
         }
         if (roleDTO.client() == null) {
             throw CLIENT_NOT_FOUND_ERROR.businessException();
+        }
+
+        if (StringValidationUtils.isUpperSnakeCase(roleDTO.name())) {
+            throw ERROR_VALIDATION_PATTERN_ROLE_NAME.businessException();
         }
     }
 
