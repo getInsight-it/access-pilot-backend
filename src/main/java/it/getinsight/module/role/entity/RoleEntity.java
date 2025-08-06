@@ -1,6 +1,5 @@
 package it.getinsight.module.role.entity;
 
-
 import it.getinsight.core.model.jpa.entity.AuditableEntity;
 import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.level.entity.LevelEntity;

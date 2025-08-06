@@ -24,6 +24,7 @@ public enum MessageProperty implements IMessageProperty {
     ROLE_ALREADY_EXISTS_ERROR("role.already.exists"),
     ROLE_ALREADY_EXISTS_IDP_ERROR("role.already.exists.at.idp"),
     ROLE_NOT_FOUND_ERROR("role.not.found"),
+    ERROR_VALIDATION_PATTERN_ROLE_NAME("error.validation.pattern.role.name"),
     CLIENT_NOT_PUBLISHED_ERROR("client.not.published"),
     USER_NOT_FOUND_ERROR("user.not.found"),
     REQUIRED_FIELD_WITH_PARAMETER("required.field.with.parameter"),
