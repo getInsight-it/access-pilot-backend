@@ -15,6 +15,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static it.getinsight.message.MessageProperty.*;
+
 @Component
 @RequiredArgsConstructor
 public class LevelClient {
@@ -25,14 +27,14 @@ public class LevelClient {
 
         public static ApiConfig from(String url) {
             if (url == null || url.isBlank()) {
-                throw new IllegalArgumentException("URL não pode ser nula ou vazia");
+                throw INVALID_URL_EMPTY_ERROR.businessException();
             }
 
             url = url.trim();
 
             int protocolEnd = url.indexOf("://");
             if (protocolEnd == -1) {
-                throw new IllegalArgumentException("URL deve conter http:// ou https://");
+                throw INVALID_URL_PROTOCOL_ERROR.businessException();
             }
 
             int start = protocolEnd + 3;

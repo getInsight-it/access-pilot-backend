@@ -33,6 +33,9 @@ provider:
       - admin-cli
       - account-console
 
+identity:
+  provider: keycloak
+
 jwt:
   auth:
     converter:
@@ -113,7 +116,7 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/db_accesspilot_dev_anexo
+    url: jdbc:postgresql://localhost:5432/db_accesspilot_dev_2
     username: postgres
     password: postgres
     hikari:
@@ -178,7 +181,6 @@ spring:
     redis:
       host: localhost
       port: 6379
-      password: Xch9AwOrxM
 
 minio:
   endpoint: http://localhost:9002
@@ -252,6 +254,27 @@ management:
 logging:
   level:
     root: info
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      keycloak:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+        slowCallRateThreshold: 100
+        slowCallDurationThreshold: 2s
+
+  retry:
+    instances:
+      keycloak:
+        maxAttempts: 3
+        waitDuration: 500ms
+        exponentialBackoffMultiplier: 2
+        enable-exponential-backoff: true
 
 
 

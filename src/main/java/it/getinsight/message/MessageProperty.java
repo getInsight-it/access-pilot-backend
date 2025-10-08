@@ -57,6 +57,29 @@ public enum MessageProperty implements IMessageProperty {
     ERROR_UPDATE_LEVEL_TYPE("error.update.level.type"),
     ERROR_UPDATE_LEVEL_PARENT_WITH_ITEMS("error.update.level.parent.with.items"),
     ROLE_WITH_PENDING_REQUESTS_ERROR("role.with.pending.requests"),
+    CLIENT_INVALID_STATUS("client.invalid.status"),
+    CLIENT_ALREADY_HAS_STATUS("client.already.has.status"),
+    CLIENT_UNMANAGED_CANNOT_BE_PUBLISHED("client.unmanaged.cannot.be.published"),
+    CLIENT_SYNC_FROM_IDP_ERROR("client.sync.from.idp.error"),
+
+    FILE_UPLOAD_FAILED_ERROR("file.upload.failed"),
+    FILE_SAVE_FAILED_ERROR("file.save.failed"),
+    FILE_DOWNLOAD_FAILED_ERROR("file.download.failed"),
+    FILE_DELETE_FAILED_ERROR("file.delete.failed"),
+    FILE_LIST_FAILED_ERROR("file.list.failed"),
+    FILE_INFO_FAILED_ERROR("file.info.failed"),
+    FILE_NOT_FOUND_ERROR("file.not.found"),
+    FILE_SAVE_ERROR("file.save.error"),
+    OWNER_ID_REQUIRED_ERROR("owner.id.required"),
+    STORAGE_BUCKET_CREATION_ERROR("storage.bucket.creation.error"),
+
+    EMAIL_SEND_FAILED_ERROR("email.send.failed"),
+    EMAIL_TEMPLATE_BUILD_ERROR("email.template.build.error"),
+    EMAIL_NOT_FOUND_ERROR("email.not.found"),
+
+    INVALID_URL_EMPTY_ERROR("invalid.url.empty"),
+    INVALID_URL_PROTOCOL_ERROR("invalid.url.protocol"),
+    INVALID_JSON_FORMAT_ERROR("invalid.json.format"),
 
     ;
 

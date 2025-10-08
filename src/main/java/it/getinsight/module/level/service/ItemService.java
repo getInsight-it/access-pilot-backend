@@ -300,7 +300,6 @@ public class ItemService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void deleteItem(Long id, String itemId) {//excluir item que nao esta pendente
         var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
         if (!LevelType.EXTERNAL.equals(levelEntity.getType())) {
             var itemEntity = itemRepository.findByLevelIdAndId(id, Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);

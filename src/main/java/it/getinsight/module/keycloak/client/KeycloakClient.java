@@ -1,6 +1,7 @@
 package it.getinsight.module.keycloak.client;
 
 
+import io.github.resilience4j.retry.annotation.Retry;
 import it.getinsight.config.FeignConfiguration;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
@@ -15,37 +16,47 @@ import java.util.Map;
 public interface KeycloakClient {
 
     @GetMapping("/users/{id}")
+    @Retry(name = "keycloak")
     UserRepresentationDTO getUsers(@PathVariable String id);
 
     @GetMapping("/clients/{clientUUID}/roles/{roleName}/users")
+    @Retry(name = "keycloak")
     List<UserRepresentationDTO> getUsersByClientUUIDAndRoleName(@PathVariable String clientUUID,@PathVariable String roleName);
 
     @PostMapping("/users/{id}/role-mappings/clients/{clientUUID}")
     void assignRoles(@PathVariable String id, @PathVariable String clientUUID, @RequestBody List<RoleRepresentationDTO> roles);
 
     @GetMapping("/clients/{clientUUID}/roles/{roleName}")
+    @Retry(name = "keycloak")
     RoleRepresentationDTO getRole(@PathVariable String clientUUID, @PathVariable String roleName);
 
     @GetMapping("/clients/{clientUUID}/roles/{roleName}")
+    @Retry(name = "keycloak")
     RoleRepresentationDTO getRoleByNameAndClientUUID(@PathVariable String roleName, @PathVariable String clientUUID);
 
     @GetMapping("/clients/{clientUUID}/roles")
+    @Retry(name = "keycloak")
     List<RoleRepresentationDTO> getRolesByClientUUID(@PathVariable String clientUUID);
 
 
     @GetMapping("/clients/{clientUUID}")
+    @Retry(name = "keycloak")
     ClientRepresentationDTO getClientByClientUUID(@PathVariable String clientUUID);
 
     @GetMapping("/clients")
+    @Retry(name = "keycloak")
     List<ClientRepresentationDTO> getClients();
 
     @GetMapping("/clients")
+    @Retry(name = "keycloak")
     List<ClientRepresentationDTO> getClientsByClientId(@RequestParam String clientId);
 
     @GetMapping("/users/count")
+    @Retry(name = "keycloak")
     Long getTotalUsersByEnabled(@RequestParam Boolean enabled);
 
     @GetMapping("/users/{id}/role-mappings")
+    @Retry(name = "keycloak")
     Map<String, List<RoleRepresentationDTO>> getUserRoles(@PathVariable("id") String userId);
 
     @PutMapping("/users/{id}")

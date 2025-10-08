@@ -1,7 +1,6 @@
 package it.getinsight.module.storage.service;
 
 
-import it.getinsight.core.exception.BusinessException;
 import it.getinsight.core.exception.InfraException;
 import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
@@ -12,7 +11,6 @@ import it.getinsight.module.storage.dto.StorageFileFilterDTO;
 import it.getinsight.module.storage.entity.StorageFileEntity;
 import it.getinsight.module.storage.mapper.StorageFileFilterMapper;
 import it.getinsight.module.storage.mapper.StorageFileMapper;
-import it.getinsight.module.storage.provider.StorageProvider;
 import it.getinsight.module.storage.repository.StorageFileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
@@ -29,18 +27,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static it.getinsight.message.MessageProperty.*;
+
 @Service
 @RequiredArgsConstructor
 public class StorageFileService {
 
     private final StorageFileRepository storageRepository;
-    private final StorageProvider storageProvider;
+    private final StorageService storageService;
     private final StorageFileMapper storageFileMapper;
     private final StorageFileFilterMapper storageFileFilterMapper;
+    private final StoragePolicyService storagePolicyService;
 
     public StorageFileDTO findById(Long id) {
-        var storageFileEntity = storageRepository.findById(id).orElseThrow(ResourceNotFoundException::new);
-        return storageFileMapper.toDto(storageFileEntity);
+        return storageFileMapper.toDto(storageRepository.findById(id).orElseThrow(FILE_NOT_FOUND_ERROR::businessException));
     }
 
     public void delete(Long id) {
@@ -68,7 +68,7 @@ public class StorageFileService {
 
     public StorageFileDTO findByName(String name) {
         return storageFileMapper.toDto(storageRepository.findByOriginalFilename(name)
-            .orElseThrow(() -> new InfraException("Arquivo não encontrado")));
+            .orElseThrow(FILE_NOT_FOUND_ERROR::businessException));
     }
 
     @Transactional
@@ -77,11 +77,15 @@ public class StorageFileService {
         if (attachments != null && !attachments.isEmpty()){
             attachments.forEach(file -> {
                 try {
-                    var fileUploaded = upload(bucket, isPublic, ephemeral, ownerId, file.getOriginalFilename(),
+                    var actualBucket = bucket != null ? bucket : storagePolicyService.getDefaultPrivateBucket();
+                    var actualIsPublic = isPublic != null ? isPublic : storagePolicyService.shouldBePublic("default", file.getContentType());
+                    var actualEphemeral = ephemeral != null ? ephemeral : storagePolicyService.shouldBeEphemeral("default", file.getContentType());
+                    
+                    var fileUploaded = upload(actualBucket, actualIsPublic, actualEphemeral, ownerId, file.getOriginalFilename(),
                         file.getContentType(), file.getSize(), file.getInputStream());
                     files.add(fileUploaded);
                 } catch (IOException e) {
-                    throw new InfraException("Erro ao salvar arquivo", e);
+                    throw FILE_SAVE_ERROR.infraException();
                 }
             });
         }
@@ -98,9 +102,7 @@ public class StorageFileService {
                                     String contentType,
                                     Long size,
                                     InputStream inputStream) {
-        if (ownerId == null) {
-            throw new BusinessException("OwnerId não informada");
-        }
+        storagePolicyService.validateOwnerId(ownerId);
 
         var entity = StorageFileEntity.builder()
             .bucket(bucket)
@@ -116,7 +118,7 @@ public class StorageFileService {
             .build();
 
         entity = storageRepository.save(entity);
-        storageProvider.uploadFile(entity, inputStream);
+        storageService.upload(bucket, isPublic, ephemeral, ownerId.toString(), originalFilename, contentType, size, inputStream);
         return entity;
     }
 
@@ -124,8 +126,9 @@ public class StorageFileService {
     @Transactional(propagation = Propagation.REQUIRED)
     public InputStreamResource download(Long fileId, boolean registerDownload) {
         var storageFileEntity = storageRepository.findById(fileId)
-            .orElseThrow(() -> new ResourceNotFoundException("Arquivo não encontrado"));
-        var file = storageProvider.download(storageFileEntity);
+            .orElseThrow(FILE_NOT_FOUND_ERROR::businessException);
+        var fileInputStream = storageService.download(storageFileEntity.getBucket(), storageFileEntity.getOriginalFilename());
+        var file = new InputStreamResource(fileInputStream);
 
         if (registerDownload) {
             registerDownloadEvent(storageFileEntity);
