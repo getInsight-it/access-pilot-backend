@@ -13,6 +13,7 @@ import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
 import it.getinsight.module.level.client.LevelClient;
 
+import it.getinsight.module.level.entity.LevelEntity;
 import it.getinsight.module.level.entity.LevelType;
 import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.notification.enums.NotificationType;
@@ -272,12 +273,12 @@ public class RequestService {
 
     private void updateUserAttributes(RequestEntity entity, RoleEntity roleEntity, RoleRepresentationDTO role) {
         var user = keycloakClient.getUsers(entity.getRequestingUser().getExternalId());
-        var item = levelClient.getItemByExternalCode(entity.getLevel().getExternalUrl(), entity.getLevel().getApiKey(), entity.getCodeItem());
+        var item = resolveItemCodeItem(entity.getLevel(), entity.getCodeItem());
         String levelAccess = String.join("::",
             roleEntity.getClient().getClientId(),
             role.name(),
             entity.getLevel().getName(),
-            item.name());
+            item);
 
         var levelAttributes = new ArrayList<>(user.attributes().getOrDefault("levelAttributes", Collections.emptyList()));
 
@@ -287,6 +288,28 @@ public class RequestService {
             keycloakClient.updateUser(entity.getRequestingUser().getExternalId(), user.withLevelAttributes(levelAttributes));
         }
     }
+
+    private String resolveItemCodeItem(LevelEntity level, String codeItem) {
+        if (codeItem == null || codeItem.isBlank()) {
+            throw CODE_ITEM_NOT_FOUND_FOR_ROLE.businessException();
+        }
+        return switch (level.getType()) {
+            case EXTERNAL -> {
+                var dto = levelClient.getItemByExternalCode(
+                    level.getExternalUrl(),
+                    level.getApiKey(),
+                    codeItem
+                );
+                yield dto.name();
+            }
+            case BUILT_IN, BUSINESS -> {
+                var local = itemRepository.findByLevelIdAndId(level.getId(), Long.parseLong(codeItem))
+                    .orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+                yield local.getName();
+            }
+        };
+    }
+
 
     public PageableResponseModel<RequestDTO> getAllRequestsMine(PageableRequestModel<RequestFilterDTO> configPage) {
         log.debug("Fetching requests with filters: {}", configPage.getFilter());
