@@ -135,6 +135,8 @@ public class RoleService {
         roleEntity.setDescription(role.description());
         roleEntity.setClient(clientEntity);
         roleEntity.setActive(true);
+        roleEntity.setLabel(roleEntity.getLabel());
+        roleEntity.setIcon(roleEntity.getIcon());
         roleEntity.setRoleExternalId(role.id());
         roleEntity.setName(role.name());
         roleEntity.setRole(roleParentEntity != null ? roleParentEntity : roleEntity.getRole());
@@ -192,7 +194,10 @@ public class RoleService {
             var roleEntity = roleMapper.toEntity(roleDTO);
             roleEntity.setLabel(roleDTO.label());
             roleEntity.setIcon(roleDTO.icon());
-            synchronizeWithDatabase(roleMapper.toEntity(roleDTO));
+            if (roleDTO.levelId() != null) {
+                levelRepository.findById(roleDTO.levelId()).ifPresent(roleEntity::setLevel);
+            }
+            synchronizeWithDatabase(roleEntity);
         } catch (InfraException e) {
             log.info("Role already exists: {}", roleDTO.name());
             throw ROLE_ALREADY_EXISTS_ERROR.businessException(e);
