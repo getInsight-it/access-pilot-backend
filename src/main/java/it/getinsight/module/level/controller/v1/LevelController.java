@@ -33,7 +33,6 @@ public class LevelController {
 
     @Operation(summary = "Retrieve the list of levels", description = "Retrieve all levels")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PageableResponseModel<LevelResponseDTO>> getPaginatedAllLevels(
         @Min(value = 1, message = "O índice da página deve ser no mínimo 1")
         @RequestParam(defaultValue = "1") Integer pageIndex,
@@ -47,7 +46,6 @@ public class LevelController {
 
     @Operation(summary = "Retrieve a level by ID", description = "Retrieve a level by ID")
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<LevelResponseDTO> getLevelById(@PathVariable Long id
     ) {
         return ResponseEntity.ok(levelService.findById(id));
@@ -75,6 +73,7 @@ public class LevelController {
 
     @Operation(summary = "Import levels", description = "Import levels")
     @PostMapping(value = "/importation", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize(value = "hasRole('ADMIN')")
     public ResponseEntity<String> importLevels(@RequestParam("file") MultipartFile file) {
         levelService.importLevels(file);
         return ResponseEntity.ok().build();
@@ -82,6 +81,7 @@ public class LevelController {
 
     @Operation(summary = "Import items", description = "Import items")
     @PostMapping(value = "{levelId}/items/importation", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize(value = "hasRole('ADMIN')")
     public ResponseEntity<String> importItems( @PathVariable Long levelId,@RequestParam("file") MultipartFile file) {
         itemService.importItems(levelId,file);
         return ResponseEntity.ok().build();
@@ -89,6 +89,7 @@ public class LevelController {
 
     @Operation(summary = "Import items", description = "Import items")
     @PostMapping(value = "/items/exportation",  produces = "text/csv")
+    @PreAuthorize(value = "hasRole('ADMIN')")
     public ResponseEntity<String> exportationItems(@ParameterObject ExportationFilterDTO filterDTO, HttpServletResponse response) {
         response.setContentType("text/csv");
         response.setHeader("Content-Disposition", "attachment; filename=items.csv");
@@ -99,6 +100,7 @@ public class LevelController {
 
     @Operation(summary = "Export levels", description = "Export levels")
     @GetMapping(value = "/exportation", produces = "text/csv")
+    @PreAuthorize(value = "hasRole('ADMIN')")
     public void exportLevels(@ParameterObject ExportationFilterDTO filter, HttpServletResponse response) {
         response.setContentType("text/csv");
         response.setHeader("Content-Disposition", "attachment; filename=levels.csv");
@@ -107,7 +109,6 @@ public class LevelController {
 
     @Operation(summary = "Retrieve items of a level", description = "Retrieve items related to a level")
     @GetMapping(value = "{id}/items", produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PageableResponseModel<ItemHierarchyResumedDTO>> getItemsPaginatedByLevel(@PathVariable Long id,
                                                                   @Min(value = 1, message = "O índice da página deve ser no mínimo 1")
                                                                    @RequestParam(defaultValue = "1") Integer pageIndex,
@@ -128,7 +129,6 @@ public class LevelController {
 
     @Operation(summary = "Retrieve items of a level", description = "Retrieve items related to a level")
     @GetMapping(value = "{id}/items/count", produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Integer> getCountItemsByLevel(@PathVariable Long id) {
         return ResponseEntity.ok(itemService.getCountItemsByLevel(id));
     }
@@ -144,7 +144,6 @@ public class LevelController {
 
     @Operation(summary = "Retrieve items of a level", description = "Retrieve items related to a level")
     @GetMapping(value = "{id}/items/{itemId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ItemHierarchyResumedDTO> getItemById(@PathVariable Long id, @PathVariable String itemId
     ) {
         return ResponseEntity.ok(itemService.getItemById(id, itemId));
@@ -162,7 +161,6 @@ public class LevelController {
 
     @Operation(summary = "Retrieve subitems of an item", description = "Retrieve subitems related to an item")
     @GetMapping(value = "{id}/items/{itemId}/subitems", produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PageableResponseModel<ItemHierarchyResumedDTO>> getSubItemsPaginatedByItem(@PathVariable Long id, @PathVariable String itemId,
                                                                     @Min(value = 1, message = "O índice da página deve ser no mínimo 1")
                                                                     @RequestParam(defaultValue = "1") Integer pageIndex,
