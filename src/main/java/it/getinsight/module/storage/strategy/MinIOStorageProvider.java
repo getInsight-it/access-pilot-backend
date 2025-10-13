@@ -24,39 +24,37 @@ public class MinIOStorageProvider implements StorageProviderStrategy {
     private final MinioClient minioClient;
 
     @Override
-    public StorageFileEntity upload(String bucket, Boolean isPublic, Boolean ephemeral, 
-                                 String ownerId, String originalFilename, String contentType, 
+    public StorageFileEntity upload(String bucket, Boolean isPublic, Boolean ephemeral,
+                                 String fileId, String originalFilename, String contentType,
                                  Long size, InputStream inputStream) {
         log.debug("MinIO: Uploading file {} to bucket {}", originalFilename, bucket);
-        
+
         try {
             boolean bucketExists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
             if (!bucketExists) {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
             }
 
-            String objectName = UUID.randomUUID().toString();
-            
             minioClient.putObject(
                 PutObjectArgs.builder()
                     .bucket(bucket)
-                    .object(objectName)
+                    .object(fileId)
                     .stream(inputStream, size, -1)
                     .contentType(contentType)
                     .build()
             );
 
             return StorageFileEntity.builder()
-                .fileId(UUID.randomUUID())
+                .fileId(UUID.fromString(fileId))
                 .bucket(bucket)
                 .originalFilename(originalFilename)
                 .mimeType(contentType)
                 .filesize(size)
                 .isPublic(isPublic)
                 .ephemeral(ephemeral)
-                .ownerId(UUID.fromString(ownerId))
+                .ownerId(UUID.fromString(fileId))
                 .build();
-                
+
         } catch (Exception e) {
             log.error("Error uploading file {} to bucket {}", originalFilename, bucket, e);
             throw FILE_UPLOAD_FAILED_ERROR.bind(originalFilename).infraException();
@@ -64,15 +62,15 @@ public class MinIOStorageProvider implements StorageProviderStrategy {
     }
 
     @Override
-    public List<StorageFileEntity> saveAll(List<org.springframework.web.multipart.MultipartFile> attachments, 
+    public List<StorageFileEntity> saveAll(List<org.springframework.web.multipart.MultipartFile> attachments,
                                           String bucket, Boolean isPublic, Boolean ephemeral, String ownerId) {
         log.debug("MinIO: Saving {} files to bucket {}", attachments.size(), bucket);
-        
+
         return attachments.stream()
             .map(file -> {
                 try {
-                    return upload(bucket, isPublic, ephemeral, ownerId, 
-                                file.getOriginalFilename(), file.getContentType(), 
+                    return upload(bucket, isPublic, ephemeral, ownerId,
+                                file.getOriginalFilename(), file.getContentType(),
                                 file.getSize(), file.getInputStream());
                 } catch (Exception e) {
                     log.error("Error saving file {}", file.getOriginalFilename(), e);
@@ -85,7 +83,7 @@ public class MinIOStorageProvider implements StorageProviderStrategy {
     @Override
     public InputStream download(String bucket, String filename) {
         log.debug("MinIO: Downloading file {} from bucket {}", filename, bucket);
-        
+
         try {
             return minioClient.getObject(
                 GetObjectArgs.builder()
@@ -102,7 +100,7 @@ public class MinIOStorageProvider implements StorageProviderStrategy {
     @Override
     public void delete(String bucket, String filename) {
         log.debug("MinIO: Deleting file {} from bucket {}", filename, bucket);
-        
+
         try {
             minioClient.removeObject(
                 RemoveObjectArgs.builder()
@@ -119,7 +117,7 @@ public class MinIOStorageProvider implements StorageProviderStrategy {
     @Override
     public boolean exists(String bucket, String filename) {
         log.debug("MinIO: Checking if file {} exists in bucket {}", filename, bucket);
-        
+
         try {
             minioClient.statObject(
                 StatObjectArgs.builder()
@@ -136,7 +134,7 @@ public class MinIOStorageProvider implements StorageProviderStrategy {
     @Override
     public List<String> listFiles(String bucket, String prefix) {
         log.debug("MinIO: Listing files in bucket {} with prefix {}", bucket, prefix);
-        
+
         try {
             Iterable<Result<Item>> results = minioClient.listObjects(
                 ListObjectsArgs.builder()
@@ -144,7 +142,7 @@ public class MinIOStorageProvider implements StorageProviderStrategy {
                     .prefix(prefix)
                     .build()
             );
-            
+
             List<String> files = new ArrayList<>();
             for (Result<Item> result : results) {
                 files.add(result.get().objectName());
@@ -159,7 +157,7 @@ public class MinIOStorageProvider implements StorageProviderStrategy {
     @Override
     public StorageFileEntity getFileInfo(String bucket, String filename) {
         log.debug("MinIO: Getting file info for {} in bucket {}", filename, bucket);
-        
+
         try {
             var stat = minioClient.statObject(
                 StatObjectArgs.builder()
@@ -167,7 +165,7 @@ public class MinIOStorageProvider implements StorageProviderStrategy {
                     .object(filename)
                     .build()
             );
-            
+
             return StorageFileEntity.builder()
                 .fileId(UUID.randomUUID())
                 .bucket(bucket)

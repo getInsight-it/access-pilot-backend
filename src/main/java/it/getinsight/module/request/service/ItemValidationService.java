@@ -13,10 +13,7 @@ import java.util.Optional;
 
 import static it.getinsight.message.MessageProperty.*;
 
-/**
- * Serviço responsável exclusivamente por validações de itens.
- * Aplica SRP de forma agressiva - apenas validações relacionadas a itens.
- */
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -25,9 +22,7 @@ public class ItemValidationService {
     private final ItemRepository itemRepository;
     private final LevelClient levelClient;
 
-    /**
-     * Valida a existência do item baseado no tipo de nível.
-     */
+
     public void validateItemExistence(String codeItem, RoleEntity roleEntity) {
         Optional.ofNullable(roleEntity.getLevel()).ifPresent(level -> {
             var levelType = level.getType();

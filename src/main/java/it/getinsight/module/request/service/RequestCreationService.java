@@ -7,6 +7,7 @@ import it.getinsight.module.request.mapper.RequestMapper;
 import it.getinsight.module.request.repository.RequestRepository;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.repository.RoleRepository;
+import it.getinsight.module.role.service.RoleLevelPolicyService;
 import it.getinsight.module.user.entity.UserEntity;
 import it.getinsight.module.user.repository.UserRepository;
 import it.getinsight.module.user.service.AuthenticationContextService;
@@ -35,11 +36,12 @@ public class RequestCreationService {
     private final RequestAttachmentService requestAttachmentService;
     private final RequestNotificationService requestNotificationService;
     private final ProtocolGeneratorService protocolGeneratorService;
+    private final RoleLevelPolicyService roleLevelPolicyService;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public RequestDTO createRequest(final RequestDTO requestDTO, MultiValueMap<String, MultipartFile> attachments) {
         log.debug("Starting request creation process for role: {}", requestDTO.role().id());
-        
+
         var roleEntity = findAndValidateRole(requestDTO);
         var configurations = roleEntity.getClient().getConfigurations();
 
@@ -65,12 +67,19 @@ public class RequestCreationService {
             .orElseThrow(REQUEST_NOT_FOUND_ERROR::businessException);
     }
 
-    private void validateRequestCreation(RequestDTO requestDTO, RoleEntity roleEntity, 
-                                        java.util.List<it.getinsight.module.configuration.entity.AttachmentConfigurationEntity> configurations, 
+    private void validateRequestCreation(RequestDTO requestDTO, RoleEntity roleEntity,
+                                        java.util.List<it.getinsight.module.configuration.entity.AttachmentConfigurationEntity> configurations,
                                         MultiValueMap<String, MultipartFile> attachments) {
         requestValidationService.validateItemExistence(requestDTO.codeItem(), roleEntity);
         requestValidationService.validateAttachments(configurations, attachments);
         requestValidationService.validateRoleParent(roleEntity);
+
+        if (roleEntity.getRole() != null) {
+            Long parentLevelId = roleEntity.getRole().getLevel() != null ? roleEntity.getRole().getLevel().getId() : null;
+            Long childLevelId = roleEntity.getLevel() != null ? roleEntity.getLevel().getId() : null;
+
+            roleLevelPolicyService.validateChildLevelAssignment(parentLevelId,childLevelId);
+        }
     }
 
     private RequestEntity buildRequestEntity(RequestDTO requestDTO, UserEntity user, RoleEntity roleEntity) {

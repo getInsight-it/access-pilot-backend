@@ -30,10 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-/**
- * Serviço responsável por consultas e filtros de clientes.
- * Aplica SRP separando lógica de queries da lógica de negócio.
- */
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -48,22 +45,14 @@ public class ClientQueryService {
     private static final String NAME_QUERY_FIND_ALL_CLIENTS = "find-all-clients";
     private static final String IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED = "acl.client.managed";
 
-    /**
-     * Busca todos os clientes usando query dinâmica.
-     * 
-     * @return Lista de clientes
-     */
+
     public List<ClientDTO> getAllClientsDynamicQuery() {
         log.debug("Fetching all clients using dynamic query");
         final var parameters = DynamicParameters.get();
         return clientRepository.findAllNative(NAME_QUERY_FIND_ALL_CLIENTS, parameters, clientMapper);
     }
 
-    /**
-     * Busca todos os clientes publicados.
-     * 
-     * @return Lista de clientes publicados
-     */
+
     public List<ClientDTO> getAllClientsPublished() {
         log.debug("Fetching all published clients");
         return clientRepository.findAllByStatus(ClientStatus.PUBLISHED)
@@ -72,15 +61,10 @@ public class ClientQueryService {
             .toList();
     }
 
-    /**
-     * Busca clientes paginados com filtros.
-     * 
-     * @param configPage Configuração de paginação e filtros
-     * @return Página de clientes
-     */
+
     public PageableResponseModel<ClientDTO> getAllClientsPageable(PageableRequestModel<ClientFilterDTO> configPage) {
         log.debug("Fetching clients with pagination and filters");
-        
+
         final var model = configPage
             .getFilter()
             .map(clientFilterMapper::toDto)
@@ -95,33 +79,28 @@ public class ClientQueryService {
 
         final var example = Example.of(model, matcher);
         final var page = clientRepository.findAll(example, PaginationHelper.toPageable(configPage));
-        
+
         final var clientsNotSynchronized = page.getContent()
             .stream()
             .filter(o -> o.getClientUUID() == null)
             .map(clientMapper::toDto)
             .toList();
-            
+
         final var clientsSynchronized = fetchUpdatedClientFromIDP(page.getContent());
         final var dtos = Stream.concat(clientsNotSynchronized.stream(), clientsSynchronized.stream()).toList();
-        
+
         return PaginationHelper.toPageResponse(dtos, page.getTotalElements());
     }
 
-    /**
-     * Busca clientes associados ao usuário atual.
-     * 
-     * @param attached Se true, retorna clientes associados; se false, não associados
-     * @return Lista de clientes
-     */
+
     public List<ClientDTO> getAssociateClients(Boolean attached) {
         log.debug("Fetching associate clients with attached={}", attached);
-        
+
         var principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Map<String, List<String>> resourceAccess = principal.getClaim("resource_access");
 
         var clientEntities = clientRepository.findAllByManagedAndStatus(true, ClientStatus.PUBLISHED);
-        
+
         return identityProviderService.getClients().stream()
             .filter(client -> isManagedClient(client))
             .map(obj -> findLocalClientByClientId(clientEntities, obj.getClientId()))
@@ -131,12 +110,7 @@ public class ClientQueryService {
             .toList();
     }
 
-    /**
-     * Busca clientes atualizados do IDP, tratando erros de forma apropriada.
-     * 
-     * @param page Lista de entidades de cliente
-     * @return Lista de DTOs atualizados
-     */
+
     @NotNull
     private List<ClientDTO> fetchUpdatedClientFromIDP(List<ClientEntity> page) {
         return page.stream()
@@ -147,12 +121,7 @@ public class ClientQueryService {
             .toList();
     }
 
-    /**
-     * Busca um cliente do IDP de forma segura, logando erros apropriadamente.
-     * 
-     * @param client Entidade de cliente local
-     * @return Optional contendo o cliente do IDP, ou empty se houver erro
-     */
+
     private Optional<ClientRepresentationDTO> fetchClientFromIDPSafely(ClientEntity client) {
         try {
             return Optional.of(identityProviderService.getClientByUUID(client.getClientUUID()));
@@ -165,9 +134,7 @@ public class ClientQueryService {
         }
     }
 
-    /**
-     * Mapeia cliente do IDP para DTO local.
-     */
+
     private ClientDTO mapToClientDTO(List<ClientEntity> localClients, ClientRepresentationDTO idpClient) {
         var localClient = localClients.stream()
             .filter(e -> Objects.equals(e.getClientUUID(), idpClient.getId()))
@@ -176,17 +143,13 @@ public class ClientQueryService {
         return clientRepresentationMapper.toDto(localClient, idpClient);
     }
 
-    /**
-     * Verifica se um cliente é gerenciado pelo IDP.
-     */
+
     private boolean isManagedClient(ClientRepresentationDTO client) {
-        return client.getAttributes().containsKey(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED) 
+        return client.getAttributes().containsKey(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED)
             && client.getAttributes().get(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED).equals("true");
     }
 
-    /**
-     * Busca cliente local por clientId.
-     */
+
     private ClientEntity findLocalClientByClientId(List<ClientEntity> clientEntities, String clientId) {
         return clientEntities.stream()
             .filter(c -> Objects.equals(c.getClientId(), clientId))
@@ -194,13 +157,11 @@ public class ClientQueryService {
             .orElse(null);
     }
 
-    /**
-     * Filtra cliente baseado em attachment.
-     */
+
     private boolean filterByAttachment(ClientEntity client, Map<String, List<String>> resourceAccess, Boolean attached) {
         boolean hasAccess = resourceAccess.entrySet().stream()
             .anyMatch(e -> Objects.equals(e.getKey(), client.getClientId()));
-        
+
         return BooleanUtils.isTrue(attached) ? hasAccess : !hasAccess;
     }
 }

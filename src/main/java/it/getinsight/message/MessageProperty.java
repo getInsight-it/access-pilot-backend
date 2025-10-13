@@ -62,6 +62,7 @@ public enum MessageProperty implements IMessageProperty {
     CLIENT_UNMANAGED_CANNOT_BE_PUBLISHED("client.unmanaged.cannot.be.published"),
     CLIENT_SYNC_FROM_IDP_ERROR("client.sync.from.idp.error"),
 
+    // Storage/File Operations
     FILE_UPLOAD_FAILED_ERROR("file.upload.failed"),
     FILE_SAVE_FAILED_ERROR("file.save.failed"),
     FILE_DOWNLOAD_FAILED_ERROR("file.download.failed"),
@@ -73,13 +74,20 @@ public enum MessageProperty implements IMessageProperty {
     OWNER_ID_REQUIRED_ERROR("owner.id.required"),
     STORAGE_BUCKET_CREATION_ERROR("storage.bucket.creation.error"),
 
+    // Email Operations
     EMAIL_SEND_FAILED_ERROR("email.send.failed"),
     EMAIL_TEMPLATE_BUILD_ERROR("email.template.build.error"),
     EMAIL_NOT_FOUND_ERROR("email.not.found"),
 
+    // URL/Validation
     INVALID_URL_EMPTY_ERROR("invalid.url.empty"),
     INVALID_URL_PROTOCOL_ERROR("invalid.url.protocol"),
     INVALID_JSON_FORMAT_ERROR("invalid.json.format"),
+
+    // Hierarchy Validation
+    ROLE_HIERARCHY_INVALID_ERROR("role.hierarchy.invalid"),
+    LEVEL_HIERARCHY_INVALID_ERROR("level.hierarchy.invalid"),
+    APPROVER_HIERARCHY_INVALID_ERROR("approver.hierarchy.invalid"),
 
     ;
 

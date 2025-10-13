@@ -23,13 +23,7 @@ public interface RequestRepository extends JpaRepository<RequestEntity, Long>, D
 
     long countByStatusAndRole(RequestStatus status, RoleEntity role);
 
-    /**
-     * Busca requests com todos os relacionamentos em uma única query (JOIN FETCH).
-     * Evita N+1 queries ao carregar role, client, level e users.
-     * 
-     * @param ids Lista de IDs de requests
-     * @return Lista de requests com relacionamentos carregados
-     */
+
     @Query("""
         SELECT DISTINCT r FROM RequestEntity r
         LEFT JOIN FETCH r.role role
@@ -42,13 +36,7 @@ public interface RequestRepository extends JpaRepository<RequestEntity, Long>, D
     """)
     List<RequestEntity> findAllByIdWithRelationships(@Param("ids") List<Long> ids);
 
-    /**
-     * Busca um request com todos os relacionamentos carregados.
-     * Evita N+1 queries ao carregar entidades relacionadas.
-     * 
-     * @param id ID do request
-     * @return Optional contendo o request com relacionamentos carregados
-     */
+
     @Query("""
         SELECT r FROM RequestEntity r
         LEFT JOIN FETCH r.role role

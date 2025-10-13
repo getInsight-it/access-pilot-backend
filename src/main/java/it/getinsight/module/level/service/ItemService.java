@@ -26,6 +26,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.csv.QuoteMode;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.jpa.convert.QueryByExamplePredicateBuilder;
@@ -59,6 +60,7 @@ public class ItemService {
     private final ItemHierarchyResumedMapper itemHierarchyResumedMapper;
     private final ItemFilterMapper itemFilterMapper;
     private final LevelHierarchyResumedMapper levelHierarchyResumedMapper;
+
 
     public PageableResponseModel<ItemHierarchyResumedDTO> getItemsPaginatedByLevel(Long levelId, PageableRequestModel<ItemFilterDTO> configPage) {
         var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
@@ -300,6 +302,7 @@ public class ItemService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
+    public void deleteItem(Long id, String itemId) {
         var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
         if (!LevelType.EXTERNAL.equals(levelEntity.getType())) {
             var itemEntity = itemRepository.findByLevelIdAndId(id, Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);

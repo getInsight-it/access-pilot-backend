@@ -58,6 +58,7 @@ public class RoleService {
     private final LevelRepository levelRepository;
 
     private final RoleValidationService roleValidationService;
+    private final RoleLevelPolicyService roleLevelPolicyService;
 
     public List<RoleResponseDTO> getAllRoles(String filter, Boolean hasParent) {
         return roleRepository.findAll(Specification.where(hasClientId(filter)).and(hasParent(hasParent))).stream()
@@ -128,6 +129,14 @@ public class RoleService {
             final var entity = roleRepository.findById(role.id()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
             final var roleEntityParent = role.parentId() != null ? roleRepository.findById(role.parentId()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::businessException) : null;
             final var clientEntity = role.clientId() != null ? clientRepository.findById(role.clientId()).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException) : null;
+
+            if (roleEntityParent != null) {
+                Long parentLevelId = roleEntityParent.getLevel() != null ? roleEntityParent.getLevel().getId() : null;
+                Long selfLevelId = entity.getLevel() != null ? entity.getLevel().getId() : null;
+
+                roleLevelPolicyService.validateChildLevelAssignment(parentLevelId,selfLevelId);
+            }
+
             entity.setRole(roleEntityParent);
             entity.setClient(clientEntity);
             roleRepository.save(entity);
@@ -137,6 +146,15 @@ public class RoleService {
     @Transactional(propagation = Propagation.REQUIRED)
     public RoleDTO createRole(RoleDTO roleDTO) {
         roleValidationService.validateRoleInput(roleDTO);
+
+        // Validar hierarquia antes de criar
+        if (roleDTO.roleParent() != null && roleDTO.roleParent().id() != null) {
+            var parentRole = roleRepository.findById(roleDTO.roleParent().id()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::businessException);
+            Long parentLevelId = parentRole.getLevel() != null ? parentRole.getLevel().getId() : null;
+            Long childLevelId = roleDTO.levelId();
+
+            roleLevelPolicyService.validateChildLevelAssignment(parentLevelId, childLevelId);
+        }
 
         final var roleToCreate = mapToRepresentation(roleDTO);
 
@@ -175,6 +193,13 @@ public class RoleService {
         var entity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
         if (requestRepository.countByStatusAndRole(RequestStatus.PENDING, entity) > 0) {
             throw ROLE_WITH_PENDING_REQUESTS_ERROR.businessException();
+        }
+
+        if (entity.getRole() != null && entity.getRole().getId() != null) {
+            Long parentLevelId =  entity.getRole().getLevel() != null ? entity.getRole().getLevel().getId() : null;
+            Long selfLevelId = roleDTO.levelId();
+
+            roleLevelPolicyService.validateChildLevelAssignment(parentLevelId,selfLevelId);
         }
 
         if (StringUtils.isNotBlank(entity.getRoleExternalId())) {

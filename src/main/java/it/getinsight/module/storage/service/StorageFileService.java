@@ -80,7 +80,7 @@ public class StorageFileService {
                     var actualBucket = bucket != null ? bucket : storagePolicyService.getDefaultPrivateBucket();
                     var actualIsPublic = isPublic != null ? isPublic : storagePolicyService.shouldBePublic("default", file.getContentType());
                     var actualEphemeral = ephemeral != null ? ephemeral : storagePolicyService.shouldBeEphemeral("default", file.getContentType());
-                    
+
                     var fileUploaded = upload(actualBucket, actualIsPublic, actualEphemeral, ownerId, file.getOriginalFilename(),
                         file.getContentType(), file.getSize(), file.getInputStream());
                     files.add(fileUploaded);
@@ -104,6 +104,7 @@ public class StorageFileService {
                                     InputStream inputStream) {
         storagePolicyService.validateOwnerId(ownerId);
 
+        final UUID fileId = UUID.randomUUID();
         var entity = StorageFileEntity.builder()
             .bucket(bucket)
             .excluded(false)
@@ -114,11 +115,11 @@ public class StorageFileService {
             .originalFilename(originalFilename)
             .mimeType(contentType)
             .filesize(size)
-            .fileId(UUID.randomUUID())
+            .fileId(fileId)
             .build();
 
         entity = storageRepository.save(entity);
-        storageService.upload(bucket, isPublic, ephemeral, ownerId.toString(), originalFilename, contentType, size, inputStream);
+        storageService.upload(bucket, isPublic, ephemeral, fileId.toString(), originalFilename, contentType, size, inputStream);
         return entity;
     }
 
@@ -127,7 +128,7 @@ public class StorageFileService {
     public InputStreamResource download(Long fileId, boolean registerDownload) {
         var storageFileEntity = storageRepository.findById(fileId)
             .orElseThrow(FILE_NOT_FOUND_ERROR::businessException);
-        var fileInputStream = storageService.download(storageFileEntity.getBucket(), storageFileEntity.getOriginalFilename());
+        var fileInputStream = storageService.download(storageFileEntity.getBucket(), storageFileEntity.getFileId().toString());
         var file = new InputStreamResource(fileInputStream);
 
         if (registerDownload) {

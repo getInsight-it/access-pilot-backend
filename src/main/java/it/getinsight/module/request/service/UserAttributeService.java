@@ -13,10 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 
-/**
- * Serviço responsável exclusivamente por atualização de atributos de usuário.
- * Aplica SRP de forma agressiva - apenas atualização de atributos.
- */
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -25,13 +22,11 @@ public class UserAttributeService {
     private final IdentityProviderService identityProviderService;
     private final LevelClient levelClient;
 
-    /**
-     * Atualiza atributos do usuário no Keycloak com informações de nível.
-     */
+
     public void updateUserAttributes(RequestEntity entity, RoleEntity roleEntity, RoleRepresentationDTO role) {
         var user = identityProviderService.getUsers(Map.of("externalId", entity.getRequestingUser().getExternalId())).get(0);
         var item = levelClient.getItemByExternalCode(entity.getLevel().getExternalUrl(), entity.getLevel().getApiKey(), entity.getCodeItem());
-        
+
         String levelAccess = String.join("::",
             roleEntity.getClient().getClientId(),
             role.name(),

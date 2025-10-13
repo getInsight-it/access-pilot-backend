@@ -13,6 +13,7 @@ import it.getinsight.module.level.entity.LevelType;
 import it.getinsight.module.level.mapper.*;
 import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.level.repository.LevelRepository;
+import it.getinsight.module.role.service.RoleLevelPolicyService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +48,7 @@ public class LevelService {
     private final LevelResponseMapper levelResponseMapper;
     private final LevelHierarchyResponseMapper levelHierarchyResponseMapper;
     private final LevelFilterMapper levelFilterMapper;
+    private final RoleLevelPolicyService roleLevelPolicyService;
 
     public PageableResponseModel<LevelResponseDTO> getAllPaginatedLevels(PageableRequestModel<LevelFilterDTO> configPage) {
         final var filter = configPage.getFilter();
@@ -166,6 +168,15 @@ public class LevelService {
             }
             levelMapper.fromDto(levelDTO, levelEntity);
             var levelParent = levelDTO.parentId() != null ?  levelRepository.findById(levelDTO.parentId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException) : null;
+
+            // Validar hierarquia antes de atualizar
+            if (levelParent != null) {
+                Long parentLevelId = levelParent.getId();
+                Long childLevelId = levelEntity.getId();
+
+                roleLevelPolicyService.validateChildLevelAssignment( parentLevelId,  childLevelId);
+            }
+
             if (Boolean.TRUE.equals(itemRepository.existsItemEntityByActiveTrueAndLevel(levelEntity)) && Boolean.TRUE.equals(itemRepository.existsItemEntityByActiveTrueAndLevel(levelParent))) {
                 throw  ERROR_UPDATE_LEVEL_PARENT_WITH_ITEMS.businessException();
             }

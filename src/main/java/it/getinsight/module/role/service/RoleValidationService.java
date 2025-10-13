@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import static it.getinsight.message.MessageProperty.*;
 
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -18,14 +19,15 @@ public class RoleValidationService {
 
     private final IdentityProviderService identityProviderService;
 
+
     public void validateRoleInput(RoleDTO roleDTO) {
         log.debug("Validating role input for role: {}", roleDTO != null ? roleDTO.name() : "null");
-        
+
         if (roleDTO == null) {
             log.error("RoleDTO is null");
             throw ROLE_NOT_FOUND_ERROR.businessException();
         }
-        
+
         if (roleDTO.client() == null) {
             log.error("Client is null for role: {}", roleDTO.name());
             throw CLIENT_NOT_FOUND_ERROR.businessException();
@@ -37,9 +39,10 @@ public class RoleValidationService {
         }
     }
 
+
     public void ensureRoleDoesNotExistInIDP(RoleDTO roleDTO) {
         log.debug("Checking if role {} exists in IDP", roleDTO.name());
-        
+
         try {
             final var role = identityProviderService.getRole(roleDTO.client().clientUUID(), roleDTO.name());
             if (role != null) {
@@ -51,11 +54,13 @@ public class RoleValidationService {
         }
     }
 
+
     public boolean isValidRoleName(String roleName) {
         if (roleName == null || roleName.trim().isEmpty()) {
             return false;
         }
-        
+
+        // Role names devem seguir convenção (não upper snake case)
         return !StringValidationUtils.isUpperSnakeCase(roleName);
     }
 }

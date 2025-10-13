@@ -17,10 +17,7 @@ import java.util.List;
 
 import static it.getinsight.message.MessageProperty.*;
 
-/**
- * Serviço responsável exclusivamente por atualizações de status de requests.
- * Aplica SRP de forma agressiva - apenas lógica de atualização de status.
- */
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -33,22 +30,18 @@ public class RequestStatusUpdateService {
     private final RoleRepository roleRepository;
     private final RequestRepository requestRepository;
 
-    /**
-     * Valida se o usuário atual pode aprovar o request.
-     */
+
     public boolean canUserApproveRequest(RequestEntity requestEntity) {
         var currentUserId = authenticationContextService.getCurrentUserId();
         var approvingUserDTO = userService.findOrImportByExternalId(currentUserId);
         var roleEntityParent = roleRepository.findByRoleExternalId(requestEntity.getRole().getRoleExternalId())
             .orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
         var approvingUsersDTO = roleService.getOrImportApprovesByRoleId(roleEntityParent.getId());
-        
+
         return approvingUsersDTO.stream().anyMatch(obj -> obj.id().equals(approvingUserDTO.id()));
     }
 
-    /**
-     * Atualiza os campos básicos do request com o novo status.
-     */
+
     public void updateRequestBasicFields(RequestEntity requestEntity, RequestUpdateDTO requestUpdateDTO) {
         var currentUserId = authenticationContextService.getCurrentUserId();
         var approvingUserDTO = userService.findOrImportByExternalId(currentUserId);
@@ -60,20 +53,16 @@ public class RequestStatusUpdateService {
         requestEntity.setFinalReason(requestUpdateDTO.finalReason());
     }
 
-    /**
-     * Persiste o request quando o status é rejeitado ou cancelado.
-     */
+
     public void persistRejectedOrCanceledRequest(RequestEntity requestEntity, Long requestId, String status) {
         var currentUserId = authenticationContextService.getCurrentUserId();
         var approvingUserDTO = userService.findOrImportByExternalId(currentUserId);
-        
+
         log.info("User {} is updating request {} to status {}", approvingUserDTO.email(), requestId, status);
         requestRepository.save(requestEntity);
     }
 
-    /**
-     * Determina se o request deve ser persistido baseado no status.
-     */
+
     public boolean shouldPersistRequest(RequestStatus status) {
         return List.of(RequestStatus.REJECTED, RequestStatus.CANCELED).contains(status);
     }

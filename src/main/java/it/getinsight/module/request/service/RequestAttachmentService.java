@@ -19,11 +19,7 @@ import java.util.UUID;
 
 import static it.getinsight.message.MessageProperty.*;
 
-/**
- * Serviço responsável por gerenciar anexos de requests.
- * Aplica o princípio SRP (Single Responsibility Principle) centralizando
- * toda a lógica de upload e associação de arquivos.
- */
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -35,9 +31,7 @@ public class RequestAttachmentService {
 
     private static final String PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET = "private-getinsight-accesspilot-docs";
 
-    /**
-     * Busca todos os anexos de um request específico.
-     */
+
     public List<RequestAttachmentEntity> findAllByRequest(Long requestId) {
         log.debug("Finding all attachments for request: {}", requestId);
         RequestEntity request = requestRepository.findById(requestId)
@@ -45,14 +39,12 @@ public class RequestAttachmentService {
         return requestAttachmentRepository.findAllByRequest(request);
     }
 
-    /**
-     * Salva todos os arquivos de anexo para um request específico.
-     */
+
     @Transactional
     public void saveRequestFiles(MultiValueMap<String, MultipartFile> attachments,
                                 List<AttachmentConfigurationEntity> configurations,
                                 RequestEntity request) {
-        
+
         for (AttachmentConfigurationEntity config : configurations) {
             List<MultipartFile> files = attachments.get(config.getKey());
             if (files == null || files.isEmpty()) {
@@ -61,10 +53,10 @@ public class RequestAttachmentService {
             }
 
             var storageFileEntities = storageFileService.saveAll(
-                files, 
-                PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET, 
-                false, 
-                false, 
+                files,
+                PRIVATE_GETINSIGHT_ACCESSPILOT_DOCS_BUCKET,
+                false,
+                false,
                 request.getUuid()
             );
 
@@ -78,7 +70,7 @@ public class RequestAttachmentService {
                     .build();
                 requestAttachmentRepository.save(requestFile);
             }
-            
+
             log.info("Saved {} files for request {}", storageFileEntities.size(), request.getUuid());
         }
     }

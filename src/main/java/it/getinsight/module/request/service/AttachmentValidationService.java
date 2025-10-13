@@ -10,10 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-/**
- * Serviço responsável exclusivamente por validações de anexos.
- * Aplica SRP de forma agressiva - apenas validações relacionadas a anexos.
- */
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -21,9 +18,7 @@ public class AttachmentValidationService {
 
     private final AttachmentConfigurationService attachmentConfigurationService;
 
-    /**
-     * Valida as configurações de anexos.
-     */
+
     public void validateAttachments(List<AttachmentConfigurationEntity> configurations, MultiValueMap<String, MultipartFile> attachments) {
         attachmentConfigurationService.validate(configurations, attachments);
     }
