@@ -280,7 +280,7 @@ public class RequestService {
             entity.getLevel().getName(),
             item);
 
-        var levelAttributes = new ArrayList<>(user.attributes().getOrDefault("levelAttributes", Collections.emptyList()));
+        var levelAttributes = new ArrayList<>(Optional.ofNullable(user.attributes()).orElse(Collections.emptyMap()).getOrDefault("levelAttributes", Collections.emptyList()));
 
         if (!levelAttributes.contains(levelAccess)) {
             levelAttributes.add(levelAccess);
