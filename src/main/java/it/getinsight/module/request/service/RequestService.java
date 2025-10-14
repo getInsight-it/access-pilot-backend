@@ -274,10 +274,11 @@ public class RequestService {
     private void updateUserAttributes(RequestEntity entity, RoleEntity roleEntity, RoleRepresentationDTO role) {
         var user = keycloakClient.getUsers(entity.getRequestingUser().getExternalId());
         var item = resolveItemCodeItem(entity.getLevel(), entity.getCodeItem());
-        String levelAccess = String.join("::",
-            roleEntity.getClient().getClientId(),
-            role.name(),
-            entity.getLevel().getName(),
+
+        String levelAccess = String.join(":",
+            roleEntity.getClient().getId().toString(),
+            roleEntity.getId().toString(),
+            entity.getLevel().getId().toString(),
             item);
 
         var levelAttributes = new ArrayList<>(Optional.ofNullable(user.attributes()).orElse(Collections.emptyMap()).getOrDefault("levelAttributes", Collections.emptyList()));
@@ -300,12 +301,12 @@ public class RequestService {
                     level.getApiKey(),
                     codeItem
                 );
-                yield dto.name();
+                yield dto.externalCode();
             }
             case BUILT_IN, BUSINESS -> {
                 var local = itemRepository.findByLevelIdAndId(level.getId(), Long.parseLong(codeItem))
                     .orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
-                yield local.getName();
+                yield local.getId().toString();
             }
         };
     }
