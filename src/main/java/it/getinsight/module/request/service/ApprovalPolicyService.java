@@ -44,7 +44,7 @@ public class ApprovalPolicyService {
             var role = identityProviderService.getRoleByNameAndClientUUID(roleEntity.getName(), roleEntity.getClient().getClientUUID());
 
             if (entity.getCodeItem() != null) {
-                userAttributeService.updateUserAttributes(entity, roleEntity, role);
+                userAttributeService.updateUserAttributes(entity, roleEntity);
             }
 
             roleAssignmentService.confirmRoles(entity);
