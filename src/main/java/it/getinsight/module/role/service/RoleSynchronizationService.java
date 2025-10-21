@@ -73,6 +73,8 @@ public class RoleSynchronizationService {
         roleEntity.setDescription(role.description());
         roleEntity.setClient(clientEntity);
         roleEntity.setActive(true);
+        roleEntity.setLabel(roleEntity.getLabel());
+        roleEntity.setIcon(roleEntity.getIcon());
         roleEntity.setRoleExternalId(role.id());
         roleEntity.setName(role.name());
         roleEntity.setRole(roleParentEntity != null ? roleParentEntity : roleEntity.getRole());

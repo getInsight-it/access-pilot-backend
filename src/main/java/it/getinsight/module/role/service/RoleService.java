@@ -164,7 +164,10 @@ public class RoleService {
             var roleEntity = roleMapper.toEntity(roleDTO);
             roleEntity.setLabel(roleDTO.label());
             roleEntity.setIcon(roleDTO.icon());
-            roleSynchronizationService.synchronizeWithDatabase(roleMapper.toEntity(roleDTO));
+            if (roleDTO.levelId() != null) {
+                levelRepository.findById(roleDTO.levelId()).ifPresent(roleEntity::setLevel);
+            }
+            roleSynchronizationService.synchronizeWithDatabase(roleEntity);
         } catch (InfraException e) {
             log.info("Role already exists: {}", roleDTO.name());
             throw ROLE_ALREADY_EXISTS_ERROR.businessException(e);

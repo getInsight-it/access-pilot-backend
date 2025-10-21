@@ -31,8 +31,8 @@ public class ExternalApiIdentityProviderService implements IdentityProviderServi
     }
 
     @Override
-    public void assignRoles(String userId, List<String> roleNames) {
-        log.debug("External API: Assigning roles {} to user {}", roleNames, userId);
+    public void assignRoles(String userId, String clientUUID, List<RoleRepresentationDTO> roleNames) {
+        log.debug("External API: Assigning roles {} at client {} to user {}", roleNames, clientUUID, userId);
         throw new UnsupportedOperationException("External API provider not yet implemented");
     }
 

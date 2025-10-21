@@ -52,12 +52,9 @@ public class KeycloakIdentityProviderService implements IdentityProviderService 
     }
 
     @Override
-    public void assignRoles(String userId, List<String> roleNames) {
-        log.debug("Assigning roles {} to user {}", roleNames, userId);
-        List<RoleRepresentationDTO> roles = roleNames.stream()
-            .map(roleName -> RoleRepresentationDTO.builder().name(roleName).build())
-            .toList();
-        keycloakClient.assignRoles(userId, "default-client", roles);
+    public void assignRoles(String userId, String clientUUID, List<RoleRepresentationDTO> roles) {
+        log.debug("Assigning roles {} to user {}", roles, userId);
+        keycloakClient.assignRoles(userId, clientUUID, roles);
     }
 
     @Override

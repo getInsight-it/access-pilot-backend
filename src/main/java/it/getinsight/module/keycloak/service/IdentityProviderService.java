@@ -23,7 +23,7 @@ public interface IdentityProviderService {
 
     RoleRepresentationDTO getRoleByNameAndClientUUID(String roleName, String clientUUID);
 
-    void assignRoles(String userId, List<String> roleNames);
+    void assignRoles(String userId, String clientUUID, List<RoleRepresentationDTO> roleNames);
 
     List<RoleRepresentationDTO> getUserRoles(String userId);
 

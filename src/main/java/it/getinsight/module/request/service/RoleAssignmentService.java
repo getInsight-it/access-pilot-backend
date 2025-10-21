@@ -43,7 +43,8 @@ public class RoleAssignmentService {
     private void assignRoleToUser(RequestEntity entity, RoleEntity roleEntity, RoleRepresentationDTO role) {
         identityProviderService.assignRoles(
             entity.getRequestingUser().getExternalId(),
-            List.of(role.name())
+            roleEntity.getClient().getClientUUID(),
+            List.of(role)
         );
     }
 }

@@ -3,6 +3,8 @@ package it.getinsight.module.request.service;
 import it.getinsight.module.keycloak.service.IdentityProviderService;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
 import it.getinsight.module.level.client.LevelClient;
+import it.getinsight.module.level.entity.LevelEntity;
+import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.role.entity.RoleEntity;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,10 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
+
+import static it.getinsight.message.MessageProperty.CODE_ITEM_NOT_FOUND_FOR_ROLE;
+import static it.getinsight.message.MessageProperty.ITEM_NOT_FOUND_ERROR;
 
 
 @Service
@@ -21,19 +27,19 @@ public class UserAttributeService {
 
     private final IdentityProviderService identityProviderService;
     private final LevelClient levelClient;
+    private final ItemRepository itemRepository;
 
 
-    public void updateUserAttributes(RequestEntity entity, RoleEntity roleEntity, RoleRepresentationDTO role) {
+    public void updateUserAttributes(RequestEntity entity, RoleEntity roleEntity) {
         var user = identityProviderService.getUsers(Map.of("externalId", entity.getRequestingUser().getExternalId())).get(0);
-        var item = levelClient.getItemByExternalCode(entity.getLevel().getExternalUrl(), entity.getLevel().getApiKey(), entity.getCodeItem());
+        var item = resolveItemCodeItem(entity.getLevel(), entity.getCodeItem());
+        String levelAccess = String.join(":",
+            roleEntity.getClient().getId().toString(),
+            roleEntity.getId().toString(),
+            entity.getLevel().getId().toString(),
+            item);
 
-        String levelAccess = String.join("::",
-            roleEntity.getClient().getClientId(),
-            role.name(),
-            entity.getLevel().getName(),
-            item.name());
-
-        var levelAttributes = new ArrayList<>(user.attributes().getOrDefault("levelAttributes", Collections.emptyList()));
+        var levelAttributes = new ArrayList<>(Optional.ofNullable(user.attributes()).orElse(Collections.emptyMap()).getOrDefault("levelAttributes", Collections.emptyList()));
 
         if (!levelAttributes.contains(levelAccess)) {
             levelAttributes.add(levelAccess);
@@ -41,4 +47,26 @@ public class UserAttributeService {
             identityProviderService.updateUser(entity.getRequestingUser().getExternalId(), user.withLevelAttributes(levelAttributes));
         }
     }
+
+    private String resolveItemCodeItem(LevelEntity level, String codeItem) {
+        if (codeItem == null || codeItem.isBlank()) {
+            throw CODE_ITEM_NOT_FOUND_FOR_ROLE.businessException();
+        }
+        return switch (level.getType()) {
+            case EXTERNAL -> {
+                var dto = levelClient.getItemByExternalCode(
+                    level.getExternalUrl(),
+                    level.getApiKey(),
+                    codeItem
+                );
+                yield dto.externalCode();
+            }
+            case BUILT_IN, BUSINESS -> {
+                var local = itemRepository.findByLevelIdAndId(level.getId(), Long.parseLong(codeItem))
+                    .orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+                yield local.getId().toString();
+            }
+        };
+    }
+
 }
