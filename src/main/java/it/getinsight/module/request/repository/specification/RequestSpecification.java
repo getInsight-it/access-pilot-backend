@@ -11,13 +11,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.Assert;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
 @Slf4j
 public class RequestSpecification {
 
-    private RequestSpecification() {}
+    private RequestSpecification() {
+    }
 
     public static Specification<RequestEntity> byRolesParent(List<Long> rolesParentIds) {
         return (root, query, builder) -> {
@@ -40,36 +42,125 @@ public class RequestSpecification {
         return matchCustom(RequestEntitySpecificationFilter.of(example));
     }
 
+    private static Predicate buildRoleFilters(RequestEntitySpecificationFilter filter, Root<RequestEntity> root, CriteriaBuilder cb) {
+        if (CollectionUtils.isEmpty(filter.getRoles())) {
+            return null;
+        }
+
+        Predicate rolePredicate = cb.disjunction();
+        List<RoleEntity> roles = filter.getRoles();
+
+
+        rolePredicate = addRoleFiltersByNames(rolePredicate, root, cb,
+            roles.stream().map(RoleEntity::getName).toList());
+
+
+        rolePredicate = addRoleFiltersByIds(rolePredicate, root, cb,
+            roles.stream().map(RoleEntity::getId).toList());
+
+
+        RoleEntity firstRole = roles.get(0);
+        if (firstRole.getClient() != null) {
+            String clientId = firstRole.getClient().getClientId();
+            String clientName = firstRole.getClient().getName();
+
+            if (StringUtils.isNotBlank(clientId)) {
+                rolePredicate = addClientFiltersByClientIdWithLike(rolePredicate, root, cb, clientId);
+            }
+            if (StringUtils.isNotBlank(clientName)) {
+                rolePredicate = addClientFiltersByClientNameWithLike(rolePredicate, root, cb, clientName);
+            }
+        }
+
+        return rolePredicate;
+    }
+
     public static Specification<RequestEntity> matchCustom(RequestEntitySpecificationFilter filter) {
         return (Root<RequestEntity> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
-            Predicate filtroAnd = cb.conjunction();
-            Predicate filtrosOr = cb.disjunction();
-
-            if (filter == null) return filtroAnd;
-
-            if (CollectionUtils.isNotEmpty(filter.getRoles())) {
-                filtrosOr = addRoleFiltersByNames(filtrosOr, root, cb, filter.getRoles().stream().map(RoleEntity::getName).toList());
-                filtrosOr = addRoleFiltersByIds(filtrosOr, root, cb, filter.getRoles().stream().map(RoleEntity::getId).toList());
-
-                var client = filter.getRoles().getFirst().getClient();
-                if (client != null && StringUtils.isNotBlank(client.getClientId())) {
-                    filtrosOr = addClientFiltersByClientIdWithLike(filtrosOr, root, cb, client.getClientId());
-                }
-                if (client != null && StringUtils.isNotBlank(client.getName())) {
-                    filtrosOr = addClientFiltersByClientNameWithLike(filtrosOr, root, cb, client.getName());
-                }
+            if (filter == null) {
+                return cb.conjunction();
             }
 
-            filtrosOr = addStatusFilter(filtrosOr, root, cb, filter.getStatus());
-            filtrosOr = addDescriptionFilter(filtrosOr, root, cb, filter.getDescription());
-            filtrosOr = addProtocolCodeFilter(filtrosOr, root, cb, filter.getProtocolCode());
+            Predicate combinedPredicate = cb.conjunction();
+            Predicate rolePredicate = buildRoleFilters(filter, root, cb);
 
-            Predicate pRequestingUser = addRequestingUserFilters(root, cb, filter.getRequestingUser());
-            if (pRequestingUser != null) {
-                filtroAnd = cb.and(filtroAnd, pRequestingUser);
+            if (rolePredicate != null) {
+                combinedPredicate = cb.and(combinedPredicate, rolePredicate);
             }
 
-            return filtrosOr.getExpressions().isEmpty() ? filtroAnd : cb.and(filtroAnd, filtrosOr);
+
+            Predicate statusPredicate = addStatusFilter(cb.disjunction(), root, cb, filter.getStatus());
+            Predicate descriptionPredicate = addDescriptionFilter(cb.disjunction(), root, cb, filter.getDescription());
+            Predicate protocolPredicate = addProtocolCodeFilter(cb.disjunction(), root, cb, filter.getProtocolCode());
+            Predicate userPredicate = addRequestingUserFilters(root, cb, filter.getRequestingUser());
+
+
+            Predicate orPredicate = cb.or(
+                statusPredicate,
+                descriptionPredicate,
+                protocolPredicate
+            );
+
+            if (userPredicate != null) {
+                combinedPredicate = cb.and(combinedPredicate, userPredicate);
+            }
+
+            return orPredicate.getExpressions().isEmpty()
+                ? combinedPredicate
+                : cb.and(combinedPredicate, orPredicate);
+        };
+    }
+
+    private static void processTriple(String triple, boolean isAdditionalTriples, Root<RequestEntity> root, CriteriaBuilder cb, Predicate or) {
+        final int LENGTH_LEVEL_WITHOUT_ITEM = 2;
+        final int LENGTH_LEVEL_WITH_ITEM = 3;
+        final int expectedParts = isAdditionalTriples ? LENGTH_LEVEL_WITHOUT_ITEM : LENGTH_LEVEL_WITH_ITEM;
+
+        String[] parts = triple.split(":");
+        if (parts.length != expectedParts) {
+            return;
+        }
+
+        try {
+            Long clientId = Long.valueOf(parts[0]);
+            Long levelId = Long.valueOf(parts[1]);
+            Predicate and = cb.and(
+                cb.equal(root.get("role").get("client").get("id"), clientId),
+                cb.equal(root.get("level").get("id"), levelId)
+            );
+
+            if (!isAdditionalTriples) {
+                long itemId = Long.parseLong(parts[2]);
+                and = cb.and(and, cb.equal(root.get("codeItem"), itemId));
+            }
+
+            or.getExpressions().add(and);
+        } catch (NumberFormatException numberFormatExceptionIgnored) {
+            log.warn("Invalid triple: {}", numberFormatExceptionIgnored.getMessage());
+        }
+    }
+
+    public static Specification<RequestEntity> inTriples(Collection<String> triples, boolean isAdditionalTriples) {
+        return (root, query, cb) -> {
+            if (triples == null || triples.isEmpty()) {
+                return cb.conjunction();
+            }
+
+            Predicate or = cb.disjunction();
+            triples.stream()
+                .filter(StringUtils::isNotBlank)
+                .forEach(triple -> processTriple(triple, isAdditionalTriples, root, cb, or));
+
+            return or.getExpressions().isEmpty() ? cb.conjunction() : or;
+        };
+    }
+
+    public static Specification<RequestEntity> requesterRoleIn(Collection<Long> roleIds) {
+        return (root, query, cb) -> {
+            if (roleIds == null || roleIds.isEmpty()) {
+                return cb.conjunction();
+            }
+            return root.get("role").get("id").in(roleIds);
         };
     }
 
@@ -87,8 +178,8 @@ public class RequestSpecification {
     }
 
     private static Predicate addRoleFiltersByIdWithEqual(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, Long role) {
-        if (role != null){
-            p = cb.or(p, cb.equal(root.get("role").get("id"),  role ));
+        if (role != null) {
+            p = cb.or(p, cb.equal(root.get("role").get("id"), role));
         }
         return p;
     }
@@ -112,10 +203,8 @@ public class RequestSpecification {
         return p;
     }
 
-
-
     private static Predicate addClientFiltersByClientIdWithLike(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, String clientId) {
-        if (StringUtils.isNotBlank(clientId)){
+        if (StringUtils.isNotBlank(clientId)) {
             Expression<String> expression = cb.lower(root.get("role").get("client").get("clientId"));
             p = cb.or(p, cb.like(expression, "%" + clientId.toLowerCase() + "%"));
         }
@@ -123,7 +212,7 @@ public class RequestSpecification {
     }
 
     private static Predicate addClientFiltersByClientNameWithLike(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, String clientName) {
-        if (StringUtils.isNotBlank(clientName)){
+        if (StringUtils.isNotBlank(clientName)) {
             Expression<String> campo = cb.lower(root.get("role").get("client").get("name"));
             p = cb.or(p, cb.like(campo, "%" + clientName.toLowerCase() + "%"));
         }
@@ -131,7 +220,7 @@ public class RequestSpecification {
     }
 
     private static Predicate addRoleFiltersByNameWithLike(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, String role) {
-        if (StringUtils.isNotBlank(role)){
+        if (StringUtils.isNotBlank(role)) {
             Expression<String> campo = cb.lower(root.get("role").get("name"));
             p = cb.or(p, cb.like(campo, "%" + role.toLowerCase() + "%"));
         }
@@ -146,11 +235,10 @@ public class RequestSpecification {
         return p;
     }
 
-
     private static Predicate addRequestingUserFilters(Root<RequestEntity> root, CriteriaBuilder cb, UserEntity requestingUser) {
         Predicate requestingPredicate = null;
         if (requestingUser != null) {
-        requestingPredicate = cb.conjunction();
+            requestingPredicate = cb.conjunction();
             if (requestingUser.getId() != null) {
                 requestingPredicate = cb.and(requestingPredicate, cb.like(root.get("requestingUser").get("id"), "%" + requestingUser.getId() + "%"));
             }
@@ -183,5 +271,6 @@ public class RequestSpecification {
         }
         return p;
     }
+
 
 }

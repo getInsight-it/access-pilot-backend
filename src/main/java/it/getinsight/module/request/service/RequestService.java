@@ -22,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -71,7 +70,7 @@ public class RequestService {
 
     public PageableResponseModel<RequestDTO> getAllRequestsMine(PageableRequestModel<RequestFilterDTO> configPage) {
         log.debug("Fetching requests with filters: {}", configPage.getFilter());
-        
+
         Optional<RequestFilterDTO> filter = configPage.getFilter();
         final var model = filter
             .map(requestFilterMapper::toDto)
@@ -91,12 +90,35 @@ public class RequestService {
 
     public PageableResponseModel<RequestDTO> getAllRequestsByRolesDynamicQuery(PageableRequestModel<String> configPage) {
         var roles = configPage.getFilter().filter(StringUtils::isNotBlank).orElse(null);
+        DynamicParameters parameters = DynamicParameters.get();
         if (StringUtils.isNotBlank(roles)) {
-            DynamicParameters parameters = DynamicParameters.get().append("roles", List.of(roles.split(",")));
-            return requestRepository.findAllNative(NAME_QUERY_FIND_ALL_REQUESTS_IN_ROLES, parameters, PaginationHelper.toPageable(configPage), requestMapper);
-        } else {
-            return requestRepository.findAllNative(NAME_QUERY_FIND_ALL_REQUESTS, DynamicParameters.get(), PaginationHelper.toPageable(configPage), requestMapper);
+            parameters = parameters.append("roles", List.of(roles.split(",")));
         }
+
+        var jwt = authenticationContextService.getCurrentJwt();
+        var claim = jwt.getClaim("levelAttributes");
+        java.util.List<String> raw = claim instanceof java.util.Collection<?> c ? c.stream().map(Object::toString).toList() : java.util.List.of();
+        var clientIds = new java.util.ArrayList<Long>();
+        var levelIds = new java.util.ArrayList<Long>();
+        var itemIds  = new java.util.ArrayList<Long>();
+        for (String v : raw) {
+            String[] parts = v.split(":");
+            if (parts.length == 4) {
+                try {
+                    clientIds.add(Long.valueOf(parts[0]));
+                    levelIds.add(Long.valueOf(parts[2]));
+                    itemIds.add(Long.valueOf(parts[3]));
+                } catch (NumberFormatException e) {
+                    log.warn("Invalid scope: {}", e.getMessage());
+                }
+            }
+        }
+        if (!clientIds.isEmpty()) parameters = parameters.append("clientIds", clientIds);
+        if (!levelIds.isEmpty())  parameters = parameters.append("levelIds", levelIds);
+        if (!itemIds.isEmpty())   parameters = parameters.append("itemIds", itemIds);
+
+        String queryName = StringUtils.isNotBlank(roles) ? NAME_QUERY_FIND_ALL_REQUESTS_IN_ROLES : NAME_QUERY_FIND_ALL_REQUESTS;
+        return requestRepository.findAllNative(queryName, parameters, PaginationHelper.toPageable(configPage), requestMapper);
     }
 
 
@@ -107,26 +129,13 @@ public class RequestService {
             .map(requestMapper::toEntity)
             .orElse(new RequestEntity());
         var currentUserId = authenticationContextService.getCurrentUserId();
-        var filterDTO = configPage.getFilter().get();
-        if (BooleanUtils.isTrue(filterDTO.onlyMine())) {
+        var filterDTO = configPage.getFilter().orElse(null);
+        if (filterDTO != null && BooleanUtils.isTrue(filterDTO.onlyMine())) {
             model.setRequestingUser(UserEntity.builder().externalId(currentUserId).build());
         }
 
-        final var matcher = ExampleMatcher
-            .matchingAny()
-            .withIgnoreNullValues()
-            .withMatcher("role.name", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("role.client.name", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("role.client.clientId", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("requestingUser.id", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("requestingUser.externalId", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("status", ExampleMatcher.GenericPropertyMatcher::exact)
-            .withMatcher("managed", ExampleMatcher.GenericPropertyMatcher::exact)
-            .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains);
-
-
-        final var example = Example.of(model, matcher);
-        final var page = requestRepository.findAll(example, PaginationHelper.toPageable(configPage));
+        Specification<RequestEntity> spec = requestQueryBuilderService.buildFinalSpecification(model, configPage.getFilter());
+        final var page = requestRepository.findAll(spec, PaginationHelper.toPageable(configPage));
         return PaginationHelper.toPageResponse(requestMapper.toDto(page.getContent()), page.getTotalElements());
     }
 
@@ -155,9 +164,9 @@ public class RequestService {
 
     public RequestDTO findById(Long id) {
         var requestEntity = requestRepository.findById(id).orElseThrow(REQUEST_NOT_FOUND_ERROR::businessException);
-        
+
         requestValidationService.validateUserAccessToRequest(id, requestEntity);
-        
+
         return requestMapper.toDto(requestEntity);
     }
 
