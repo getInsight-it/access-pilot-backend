@@ -4,6 +4,7 @@ import it.getinsight.core.dynamicquery.repository.DynamicNativeQueryRepository;
 import it.getinsight.core.dynamicquery.repository.DynamicQueryRepository;
 import it.getinsight.module.level.entity.ItemEntity;
 import it.getinsight.module.level.entity.LevelEntity;
+import it.getinsight.module.level.entity.LevelType;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +28,12 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long>, JpaSpec
     Optional<ItemEntity> findByLevelIdAndId(Long id, Long itemId);
 
     List<ItemEntity> findAllByLevelNameIn(List<String> names);
+
+    @Query("SELECT CASE WHEN i.level.type = :type THEN CAST(i.id AS string) ELSE i.externalCode END " +
+            "FROM ItemEntity i " +
+            "WHERE i.level.id = :levelId AND i.parent.id = :itemId")
+    List<String> findAllSubItemCodesLevelIdAndId(@Param("levelId") Long id, @Param("itemId") String itemId, @Param("type") LevelType type);
+
 
     @Modifying
     @Query("UPDATE ItemEntity i SET i.active = false WHERE i.id = :id")

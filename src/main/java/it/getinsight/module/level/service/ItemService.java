@@ -26,7 +26,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.csv.QuoteMode;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.jpa.convert.QueryByExamplePredicateBuilder;
@@ -270,6 +269,14 @@ public class ItemService {
             return levelClient.getCountLevel(level.getExternalUrl(), level.getApiKey());
         }
         return itemRepository.countByLevel(level);
+    }
+
+    public List<String> getAllSubitemCodes(Long levelId, String itemId) {
+        var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
+            return levelClient.getAllSubitemCodes(levelEntity.getExternalUrl(), levelEntity.getApiKey(), itemId);
+        }
+        return itemRepository.findAllSubItemCodesLevelIdAndId(levelEntity.getId(), itemId, levelEntity.getType());
     }
 
     public ItemHierarchyResumedDTO getItemById(Long id, String itemId) {

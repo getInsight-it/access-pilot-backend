@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static it.getinsight.message.MessageProperty.*;
@@ -103,4 +104,11 @@ public class LevelClient {
         String path = String.format("%s/count", ApiConfig.from(url).extraPath());
         return client.getCountDynamic(path, apiKey);
     }
+
+    public List<String> getAllSubitemCodes(String url, String apiKey, String itemId) {
+        GenericClient client = createGenericClient(ApiConfig.from(url).baseUrl());
+        String path = String.format("%s/items/%s/subitems/codes", ApiConfig.from(url).extraPath(), itemId);
+        return client.getAllSubitemCodes(path, apiKey);
+    }
+
 }

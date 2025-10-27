@@ -1,20 +1,22 @@
 package it.getinsight.module.request.service;
 
+import it.getinsight.module.level.entity.LevelType;
+import it.getinsight.module.level.repository.ItemRepository;
+import it.getinsight.module.level.service.ItemService;
 import it.getinsight.module.request.dto.RequestFilterDTO;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.repository.specification.RequestSpecification;
-import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.user.entity.UserEntity;
 import it.getinsight.module.user.service.AuthenticationContextService;
+import it.getinsight.module.user.service.ScopeRef;
 import it.getinsight.module.user.service.SecurityScopes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +26,8 @@ public class RequestQueryBuilderService {
     private final RoleRepository roleRepository;
     private final AuthenticationContextService authenticationContextService;
     private final SecurityScopes securityScopes;
+    private final ItemService itemService;
+    private final ItemRepository itemRepository;
 
     public Specification<RequestEntity> buildCreatedRequestsSpecification(RequestEntity model, String currentUserId) {
         model.setRequestingUser(UserEntity.builder().externalId(currentUserId).build());
@@ -31,67 +35,86 @@ public class RequestQueryBuilderService {
     }
 
     public Specification<RequestEntity> buildAssignedRequestsSpecification(RequestEntity model) {
-        var triples = buildTriplesFromToken();
-        var additionalTriples = buildAdditionalTriples();
-        var approvablesScoped = buildApprovablesFromToken();
+        var sameLevel = buildSameLevelFromToken();
+        var hierarchyLevel = buildHierarchyLevelFromToken();
+        var rolesWithoutLevel = buildRolesWithoutLevelFromToken();
 
-        Specification<RequestEntity> spec = RequestSpecification.matchCustom(model);
 
-        if (!approvablesScoped.isEmpty()) {
-            spec = spec.and(RequestSpecification.requesterRoleIn(approvablesScoped));
-        }
+        var spec = RequestSpecification.matchCustom(model);
 
-        if (!triples.isEmpty()) {
-            spec = spec.and(RequestSpecification.inTriples(triples, false));
-            // TODO: Verificar quando a role nao tem esfera associada
-            //  Specification<RequestEntity> levelIsNull = (root, query, cb) -> cb.isNull(root.get("level"));
-            //  spec = spec.or(levelIsNull);
-        } else {
-            Specification<RequestEntity> levelIsNull = (root, query, cb) -> cb.isNull(root.get("level"));
-            spec = spec.and(levelIsNull);
-        }
+        var triplesSpec = !sameLevel.isEmpty() ?
+            RequestSpecification.inTriples(sameLevel) :
+            null;
 
-        if (!additionalTriples.isEmpty()) {
-            spec = spec.or(RequestSpecification.inTriples(additionalTriples, true));
-        }
+        var additionalTriplesSpec = !hierarchyLevel.isEmpty() ?
+            RequestSpecification.inTriples(hierarchyLevel) :
+            null;
 
-        return spec;
+        Specification<RequestEntity>  specRolesWithLevelIsNull = RequestSpecification.rolesWithLevelIsNull(rolesWithoutLevel);
+
+
+        return spec.and(Specification.where(triplesSpec).or(additionalTriplesSpec).or(specRolesWithLevelIsNull));
     }
 
-    private List<String> buildTriplesFromToken() {
-        return  securityScopes.all().stream()
-            .map(s -> s.clientId() + ":" + s.levelId() + ":" + s.itemId())
-            .toList();
-    }
-
-    private List<String> buildAdditionalTriples() {
+    private List<String> buildSameLevelFromToken() {
         return securityScopes.all().stream()
-            .flatMap(s -> roleRepository.findDescendantRoles(s.roleId(), s.clientId())
-                .stream()
-                .filter(roleEntity ->
-                    roleEntity != null
-                    && roleEntity.getRole() != null
-                    && roleEntity.getLevel() != null
-                    && roleEntity.getRole().getLevel() != null
-                    && !roleEntity.getRole().getLevel().equals(roleEntity.getLevel()))
-                .map(roleEntity -> s.clientId() + ":" + roleEntity.getLevel().getId())
+            .flatMap(s ->
+                roleRepository.findDescendantRoles(s.roleId(), s.clientId())
+                    .stream()
+                    .filter(roleEntity ->
+                        roleEntity != null
+                            && roleEntity.getRole() != null
+                            && roleEntity.getLevel() != null
+                            && roleEntity.getRole().getLevel() != null
+                            && roleEntity.getRole().getLevel().equals(roleEntity.getLevel())
+                    )
+                    .map(roleEntity -> s.clientId() + ":"+ roleEntity.getId() + ":" + s.levelId() + ":" + s.itemId() )
+
             )
             .distinct()
             .toList();
     }
 
-    private List<Long> buildApprovablesFromToken() {
+    private List<String> buildRolesWithoutLevelFromToken() {
         return securityScopes.all().stream()
-            .flatMap(s -> {
-                List<RoleEntity> descendants = roleRepository.findDescendantRoles(s.roleId(), s.clientId());
-                return java.util.stream.Stream.concat(
-                    java.util.stream.Stream.of(s.roleId()),
-                    descendants.stream().map(RoleEntity::getId)
-                );
-            })
+            .map(ScopeRef::roleId)
+            .map(String::valueOf)
+            .filter(roleId -> buildSameLevelFromToken().stream().noneMatch(s -> s.split(":")[1].equals(roleId)) &&
+                buildHierarchyLevelFromToken().stream().noneMatch(h -> h.split(":")[1].equals(roleId)))
+            .toList();
+    }
+
+
+    private List<String> buildHierarchyLevelFromToken() {
+        return securityScopes.all().stream()
+            .flatMap(s ->
+                roleRepository.findDescendantRoles(s.roleId(), s.clientId())
+                    .stream()
+                    .filter(roleEntity ->
+                        roleEntity != null
+                            && roleEntity.getRole() != null
+                            && roleEntity.getLevel() != null
+                            && roleEntity.getRole().getLevel() != null
+                            && !roleEntity.getRole().getLevel().equals(roleEntity.getLevel())
+                    )
+                    .flatMap(roleEntity ->
+                        roleEntity.getLevel().getType() == LevelType.EXTERNAL ?
+                            itemService.getAllSubitemCodes(roleEntity.getLevel().getId(), s.itemId().toString())
+                                .stream()
+                            .map(itemId -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + itemId)
+
+                        : itemRepository.findAllByLevelIdAndParentId(roleEntity.getLevel().getId(), s.itemId())
+                        .stream()
+                        .map(item -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + item.getId())
+                    )
+            )
             .distinct()
             .toList();
     }
+
+
+
+
 
     public boolean shouldExecuteQuery(Optional<RequestFilterDTO> filter) {
         if (filter.isEmpty()) {

@@ -60,7 +60,6 @@ public class RoleValidationService {
             return false;
         }
 
-        // Role names devem seguir convenção (não upper snake case)
         return !StringValidationUtils.isUpperSnakeCase(roleName);
     }
 }
