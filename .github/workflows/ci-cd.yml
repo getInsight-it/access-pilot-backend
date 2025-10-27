@@ -1,0 +1,28 @@
+name: ci-cd.yml
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    container:
+      image: maven:3-eclipse-temurin-21
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: mvn-build
+        run: mvn clean package -P sentry -T $(nproc) -Dmaven.artifact.threads=$(nproc) -s maven-settings-gh.xml
+
+
