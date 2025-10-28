@@ -129,27 +129,22 @@ public class RequestSpecification {
             }
 
 
-            Map<String, List<Long>> groupedItems = triples.stream()
+            Map<String, List<String>> groupedItems = triples.stream()
                 .filter(StringUtils::isNotBlank)
                 .map(triple -> {
                     String[] parts = triple.split(":");
                     if (parts.length != 4) return null;
-                    try {
-                        return new Object[] {
-                            parts[0],
-                            parts[1],
-                            parts[2],
-                            Long.parseLong(parts[3])
-                        };
-                    } catch (NumberFormatException e) {
-                        log.warn("Invalid triple: {}", triple);
-                        return null;
-                    }
+                    return new Object[] {
+                        parts[0],
+                        parts[1],
+                        parts[2],
+                        parts[3]
+                    };
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.groupingBy(
                     arr -> arr[0] + ":" + arr[1] + ":" + arr[2],
-                    Collectors.mapping(arr -> (Long) arr[3], Collectors.toList())
+                    Collectors.mapping(arr -> (String) arr[3], Collectors.toList())
                 ));
 
             if (groupedItems.isEmpty()) {
@@ -158,17 +153,17 @@ public class RequestSpecification {
 
 
             List<Predicate> groupPredicates = new ArrayList<>();
-            for (Map.Entry<String, List<Long>> entry : groupedItems.entrySet()) {
+            for (Map.Entry<String, List<String>> entry : groupedItems.entrySet()) {
                 String[] keys = entry.getKey().split(":");
-                long clientId = Long.parseLong(keys[0]);
-                long roleId = Long.parseLong(keys[1]);
-                long levelId = Long.parseLong(keys[2]);
-                List<Long> codeItems = entry.getValue();
+                String clientId = keys[0];
+                String roleId = keys[1];
+                String levelId = keys[2];
+                List<String> codeItems = entry.getValue();
 
                 Predicate clientPredicate = cb.equal(root.get("role").get("client").get("id"), clientId);
                 Predicate rolePredicate = cb.equal(root.get("role").get("id"), roleId);
                 Predicate levelPredicate = cb.equal(root.get("level").get("id"), levelId);
-                Expression<Long> codeItemExpr = root.get("codeItem");
+                Expression<String> codeItemExpr = root.get("codeItem");
                 Predicate inClause = codeItemExpr.in(codeItems);
 
                 groupPredicates.add(cb.and(
