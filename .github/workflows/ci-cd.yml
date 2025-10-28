@@ -60,7 +60,7 @@ jobs:
 
       - name: build-image
         env:
-          DOCKER_TAG: ghcr.io/${{ env.GITHUB_REPOSITORY }}:latest
+          DOCKER_TAG: ghcr.io/${{ github.repository }}:latest
         run: |
           cd
           docker buildx create --use --driver docker-container --bootstrap
