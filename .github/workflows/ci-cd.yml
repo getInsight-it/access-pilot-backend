@@ -10,8 +10,6 @@ jobs:
     name: build
     environment: dev
     runs-on: ubuntu-latest
-    outputs:
-      jar: ${{ steps.mvn-build.outputs }}
     steps:
       - uses: actions/checkout@v5
 
@@ -28,9 +26,15 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: |
           mvn -B clean package -P sentry -T $(nproc) -Dmaven.artifact.threads=$(nproc) -s maven-settings-gh.xml
-          mkdir -p $GITHUB_OUTPUT/target
-          cp -R target/* $GITHUB_OUTPUT/target
-          cp Dockerfile $GITHUB_OUTPUT
+
+      - uses: actions/upload-artifact@v5
+        with:
+          path: target/*.jar
+          retention-days: 1
+          if-no-files-found: 'error'
+          include-hidden-files: 'true'
+          name: 'target'
+
 
   container:
     name: container
@@ -38,6 +42,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v6
 
       - uses: docker/login-action@v3
         with:
