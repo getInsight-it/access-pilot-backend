@@ -10,7 +10,6 @@ import feign.jackson.JacksonEncoder;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.level.dto.ItemFilterDTO;
 import it.getinsight.module.level.dto.ItemHierarchyResumedDTO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
@@ -21,16 +20,20 @@ import java.util.concurrent.ConcurrentHashMap;
 import static it.getinsight.message.MessageProperty.*;
 
 @Component
-@RequiredArgsConstructor
 public class LevelClient {
 
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
     private final ObjectMapper objectMapper;
     private final LevelClientProperties props;
+    private final Map<String, GenericClient> clientCache;
 
+    LevelClient(ObjectMapper objectMapper, LevelClientProperties props) {
+        this.objectMapper = objectMapper;
+        this.props = props;
+        this.clientCache = buildCache();
+    }
 
-    private final Map<String, GenericClient> clientCache = buildCache();
 
     private Map<String, GenericClient> buildCache() {
         int max = Objects.requireNonNull(props).getCache().getMaxEntries();
