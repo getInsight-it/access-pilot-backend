@@ -22,14 +22,15 @@ jobs:
           cache: 'maven'
 
       - name: mvn-build
+        id: mvn-build
         env:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: |
           mvn -B clean package -P sentry -T $(nproc) -Dmaven.artifact.threads=$(nproc) -s maven-settings-gh.xml
-          cp target/*.jar $GITHUB_OUTPUT
-
-
+          mkdir -p $GITHUB_OUTPUT/target
+          cp -R target/* $GITHUB_OUTPUT/target
+          cp Dockerfile $GITHUB_OUTPUT
 
   container:
     name: container
