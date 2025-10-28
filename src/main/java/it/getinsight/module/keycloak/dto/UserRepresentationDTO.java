@@ -3,7 +3,6 @@ package it.getinsight.module.keycloak.dto;
 import lombok.Builder;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 

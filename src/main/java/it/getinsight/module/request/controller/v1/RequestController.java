@@ -28,6 +28,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
 
+import static it.getinsight.message.MessageProperty.*;
+
 @RestController
 @RequestMapping("/v1/requests")
 @Tag(name = "Request", description = "Operations on requests.")
@@ -53,7 +55,7 @@ public class RequestController {
                 "/{id}").buildAndExpand(requestService.createRequest(requestDTO, attachments).id()).toUri();
             return ResponseEntity.created(uri).build();
         } catch (JsonProcessingException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "JSON mal formado", e);
+            throw INVALID_JSON_FORMAT_ERROR.businessException();
         }
     }
 
@@ -72,7 +74,7 @@ public class RequestController {
             requestService.publishRequestUpdateEvent(id, requestUpdateDTO);
             return ResponseEntity.status(HttpStatus.ACCEPTED).build();
         } catch (JsonProcessingException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "JSON mal formado", e);
+            throw INVALID_JSON_FORMAT_ERROR.businessException();
         }
     }
 

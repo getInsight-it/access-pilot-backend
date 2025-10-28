@@ -27,4 +27,46 @@ public interface RoleRepository extends JpaRepository<RoleEntity, Long>, Dynamic
     @Query("UPDATE RoleEntity r SET r.active = false WHERE r.id = :id")
     void softDelete(@Param("id") Long id);
 
+    @Query(value = """
+        WITH RECURSIVE role_descendants AS (
+            -- Base case: Get the direct children of the parent role
+            SELECT r.*
+            FROM TB_ROLE r
+            WHERE r.ID_ROLE_PARENT = :parentRoleId
+            AND r.ATIVO = true
+
+            UNION ALL
+
+            -- Recursive case: Get all descendants
+            SELECT r.*
+            FROM TB_ROLE r
+            INNER JOIN role_descendants rd ON r.ID_ROLE_PARENT = rd.ID
+            WHERE r.ATIVO = true
+        )
+        SELECT DISTINCT rd.*
+        FROM role_descendants rd
+        WHERE (:clientId IS NULL OR rd.ID_CLIENTE = :clientId)
+        """, nativeQuery = true)
+    List<RoleEntity> findDescendantRoles(@Param("parentRoleId") Long parentRoleId, @Param("clientId") Long clientId);
+
+    @Query(value = """
+        WITH RECURSIVE role_ancestors AS (
+            SELECT r.*
+            FROM TB_ROLE r
+            WHERE r.ID = :childRoleId
+            AND r.ATIVO = true
+
+            UNION ALL
+
+            SELECT r.*
+            FROM TB_ROLE r
+            INNER JOIN role_ancestors ra ON r.ID = ra.ID_ROLE_PARENT
+            WHERE r.ATIVO = true
+        )
+        SELECT DISTINCT ra.*
+        FROM role_ancestors ra
+        WHERE (:clientId IS NULL OR ra.ID_CLIENTE = :clientId)
+        """, nativeQuery = true)
+    List<RoleEntity> findAncestorRoles(@Param("childRoleId") Long childRoleId, @Param("clientId") Long clientId);
+
 }

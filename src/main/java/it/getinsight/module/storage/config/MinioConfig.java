@@ -11,6 +11,8 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
+import static it.getinsight.message.MessageProperty.*;
+
 @Configuration
 @EnableConfigurationProperties({MinioConfigProperties.class})
 public class MinioConfig {
@@ -36,7 +38,7 @@ public class MinioConfig {
                 }
             }
         } catch (Exception e) {
-            throw new InfraException("Falha na criação/verificação de buckets: " + e.getMessage(), e);
+            throw STORAGE_BUCKET_CREATION_ERROR.bind(e.getMessage()).infraException();
         }
 
         return minioClient;

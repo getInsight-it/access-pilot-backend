@@ -1,6 +1,7 @@
 package it.getinsight.module.client.dto;
 
 import it.getinsight.module.configuration.dto.AttachmentConfigurationDTO;
+import it.getinsight.module.level.dto.ItemResponseNodeDTO;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -38,6 +39,25 @@ public record ClientDTO(
     @Size(min = 3, max = 255)
     String baseUrl,
 
-    List<AttachmentConfigurationDTO> configurations
+    List<AttachmentConfigurationDTO> configurations,
 
-) implements Serializable {}
+    List<ItemResponseNodeDTO> allowedItemsHierarchy
+
+) implements Serializable {
+
+    public ClientDTO withAllowedItemsHierarchy(List<ItemResponseNodeDTO> allowedItemsHierarchy) {
+        return ClientDTO.builder()
+            .id(this.id)
+            .name(this.name)
+            .label(this.label)
+            .clientId(this.clientId)
+            .clientUUID(this.clientUUID)
+            .managed(this.managed)
+            .status(this.status)
+            .description(this.description)
+            .baseUrl(this.baseUrl)
+            .configurations(this.configurations)
+            .allowedItemsHierarchy(allowedItemsHierarchy)
+            .build();
+    }
+}

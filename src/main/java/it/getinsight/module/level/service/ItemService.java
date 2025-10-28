@@ -60,6 +60,7 @@ public class ItemService {
     private final ItemFilterMapper itemFilterMapper;
     private final LevelHierarchyResumedMapper levelHierarchyResumedMapper;
 
+
     public PageableResponseModel<ItemHierarchyResumedDTO> getItemsPaginatedByLevel(Long levelId, PageableRequestModel<ItemFilterDTO> configPage) {
         var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
 
@@ -270,6 +271,14 @@ public class ItemService {
         return itemRepository.countByLevel(level);
     }
 
+    public List<String> getAllSubitemCodes(Long levelId, String itemId) {
+        var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
+            return levelClient.getAllSubitemCodes(levelEntity.getExternalUrl(), levelEntity.getApiKey(), itemId);
+        }
+        return itemRepository.findAllSubItemCodesLevelIdAndId(levelEntity.getId(), itemId, levelEntity.getType());
+    }
+
     public ItemHierarchyResumedDTO getItemById(Long id, String itemId) {
         var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
         if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
@@ -300,7 +309,7 @@ public class ItemService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void deleteItem(Long id, String itemId) {//excluir item que nao esta pendente
+    public void deleteItem(Long id, String itemId) {
         var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
         if (!LevelType.EXTERNAL.equals(levelEntity.getType())) {
             var itemEntity = itemRepository.findByLevelIdAndId(id, Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);

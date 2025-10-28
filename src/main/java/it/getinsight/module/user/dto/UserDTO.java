@@ -1,6 +1,8 @@
 package it.getinsight.module.user.dto;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 
@@ -25,10 +27,10 @@ public record UserDTO(
 
     @Size(min = 1, max = 255)
     @NotBlank
+    @Email
     String email,
 
-    @Size(min = 1, max = 255)
-    @NotBlank
+    @NotNull(message = "isApprover field is required")
     Boolean isApprover,
 
     @NotBlank
