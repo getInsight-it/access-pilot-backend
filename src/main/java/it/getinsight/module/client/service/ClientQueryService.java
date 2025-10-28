@@ -14,6 +14,10 @@ import it.getinsight.module.client.mapper.ClientRepresentationMapper;
 import it.getinsight.module.client.repository.ClientRepository;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.service.IdentityProviderService;
+import it.getinsight.module.level.dto.ItemResponseNodeDTO;
+import it.getinsight.module.level.repository.ItemRepository;
+import it.getinsight.module.level.service.ItemTreeService;
+import it.getinsight.module.user.service.SecurityScopes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
@@ -24,10 +28,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 
@@ -41,6 +42,7 @@ public class ClientQueryService {
     private final ClientFilterMapper clientFilterMapper;
     private final ClientRepresentationMapper clientRepresentationMapper;
     private final IdentityProviderService identityProviderService;
+    private final ClientItemTreeService clientItemTreeService;
 
     private static final String NAME_QUERY_FIND_ALL_CLIENTS = "find-all-clients";
     private static final String IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED = "acl.client.managed";
@@ -102,14 +104,16 @@ public class ClientQueryService {
         var clientEntities = clientRepository.findAllByManagedAndStatus(true, ClientStatus.PUBLISHED);
 
         return identityProviderService.getClients().stream()
-            .filter(client -> isManagedClient(client))
+            .filter(this::isManagedClient)
             .map(obj -> findLocalClientByClientId(clientEntities, obj.getClientId()))
             .filter(Objects::nonNull)
             .filter(obj -> filterByAttachment(obj, resourceAccess, attached))
-            .map(clientMapper::toDto)
+            .map(client -> {
+                List<ItemResponseNodeDTO> itemTree = clientItemTreeService.buildTreeForClient(client);
+                return clientMapper.toDto(client).withAllowedItemsHierarchy(itemTree);
+            })
             .toList();
     }
-
 
     @NotNull
     private List<ClientDTO> fetchUpdatedClientFromIDP(List<ClientEntity> page) {
