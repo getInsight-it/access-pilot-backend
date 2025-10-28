@@ -277,4 +277,15 @@ resilience4j:
         enable-exponential-backoff: true
 
 
+level-client:
+  timeout:
+    connect-ms: 10000
+    read-ms: 30000
+  retry:
+    enabled: true
+    period-ms: 100
+    max-period-ms: 1000
+    max-attempts: 2
+  cache:
+    max-entries: 20
 
