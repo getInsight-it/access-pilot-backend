@@ -1,0 +1,879 @@
+{
+  "td_classific_resultado": [
+    {
+      "id": 1,
+      "descricao": "Agricultura"
+    },
+    {
+      "id": 2,
+      "descricao": "Biocombustíveis e hidrogênio"
+    },
+    {
+      "id": 3,
+      "descricao": "Cimento"
+    },
+    {
+      "id": 4,
+      "descricao": "Eletricidade"
+    },
+    {
+      "id": 5,
+      "descricao": "Ferroviário"
+    },
+    {
+      "id": 6,
+      "descricao": "Iluminação pública"
+    },
+    {
+      "id": 7,
+      "descricao": "Novo cenário"
+    },
+    {
+      "id": 8,
+      "descricao": "Outras edificações"
+    },
+    {
+      "id": 9,
+      "descricao": "Outras indústrias"
+    },
+    {
+      "id": 10,
+      "descricao": "Outros modais"
+    },
+    {
+      "id": 11,
+      "descricao": "Pecuária"
+    },
+    {
+      "id": 12,
+      "descricao": "Químico"
+    },
+    {
+      "id": 13,
+      "descricao": "Referência"
+    },
+    {
+      "id": 14,
+      "descricao": "Residencial"
+    },
+    {
+      "id": 15,
+      "descricao": "Resíduos sólidos"
+    },
+    {
+      "id": 16,
+      "descricao": "Rodoviário"
+    },
+    {
+      "id": 17,
+      "descricao": "Saneamento"
+    },
+    {
+      "id": 18,
+      "descricao": "Siderurgia"
+    },
+    {
+      "id": 19,
+      "descricao": "Uso e mudança do uso da terra"
+    },
+    {
+      "id": 20,
+      "descricao": "Óleo e gás natural"
+    }
+  ],
+  "td_cor": [
+    {
+      "id": 1,
+      "descricao": "FFFF00"
+    },
+    {
+      "id": 2,
+      "descricao": "666666"
+    },
+    {
+      "id": 3,
+      "descricao": "000000"
+    },
+    {
+      "id": 4,
+      "descricao": "333333"
+    },
+    {
+      "id": 5,
+      "descricao": "990000"
+    },
+    {
+      "id": 6,
+      "descricao": "FFCC00"
+    },
+    {
+      "id": 7,
+      "descricao": "000033"
+    },
+    {
+      "id": 8,
+      "descricao": "669933"
+    },
+    {
+      "id": 9,
+      "descricao": "3399CC"
+    },
+    {
+      "id": 10,
+      "descricao": "33FF00"
+    },
+    {
+      "id": 11,
+      "descricao": "FF00FF"
+    },
+    {
+      "id": 12,
+      "descricao": "FFCC99"
+    },
+    {
+      "id": 13,
+      "descricao": "0000FF"
+    },
+    {
+      "id": 14,
+      "descricao": "660099"
+    },
+    {
+      "id": 15,
+      "descricao": "FF0000"
+    },
+    {
+      "id": 16,
+      "descricao": "009933"
+    },
+    {
+      "id": 17,
+      "descricao": "0066CC"
+    },
+    {
+      "id": 18,
+      "descricao": "FF6633"
+    },
+    {
+      "id": 19,
+      "descricao": "CCCCCC"
+    },
+    {
+      "id": 20,
+      "descricao": "99CCFF"
+    },
+    {
+      "id": 21,
+      "descricao": "FF9900"
+    }
+  ],
+  "td_formula_decomposta": [
+    {
+      "id": 1,
+      "descricao": 1
+    },
+    {
+      "id": 2,
+      "descricao": 2
+    },
+    {
+      "id": 3,
+      "descricao": 3
+    }
+  ],
+  "td_nivel_implantacao": [
+    {
+      "id": 1,
+      "descricao": "0.0"
+    },
+    {
+      "id": 2,
+      "descricao": "0.05"
+    },
+    {
+      "id": 3,
+      "descricao": "0.1"
+    },
+    {
+      "id": 4,
+      "descricao": "0.15"
+    },
+    {
+      "id": 5,
+      "descricao": "0.2"
+    },
+    {
+      "id": 6,
+      "descricao": "0.25"
+    },
+    {
+      "id": 7,
+      "descricao": "0.5"
+    },
+    {
+      "id": 8,
+      "descricao": "0.75"
+    },
+    {
+      "id": 9,
+      "descricao": "1.0"
+    }
+  ],
+  "td_periodo": [
+    {
+      "id": 20,
+      "descricao": "2020"
+    },
+    {
+      "id": 21,
+      "descricao": "2021"
+    },
+    {
+      "id": 22,
+      "descricao": "2022"
+    },
+    {
+      "id": 23,
+      "descricao": "2023"
+    },
+    {
+      "id": 24,
+      "descricao": "2024"
+    },
+    {
+      "id": 25,
+      "descricao": "2025"
+    },
+    {
+      "id": 26,
+      "descricao": "2026"
+    },
+    {
+      "id": 27,
+      "descricao": "2027"
+    },
+    {
+      "id": 28,
+      "descricao": "2028"
+    },
+    {
+      "id": 29,
+      "descricao": "2029"
+    },
+    {
+      "id": 30,
+      "descricao": "2030"
+    },
+    {
+      "id": 31,
+      "descricao": "2031"
+    },
+    {
+      "id": 32,
+      "descricao": "2032"
+    },
+    {
+      "id": 33,
+      "descricao": "2033"
+    },
+    {
+      "id": 34,
+      "descricao": "2034"
+    },
+    {
+      "id": 35,
+      "descricao": "2035"
+    },
+    {
+      "id": 36,
+      "descricao": "2036"
+    },
+    {
+      "id": 37,
+      "descricao": "2037"
+    },
+    {
+      "id": 38,
+      "descricao": "2038"
+    },
+    {
+      "id": 39,
+      "descricao": "2039"
+    },
+    {
+      "id": 40,
+      "descricao": "2040"
+    },
+    {
+      "id": 41,
+      "descricao": "2041"
+    },
+    {
+      "id": 42,
+      "descricao": "2042"
+    },
+    {
+      "id": 43,
+      "descricao": "2043"
+    },
+    {
+      "id": 44,
+      "descricao": "2044"
+    },
+    {
+      "id": 45,
+      "descricao": "2045"
+    },
+    {
+      "id": 46,
+      "descricao": "2046"
+    },
+    {
+      "id": 47,
+      "descricao": "2047"
+    },
+    {
+      "id": 48,
+      "descricao": "2048"
+    },
+    {
+      "id": 49,
+      "descricao": "2049"
+    },
+    {
+      "id": 50,
+      "descricao": "2050"
+    }
+  ],
+  "td_politica_setorial": [
+    {
+      "id": 1,
+      "descricao": "Aplicação de bioinsumos"
+    },
+    {
+      "id": 2,
+      "descricao": "Confinamento precoce de gado de corte"
+    },
+    {
+      "id": 3,
+      "descricao": "Implantação de sistemas irrigados"
+    },
+    {
+      "id": 4,
+      "descricao": "Manejo de resíduos da produção animal"
+    },
+    {
+      "id": 5,
+      "descricao": "Recuperação de pastagens degradadas"
+    },
+    {
+      "id": 6,
+      "descricao": "Incentivo à eletrificação da cocção"
+    },
+    {
+      "id": 7,
+      "descricao": "Incentivo à geração solar distribuída com armazenamento"
+    },
+    {
+      "id": 8,
+      "descricao": "Incentivo à geração solar distribuída sem armazenamento"
+    },
+    {
+      "id": 9,
+      "descricao": "Desenvolvimento da captura de CO2 em refinarias, biorrefinarias e destilarias de etanol"
+    },
+    {
+      "id": 10,
+      "descricao": "Expansão da captura e uso de CO2 em plataformas de E&P de óleo e gás"
+    },
+    {
+      "id": 11,
+      "descricao": "Incentivo à entrada de fontes renováveis variáveis na matriz energética"
+    },
+    {
+      "id": 12,
+      "descricao": "Incentivo à medidas de redução de emissões de metano em plataformas de óleo e gás"
+    },
+    {
+      "id": 13,
+      "descricao": "Incentivo à substituição do hidrogênio fóssil por hidrogênio verde em refinarias de petróleo"
+    },
+    {
+      "id": 14,
+      "descricao": "Precificação de carbono"
+    },
+    {
+      "id": 15,
+      "descricao": "Desenvolvimento da cadeia de captura e utilização de carbono industrial"
+    },
+    {
+      "id": 16,
+      "descricao": "Incentivo à eficiência energética industrial"
+    },
+    {
+      "id": 17,
+      "descricao": "Incentivo à substituição do uso de combustíveis"
+    },
+    {
+      "id": 18,
+      "descricao": "Precificação de carbono"
+    },
+    {
+      "id": 19,
+      "descricao": "Incentivos à venda de veículos elétricos"
+    },
+    {
+      "id": 20,
+      "descricao": "Incentivos à venda de veículos híbridos flex"
+    },
+    {
+      "id": 21,
+      "descricao": "Incentivo ao aumento da mistura de etanol anidro à gasolina"
+    },
+    {
+      "id": 22,
+      "descricao": "Metas de adição de biodiesel ao diesel"
+    },
+    {
+      "id": 23,
+      "descricao": "Precificação de carbono"
+    },
+    {
+      "id": 24,
+      "descricao": "Controle do desmatamento ilegal"
+    },
+    {
+      "id": 25,
+      "descricao": "Reflorestamento com nativas nos biomas Amazônia e Caatinga"
+    },
+    {
+      "id": 26,
+      "descricao": "Restauração da vegetação nativa"
+    },
+    {
+      "id": 27,
+      "descricao": "Silvicultura comercial"
+    },
+    {
+      "id": 28,
+      "descricao": "Aproveitamento de biogás de aterro para produção de energia"
+    },
+    {
+      "id": 29,
+      "descricao": "Aproveitamento de biogás de estação de tratamento de efluentes para produção de energia"
+    },
+    {
+      "id": 30,
+      "descricao": "Degradação do biogás de aterro com flare"
+    },
+    {
+      "id": 31,
+      "descricao": "Reciclagem de embalagens"
+    },
+    {
+      "id": 32,
+      "descricao": "Desenvolvimento da infraestrutura de transporte para captura e armazenamento de carbono"
+    },
+    {
+      "id": 33,
+      "descricao": "Precificação de carbono"
+    }
+  ],
+  "td_setor_aplicacao": [
+    {
+      "id": 1,
+      "descricao": "Agropecuária"
+    },
+    {
+      "id": 2,
+      "descricao": "Edificações"
+    },
+    {
+      "id": 3,
+      "descricao": "Energia"
+    },
+    {
+      "id": 4,
+      "descricao": "Indústria"
+    },
+    {
+      "id": 5,
+      "descricao": "Transportes"
+    },
+    {
+      "id": 6,
+      "descricao": "Uso da terra, mudança do uso da terra e florestas"
+    },
+    {
+      "id": 7,
+      "descricao": "Resíduos"
+    },
+    {
+      "id": 8,
+      "descricao": "Transversais"
+    }
+  ],
+  "td_subsetor_aplicacao": [
+    {
+      "id": 1,
+      "descricao": "Pecuária"
+    },
+    {
+      "id": 2,
+      "descricao": "Iluminação pública"
+    },
+    {
+      "id": 3,
+      "descricao": "Outras edificações"
+    },
+    {
+      "id": 4,
+      "descricao": "Residencial"
+    },
+    {
+      "id": 5,
+      "descricao": "Óleo e gás natural"
+    },
+    {
+      "id": 6,
+      "descricao": "Cimento"
+    },
+    {
+      "id": 7,
+      "descricao": "Outras Indústrias"
+    },
+    {
+      "id": 8,
+      "descricao": "Químico"
+    },
+    {
+      "id": 9,
+      "descricao": "Siderurgia"
+    },
+    {
+      "id": 10,
+      "descricao": "Ferroviário"
+    },
+    {
+      "id": 11,
+      "descricao": "Outros modais"
+    },
+    {
+      "id": 12,
+      "descricao": "Rodoviário"
+    },
+    {
+      "id": 13,
+      "descricao": "Florestas"
+    },
+    {
+      "id": 14,
+      "descricao": "Resíduos sólidos"
+    },
+    {
+      "id": 15,
+      "descricao": "Saneamento"
+    },
+    {
+      "id": 16,
+      "descricao": "Desenvolvimento da infraestrutura de transporte para captura e armazenamento de carbono"
+    },
+    {
+      "id": 17,
+      "descricao": "Precificação de carbono"
+    },
+    {
+      "id": 18,
+      "descricao": "Agricultura"
+    }
+  ],
+  "td_subtipo_resultado": [
+    {
+      "id": 1,
+      "descricao": "Consumo de eletricidade"
+    },
+    {
+      "id": 2,
+      "descricao": "Consumo de GLP"
+    },
+    {
+      "id": 3,
+      "descricao": "Consumo de gás natural"
+    },
+    {
+      "id": 4,
+      "descricao": "Consumo de gasolina"
+    },
+    {
+      "id": 5,
+      "descricao": "Consumo de óleo diesel"
+    },
+    {
+      "id": 6,
+      "descricao": "Consumo de lenha"
+    },
+    {
+      "id": 7,
+      "descricao": "Consumo de etanol"
+    },
+    {
+      "id": 8,
+      "descricao": "Consumo de óleo combustível"
+    },
+    {
+      "id": 9,
+      "descricao": "Consumo de bagaço de cana"
+    },
+    {
+      "id": 10,
+      "descricao": "Consumo de biocombustíveis de segunda geração"
+    },
+    {
+      "id": 11,
+      "descricao": "Consumo de outras fontes"
+    },
+    {
+      "id": 12,
+      "descricao": "Geração de eletricidade"
+    },
+    {
+      "id": 13,
+      "descricao": "Capacidade instalada por fonte"
+    },
+    {
+      "id": 14,
+      "descricao": "Composição da matriz elétrica"
+    },
+    {
+      "id": 15,
+      "descricao": "Biogás"
+    },
+    {
+      "id": 16,
+      "descricao": "Eletricidade"
+    },
+    {
+      "id": 17,
+      "descricao": "Hidrogênio verde"
+    },
+    {
+      "id": 18,
+      "descricao": "Óleo"
+    },
+    {
+      "id": 19,
+      "descricao": "Gás natural"
+    },
+    {
+      "id": 20,
+      "descricao": "Total"
+    },
+    {
+      "id": 21,
+      "descricao": "Setoriais"
+    },
+    {
+      "id": 22,
+      "descricao": "Tipo de fonte"
+    },
+    {
+      "id": 23,
+      "descricao": "Agropecuária"
+    },
+    {
+      "id": 24,
+      "descricao": "Edificações"
+    },
+    {
+      "id": 25,
+      "descricao": "Energia"
+    },
+    {
+      "id": 26,
+      "descricao": "Indústria"
+    },
+    {
+      "id": 27,
+      "descricao": "Resíduos"
+    },
+    {
+      "id": 28,
+      "descricao": "Transportes"
+    },
+    {
+      "id": 29,
+      "descricao": "Uso, mudança do uso da terra e florestas"
+    },
+    {
+      "id": 30,
+      "descricao": "CO2"
+    },
+    {
+      "id": 31,
+      "descricao": "CH4"
+    },
+    {
+      "id": 32,
+      "descricao": "N2O"
+    },
+    {
+      "id": 33,
+      "descricao": "Outros gases"
+    },
+    {
+      "id": 36,
+      "descricao": "PIB gerado por setor"
+    },
+    {
+      "id": 37,
+      "descricao": "PIB gerado por subsetor"
+    },
+    {
+      "id": 34,
+      "descricao": "Empregos gerados por setor"
+    },
+    {
+      "id": 35,
+      "descricao": "Empregos gerados por subsetor"
+    },
+    {
+      "id": 38,
+      "descricao": "Renda gerada por setor"
+    },
+    {
+      "id": 39,
+      "descricao": "Renda gerada por subsetor"
+    }
+  ],
+  "td_tipo_cenario": [
+    {
+      "id": 1,
+      "descricao": "Cenário de referência"
+    },
+    {
+      "id": 2,
+      "descricao": "Cenário de políticas"
+    }
+  ],
+  "td_tipo_dado": [
+    {
+      "id": 1,
+      "descricao": "Fonte/Anos"
+    },
+    {
+      "id": 2,
+      "descricao": "Setor/Anos"
+    },
+    {
+      "id": 3,
+      "descricao": "Emissões/Anos"
+    }
+  ],
+  "td_tipo_grafico": [
+    {
+      "id": 1,
+      "referencia": "GRAFAREA",
+      "descricao": "Gráfico de áreas"
+    },
+    {
+      "id": 2,
+      "referencia": "GRAFLINHA",
+      "descricao": "Gráfico de linhas"
+    },
+    {
+      "id": 3,
+      "referencia": "GRAFCOLEMP",
+      "descricao": "Coluna empilhadas"
+    }
+  ],
+  "td_tipo_impacto": [
+    {
+      "id": 1,
+      "descricao": "Impactos energéticos"
+    },
+    {
+      "id": 2,
+      "descricao": "Impactos sobre emissões"
+    },
+    {
+      "id": 3,
+      "descricao": "Impactos socioeconômicos"
+    }
+  ],
+  "td_tipo_resultado": [
+    [
+      {
+        "id": 1,
+        "descricao": "Consumo de energia"
+      },
+      {
+        "id": 2,
+        "descricao": "Geração de eletricidade"
+      },
+      {
+        "id": 3,
+        "descricao": "Oferta de energia"
+      },
+      {
+        "id": 4,
+        "descricao": "Emissões CO2eq. (GWP AR6 100 anos)"
+      },
+      {
+        "id": 5,
+        "descricao": "Emissões CO2eq. (GTP AR6 100 anos)"
+      },
+      {
+        "id": 6,
+        "descricao": "Emissões totais por poluente"
+      },
+      {
+        "id": 8,
+        "descricao": "Geração de PIB"
+      },
+      {
+        "id": 7,
+        "descricao": "Geração de empregos"
+      },
+      {
+        "id": 9,
+        "descricao": "Geração de renda"
+      }
+    ]
+  ],
+  "td_unidmedida": [
+    {
+      "id": 1,
+      "descricao": "Gg"
+    },
+    {
+      "id": 2,
+      "descricao": "MWh"
+    },
+    {
+      "id": 3,
+      "descricao": "tCO2"
+    },
+    {
+      "id": 4,
+      "descricao": "TJ"
+    },
+    {
+      "id": 5,
+      "descricao": "%"
+    }
+  ],
+  "tipos_resultado": [
+    {
+      "id": 1,
+      "descricao": "Consumo de energia"
+    },
+    {
+      "id": 2,
+      "descricao": "Geração de eletricidade"
+    },
+    {
+      "id": 3,
+      "descricao": "Oferta de energia"
+    }
+  ]
+}

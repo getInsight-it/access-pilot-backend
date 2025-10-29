@@ -23,5 +23,23 @@ public interface LevelRepository extends JpaRepository<LevelEntity, Long>, Dynam
     @Query("UPDATE LevelEntity l SET l.active = false WHERE l.id = :id")
     void softDelete(@Param("id") Long id);
 
-    Optional<LevelEntity> findByParent(LevelEntity parent);
+
+    @Query(value = """
+        WITH RECURSIVE level_ancestors AS (
+            SELECT l.*
+            FROM TB_ESFERA l
+            WHERE l.ID = :childLevelId
+            AND l.ATIVO = true
+
+            UNION ALL
+
+            SELECT l.*
+            FROM TB_ESFERA l
+            INNER JOIN level_ancestors la ON l.ID = la.ID_PARENT
+            WHERE l.ATIVO = true
+        )
+        SELECT DISTINCT la.*
+        FROM level_ancestors la
+        """, nativeQuery = true)
+    List<LevelEntity> findAncestorLevels(@Param("childLevelId") Long childLevelId);
 }

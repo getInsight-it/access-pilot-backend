@@ -3,6 +3,8 @@ package it.getinsight.module.request.controller.v1;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import it.getinsight.module.request.dto.RequestAttachmentDTO;
+import it.getinsight.module.request.entity.RequestAttachmentEntity;
+import it.getinsight.module.request.mapper.RequestAttachmentMapper;
 import it.getinsight.module.request.service.RequestAttachmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -21,6 +23,7 @@ import java.util.List;
 public class RequestAttachmentController {
 
     private final RequestAttachmentService requestAttachmentService;
+    private final RequestAttachmentMapper requestAttachmentMapper;
 
     @Operation(
         summary = "Retrieve all attachments of a request",
@@ -28,7 +31,9 @@ public class RequestAttachmentController {
     )
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<RequestAttachmentDTO>> findAll(@PathVariable Long id) {
-        return ResponseEntity.ok(requestAttachmentService.findAllByRequest(id));
+        List<RequestAttachmentEntity> entities = requestAttachmentService.findAllByRequest(id);
+        List<RequestAttachmentDTO> dtos = requestAttachmentMapper.toDto(entities);
+        return ResponseEntity.ok(dtos);
     }
 
 

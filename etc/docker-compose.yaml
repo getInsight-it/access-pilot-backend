@@ -1,4 +1,4 @@
-name: getinsight
+name: getinsight-3
 services:
   postgres:
     container_name: getInsight_PostgreSQL

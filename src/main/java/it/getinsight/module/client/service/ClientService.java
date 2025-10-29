@@ -20,9 +20,9 @@ import it.getinsight.module.configuration.entity.AttachmentConfigurationEntity;
 import it.getinsight.module.configuration.mapper.AttachmentConfigurationMapper;
 import it.getinsight.module.configuration.repository.AttachmentConfigurationRepository;
 import it.getinsight.module.configuration.service.AttachmentConfigurationService;
-import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.keycloak.config.KeycloakProperties;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
+import it.getinsight.module.keycloak.service.IdentityProviderService;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.service.RoleService;
 import lombok.RequiredArgsConstructor;
@@ -58,64 +58,28 @@ public class ClientService {
     public static final String IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED = "acl.client.managed";
     private final ClientRepository clientRepository;
     private final ClientMapper clientMapper;
-    private final ClientFilterMapper clientFilterMapper;
-    private final RoleService roleService;
     private final ClientRepresentationMapper clientRepresentationMapper;
-    private final KeycloakClient keycloakClient;
-    private static final String NAME_QUERY_FIND_ALL_CLIENTS = "find-all-clients";
-    private final KeycloakProperties keycloakProperties;
-    private final MappingsEndpoint mappingsEndpoint;
+    private final IdentityProviderService identityProviderService;
+    private final ClientSynchronizationService clientSynchronizationService;
     private final ClientFullResponseMapper clientFullResponseMapper;
     private final AttachmentConfigurationRepository attachmentConfigurationRepository;
     private final AttachmentConfigurationMapper attachmentConfigurationMapper;
     private final AttachmentConfigurationService attachmentConfigurationService;
+    
+    private final ClientValidationService clientValidationService;
+    private final ClientQueryService clientQueryService;
 
 
     public List<ClientDTO> getAllClientsDynamicQuery() {
-        final var parameters = DynamicParameters.get();
-        return clientRepository.findAllNative(NAME_QUERY_FIND_ALL_CLIENTS, parameters, clientMapper);
+        return clientQueryService.getAllClientsDynamicQuery();
     }
 
     public List<ClientDTO> getAllClientsPublished() {
-        return clientRepository.findAllByStatus(ClientStatus.PUBLISHED).stream().map(clientMapper::toDto).toList();
+        return clientQueryService.getAllClientsPublished();
     }
 
-
-//    @Cacheable(value = "clients", key = "#configPage.toString()")
     public PageableResponseModel<ClientDTO> getAllClientsPageable(PageableRequestModel<ClientFilterDTO> configPage) {
-        final var model = configPage
-            .getFilter()
-            .map(clientFilterMapper::toDto)
-            .map(clientMapper::toEntity)
-            .orElse(new ClientEntity());
-
-
-        final var matcher = ExampleMatcher
-            .matchingAny()
-            .withIgnoreNullValues()
-            .withMatcher("clientId", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains);
-
-        final var example = Example.of(model, matcher);
-        final var page = clientRepository.findAll(example, PaginationHelper.toPageable(configPage));
-        final var clientsNotSynchronized = page.getContent().stream().filter(o -> o.getClientUUID() == null).map(clientMapper::toDto).toList();
-        final var clientsSynchronized = fetchUpdatedClientFromIDP(page.getContent());
-        final var dtos = Stream.concat(clientsNotSynchronized.stream(), clientsSynchronized.stream()).toList();
-        return PaginationHelper.toPageResponse(dtos, page.getTotalElements());
-    }
-
-    @NotNull
-    private List<ClientDTO> fetchUpdatedClientFromIDP(List<ClientEntity> page) {
-        return page.stream()
-            .filter(o -> o.getClientUUID() != null).map(o -> {
-                try {
-                    return keycloakClient.getClientByClientUUID(o.getClientUUID());
-                } catch (Exception e) {
-                    return null;
-                }
-            }).filter(Objects::nonNull)
-            .map(obj -> clientRepresentationMapper.toDto(page.stream().filter(e -> Objects.equals(e.getClientUUID(), obj.getId()))
-                .findFirst().orElse(null), obj)).toList();
+        return clientQueryService.getAllClientsPageable(configPage);
     }
 
     @Cacheable(value = "clients", key = "#id")
@@ -134,26 +98,12 @@ public class ClientService {
     @Transactional(propagation = Propagation.REQUIRED)
     @CacheEvict(value = "clients", allEntries = true)
     public void synchronizationClients(List<String> clientIds) {
-        if (CollectionUtils.isEmpty(clientIds)) return;
-        final var searchableClientIds = clientIds.stream().map(String::trim).map(String::toLowerCase).filter(o -> !keycloakProperties.getIgnoreClients().contains(o)).toList();
-        var clientEntities = clientRepository.findAllByClientIdIn(searchableClientIds);
-        var clients = keycloakClient.getClients().stream()
-            .filter(client -> client.getAttributes().containsKey(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED) && client.getAttributes().get(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED).equals("true"))
-            .filter(obj -> clientEntities.stream().anyMatch(c -> Objects.equals(c.getClientId(), obj.getClientId()))).toList();
-        clients.forEach(this::synchronize);
+        clientSynchronizationService.synchronizeClients(clientIds);
     }
-    //@Transactional(propagation = Propagation.REQUIRED)
+
     @CacheEvict(value = "clients", allEntries = true)
     public ClientEntity synchronize(ClientRepresentationDTO client) {
-        var entity = clientRepository.findByClientId(client.getClientId()).orElse(new ClientEntity());
-        entity.setClientUUID(client.getId());
-        entity.setDescription(client.getDescription());
-        entity.setClientId(client.getClientId());
-        entity.setManaged("true".equals(client.getAttributes().get(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED)));
-        entity.setBaseUrl(client.getBaseUrl());
-        var clientEntity = clientRepository.save(entity);
-        roleService.synchronizeRoles(Collections.singletonList(client.getClientId()));
-        return clientEntity;
+        return clientSynchronizationService.synchronizeClient(client);
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -161,12 +111,12 @@ public class ClientService {
         var entity = clientMapper.toEntity(dto);
         var opConfigurations = Optional.ofNullable(entity.getConfigurations()).filter(CollectionUtils::isNotEmpty);
         entity.setClientId(dto.clientId().toLowerCase());
-        if (clientRepository.existsByClientId(entity.getClientId())) {
-            throw CLIENT_NOT_FOUND_ERROR.businessException();
-        }
+        
+        clientValidationService.validateClientIdNotExists(entity.getClientId(), clientRepository);
+        
         if (opConfigurations.isPresent()){
             entity.getConfigurations().forEach(o -> o.setClient(entity));
-            validateAttachment(entity.getConfigurations());
+            clientValidationService.validateAttachmentConfigurations(entity.getConfigurations());
         }
 
         var clientEntity = clientRepository.save(entity);
@@ -177,30 +127,17 @@ public class ClientService {
         return clientMapper.toDto(clientEntity);
     }
 
-    private static void validateAttachment(List<AttachmentConfigurationEntity> configurations) {
-        Optional.ofNullable(configurations)
-            .orElse(Collections.emptyList())
-            .stream()
-            .collect(Collectors.groupingBy(AttachmentConfigurationEntity::getName))
-            .forEach((nome, lista) -> {
-                long actives = lista.stream().filter(AttachmentConfigurationEntity::getActive).count();
-                if (actives > 1) {
-                    throw ATTACHMENTS_MULTIPLE_ACTIVE_ERROR.bind(nome).businessException();
-                }
-            });
-    }
-
 
     private ClientDTO handleManagedClient(ClientEntity entity) {
-        var existingClients = keycloakClient.getClientsByClientId(entity.getClientId());
+        var existingClients = identityProviderService.getClientsByClientId(entity.getClientId());
         final boolean hasClient = !existingClients.isEmpty();
         if (hasClient) {
             var clientRepresentationDTO = existingClients.getFirst();
             return clientMapper.toDto(synchronize(clientRepresentationDTO));
         } else {
             var defaultClient = ClientRepresentationDTO.createDefault(entity.getClientId(), entity.getDescription(), entity.getBaseUrl());
-            keycloakClient.createClient(defaultClient);
-            return clientMapper.toDto(synchronize(keycloakClient.getClientsByClientId(entity.getClientId()).getFirst()));
+            identityProviderService.createClient(defaultClient);
+            return clientMapper.toDto(synchronize(identityProviderService.getClientsByClientId(entity.getClientId()).getFirst()));
         }
     }
 
@@ -213,12 +150,12 @@ public class ClientService {
             handleManagedClient(entityUpdated);
             return;
         }
-        var client = keycloakClient.getClientsByClientId(entityUpdated.getClientId()).getFirst();
+        var client = identityProviderService.getClientsByClientId(entityUpdated.getClientId()).getFirst();
         clientMapper.fromDtoWithoutImmutableFields(clientUpdatedDTO, entityUpdated);
         entityUpdated.setClientUUID(client.getId());
         clientRepresentationMapper.toDto(entityUpdated, client);
         Optional.of(entityUpdated).map(clientMapper::toDto).ifPresent(o -> clientRepresentationMapper.fromDtoRepresentation(o, client));
-        keycloakClient.updateClient(client.getId(), client);
+        identityProviderService.updateClient(client.getId(), client);
         handleManagedClient(entityUpdated);
         processAttachmentConfigurations(clientUpdatedDTO.configurations(), entityUpdated);
     }
@@ -241,7 +178,7 @@ public class ClientService {
                 })
                 .toList();
 
-            validateAttachment(attachmentConfigurationEntities);
+            clientValidationService.validateAttachmentConfigurations(attachmentConfigurationEntities);
             attachmentConfigurationRepository.saveAll(attachmentConfigurationEntities);
         }
     }
@@ -260,35 +197,13 @@ public class ClientService {
     @CacheEvict(value = "clients", allEntries = true)
     public ClientDTO update(Long id, String status) {
         var entity = clientRepository.findById(id).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
-        validateStatus(entity, status);
+        clientValidationService.validateStatusTransition(entity, status);
         entity.setStatus(ClientStatus.valueOf(status));
         return clientMapper.toDto(clientRepository.save(entity));
     }
 
-    private static void validateStatus( ClientEntity entity, String status) {
-        if (Arrays.stream(ClientStatus.values()).noneMatch(o -> StringUtils.equalsIgnoreCase(o.name(), status))) {
-            throw new BusinessException("Invalid status");
-        }
-        if (ClientStatus.valueOf(status).equals(entity.getStatus())) {
-            throw new BusinessException("Client already %s" .formatted(status));
-        }
-        if(BooleanUtils.isFalse(entity.getManaged()) && ClientStatus.PUBLISHED.name().equals(status)){
-            throw new BusinessException("Managed clients cannot be published");
-        }
-    }
-
     public List<ClientDTO> getAssociateClients(Boolean attached) {
-        var principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Map<String, List<String>> resourceAccess = principal.getClaim("resource_access");
-
-        var clientEntities = clientRepository.findAllByManagedAndStatus(true, ClientStatus.PUBLISHED);
-        return keycloakClient.getClients().stream()
-            .filter(client -> client.getAttributes().containsKey(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED) && client.getAttributes().get(IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED).equals("true"))
-            .map(obj -> clientEntities.stream().filter(c -> Objects.equals(c.getClientId(), obj.getClientId())).findFirst().orElse(null))
-            .filter(Objects::nonNull)
-            .filter(obj -> BooleanUtils.isTrue(attached)  ? resourceAccess.entrySet().stream().anyMatch(e -> Objects.equals(e.getKey(), obj.getClientId())) : resourceAccess.entrySet().stream().noneMatch(e -> Objects.equals(e.getKey(), obj.getClientId())) )
-            .map(clientMapper::toDto)
-            .toList();
+        return clientQueryService.getAssociateClients(attached);
     }
 
 

@@ -2,16 +2,12 @@ package it.getinsight.module.role.service;
 
 
 import it.getinsight.core.exception.InfraException;
-import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
-import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.client.repository.ClientRepository;
-import it.getinsight.module.keycloak.client.KeycloakClient;
-import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
-import it.getinsight.module.level.entity.LevelEntity;
+import it.getinsight.module.keycloak.service.IdentityProviderService;
 import it.getinsight.module.level.repository.LevelRepository;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.request.repository.RequestRepository;
@@ -27,8 +23,6 @@ import it.getinsight.module.role.mapper.RoleResponseMapper;
 import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.user.dto.UserDTO;
 import it.getinsight.module.user.service.UserService;
-import it.getinsight.utilitario.RetryUtils;
-import it.getinsight.utilitario.StringValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -57,10 +51,14 @@ public class RoleService {
     private final RoleResponseMapper roleResponseMapper;
     private final RoleRepresentationMapper roleRepresentationMapper;
     private final RoleFilterMapper roleFilterMapper;
-    private final KeycloakClient keycloakClient;
+    private final IdentityProviderService identityProviderService;
+    private final RoleSynchronizationService roleSynchronizationService;
     private final UserService userService;
     private final RequestRepository requestRepository;
     private final LevelRepository levelRepository;
+
+    private final RoleValidationService roleValidationService;
+    private final RoleLevelPolicyService roleLevelPolicyService;
 
     public List<RoleResponseDTO> getAllRoles(String filter, Boolean hasParent) {
         return roleRepository.findAll(Specification.where(hasClientId(filter)).and(hasParent(hasParent))).stream()
@@ -103,67 +101,22 @@ public class RoleService {
     }
 
     public RoleResponseDTO getById(Long id) {
-        var entity = roleRepository.findById(id).orElseThrow(ResourceNotFoundException::new);
+        var entity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
         return roleResponseMapper.toDto(entity);
     }
 
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void synchronizeRoles(List<String> clientIds) {
-        var clients = keycloakClient.getClients().stream()
-            .filter(client -> client.getAttributes().containsKey("acl.client.managed") && client.getAttributes().get("acl.client.managed").equals("true"))
-            .filter(client -> clientIds.contains(client.getClientId()))
-            .toList();
-        for (ClientRepresentationDTO client : clients) {
-            var roles = keycloakClient.getRolesByClientUUID(client.getId());
-            var clientEntity = clientRepository.findByClientId(client.getClientId()).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
-            roles.forEach(role -> synchronizeRole(role, clientEntity, null, null, null));
-        }
-    }
-
-    private void synchronizeRole(RoleRepresentationDTO role, ClientEntity clientEntity, LevelEntity levelEntity, RoleEntity roleEntity, RoleEntity roleParentEntity) {
-        var roleOpAlreadySynchronized = roleRepository.findByRoleExternalId(role.id());
-        var roleOpNotSynchronized = roleRepository.findByNameAndClient(role.name(), clientEntity);
-        if (roleOpAlreadySynchronized.isPresent()) {
-            saveUpdatesSynchronizedRole(role, clientEntity, levelEntity, roleParentEntity, roleOpAlreadySynchronized.get());
-        } else if (roleOpNotSynchronized.isEmpty()) {
-            saveNewRoleFromIDP(role,roleEntity, clientEntity, levelEntity);
-        }
-    }
-
-    private void saveUpdatesSynchronizedRole(RoleRepresentationDTO role, ClientEntity clientEntity, LevelEntity levelEntity, RoleEntity roleParentEntity, RoleEntity roleEntity) {
-        roleEntity.setDescription(role.description());
-        roleEntity.setClient(clientEntity);
-        roleEntity.setActive(true);
-        roleEntity.setLabel(roleEntity.getLabel());
-        roleEntity.setIcon(roleEntity.getIcon());
-        roleEntity.setRoleExternalId(role.id());
-        roleEntity.setName(role.name());
-        roleEntity.setRole(roleParentEntity != null ? roleParentEntity : roleEntity.getRole());
-        roleEntity.setLevel(levelEntity != null ? levelEntity : roleEntity.getLevel());
-        roleRepository.save(roleEntity);
-    }
-
-    private void saveNewRoleFromIDP(RoleRepresentationDTO role, RoleEntity roleEntityUnsaved, ClientEntity clientEntity, LevelEntity levelEntity) {
-        var roleEntity = RoleEntity.builder()
-            .roleExternalId(role.id())
-            .name(role.name())
-            .label(roleEntityUnsaved.getLabel())
-            .active(true)
-            .level(levelEntity)
-            .description(role.description())
-            .client(clientEntity)
-            .build();
-        roleRepository.save(roleEntity);
-
+        roleSynchronizationService.synchronizeRoles(clientIds);
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
     public List<UserDTO> getOrImportApprovesByRoleId(Long id) {
         var roleEntity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
         var roleParent = Optional.ofNullable(roleEntity.getRole()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::businessException);
-        var role = keycloakClient.getRoleByNameAndClientUUID(roleParent.getName(), roleEntity.getClient().getClientUUID());
-        return keycloakClient.getUsersByClientUUIDAndRoleName(roleEntity.getClient().getClientUUID(), role.name()).stream()
+        var role = identityProviderService.getRoleByNameAndClientUUID(roleParent.getName(), roleEntity.getClient().getClientUUID());
+        return identityProviderService.getUsersByClientUUIDAndRoleName(roleEntity.getClient().getClientUUID(), role.name()).stream()
             .map(user ->
                 userService.findOrImportByExternalId(user.id())
             )
@@ -176,6 +129,14 @@ public class RoleService {
             final var entity = roleRepository.findById(role.id()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
             final var roleEntityParent = role.parentId() != null ? roleRepository.findById(role.parentId()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::businessException) : null;
             final var clientEntity = role.clientId() != null ? clientRepository.findById(role.clientId()).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException) : null;
+
+            if (roleEntityParent != null) {
+                Long parentLevelId = roleEntityParent.getLevel() != null ? roleEntityParent.getLevel().getId() : null;
+                Long selfLevelId = entity.getLevel() != null ? entity.getLevel().getId() : null;
+
+                roleLevelPolicyService.validateChildLevelAssignment(parentLevelId,selfLevelId);
+            }
+
             entity.setRole(roleEntityParent);
             entity.setClient(clientEntity);
             roleRepository.save(entity);
@@ -184,20 +145,29 @@ public class RoleService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public RoleDTO createRole(RoleDTO roleDTO) {
-        validateRoleInput(roleDTO);
+        roleValidationService.validateRoleInput(roleDTO);
+
+        // Validar hierarquia antes de criar
+        if (roleDTO.roleParent() != null && roleDTO.roleParent().id() != null) {
+            var parentRole = roleRepository.findById(roleDTO.roleParent().id()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::businessException);
+            Long parentLevelId = parentRole.getLevel() != null ? parentRole.getLevel().getId() : null;
+            Long childLevelId = roleDTO.levelId();
+
+            roleLevelPolicyService.validateChildLevelAssignment(parentLevelId, childLevelId);
+        }
 
         final var roleToCreate = mapToRepresentation(roleDTO);
 
         try {
-            ensureRoleDoesNotExist(roleDTO);
-            keycloakClient.createRole(roleDTO.client().clientUUID(), roleToCreate);
+            roleValidationService.ensureRoleDoesNotExistInIDP(roleDTO);
+            identityProviderService.createRole(roleDTO.client().clientUUID(), roleToCreate);
             var roleEntity = roleMapper.toEntity(roleDTO);
             roleEntity.setLabel(roleDTO.label());
             roleEntity.setIcon(roleDTO.icon());
             if (roleDTO.levelId() != null) {
                 levelRepository.findById(roleDTO.levelId()).ifPresent(roleEntity::setLevel);
             }
-            synchronizeWithDatabase(roleEntity);
+            roleSynchronizationService.synchronizeWithDatabase(roleEntity);
         } catch (InfraException e) {
             log.info("Role already exists: {}", roleDTO.name());
             throw ROLE_ALREADY_EXISTS_ERROR.businessException(e);
@@ -206,52 +176,10 @@ public class RoleService {
         return roleDTO;
     }
 
-    private void validateRoleInput(RoleDTO roleDTO) {
-        if (roleDTO == null) {
-            throw ROLE_NOT_FOUND_ERROR.businessException();
-        }
-        if (roleDTO.client() == null) {
-            throw CLIENT_NOT_FOUND_ERROR.businessException();
-        }
-
-        if (StringValidationUtils.isUpperSnakeCase(roleDTO.name())) {
-            throw ERROR_VALIDATION_PATTERN_ROLE_NAME.businessException();
-        }
-    }
-
     private RoleRepresentationDTO mapToRepresentation(RoleDTO roleDTO) {
         return Optional.of(roleDTO)
             .map(roleRepresentationMapper::toRoleRepresentationDTO)
             .orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
-    }
-
-    private void ensureRoleDoesNotExist(RoleDTO roleDTO) {
-        try {
-            final var role = keycloakClient.getRole(roleDTO.client().clientUUID(), roleDTO.name());
-            if (role != null)
-                throw ROLE_ALREADY_EXISTS_IDP_ERROR.businessException();
-        } catch (InfraException | ResourceNotFoundException e) {
-               log.info("Role not found: {}", roleDTO.name());
-        }
-    }
-
-    private void synchronizeWithDatabase(RoleEntity roleEntity) {
-        final var createdRole = RetryUtils.retryOn404(2, 500, () ->
-            keycloakClient.getRole(roleEntity.getClient().getClientUUID(), roleEntity.getName())
-        );
-
-        final var level = roleEntity.getLevel() != null
-            ? levelRepository.findById(roleEntity.getLevel().getId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException)
-            : null;
-
-        final var client = clientRepository.findByClientId(roleEntity.getClient().getClientId())
-            .orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
-
-        final var parentRole = roleEntity.getRole() != null
-            ? roleRepository.findById(roleEntity.getRole().getId()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException)
-            : null;
-
-        synchronizeRole(createdRole, client, level, roleEntity, parentRole);
     }
 
     public Long getTotalRoles() {
@@ -270,9 +198,16 @@ public class RoleService {
             throw ROLE_WITH_PENDING_REQUESTS_ERROR.businessException();
         }
 
+        if (entity.getRole() != null && entity.getRole().getId() != null) {
+            Long parentLevelId =  entity.getRole().getLevel() != null ? entity.getRole().getLevel().getId() : null;
+            Long selfLevelId = roleDTO.levelId();
+
+            roleLevelPolicyService.validateChildLevelAssignment(parentLevelId,selfLevelId);
+        }
+
         if (StringUtils.isNotBlank(entity.getRoleExternalId())) {
-            Optional.ofNullable(keycloakClient.getRole(entity.getClient().getClientUUID(), entity.getName()))
-                .ifPresent(o -> keycloakClient.updateRole(entity.getClient().getClientUUID(), entity.getName(), RoleRepresentationDTO.builder()
+            Optional.ofNullable(identityProviderService.getRole(entity.getClient().getClientUUID(), entity.getName()))
+                .ifPresent(o -> identityProviderService.updateRole(entity.getClient().getClientUUID(), entity.getName(), RoleRepresentationDTO.builder()
                     .name(roleDTO.name())
                     .description(roleDTO.description())
                     .build()));
@@ -295,7 +230,7 @@ public class RoleService {
     public void delete(Long id) {
         var roleEntity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
         try {
-            keycloakClient.deleteRole(roleEntity.getClient().getClientUUID(), roleEntity.getName());
+            identityProviderService.deleteRole(roleEntity.getClient().getClientUUID(), roleEntity.getName());
         } catch (InfraException e) {
             log.warn("Role already was deleted from IDP: {}", roleEntity.getName());
         }

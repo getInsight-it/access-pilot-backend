@@ -60,10 +60,6 @@ public interface ClientRepresentationMapper extends BaseMapper<ClientRepresentat
         source = "obj.baseUrl",
         target = "baseUrl"
     )
-//    @Mapping(
-//        source = "entity.configuration.id",
-//        target = "configurationId"
-//    )
     ClientDTO toDto(ClientEntity entity, ClientRepresentationDTO obj);
 
 

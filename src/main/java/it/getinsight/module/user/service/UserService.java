@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static it.getinsight.message.MessageProperty.*;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -84,7 +86,7 @@ public class UserService {
     }
 
     public UserDTO findById(Long id) {
-        var entity = userRepository.findById(id).orElseThrow(ResourceNotFoundException::new);
+        var entity = userRepository.findById(id).orElseThrow(USER_NOT_FOUND_ERROR::businessException);
         return userMapper.toDto(entity);
     }
 
@@ -113,7 +115,6 @@ public class UserService {
         return userRepository.findById(Long.valueOf(userId));
     }
 
-//    @Cacheable(value = "checkExternalId", key = "#externalId")
     public boolean checkExternalId(String externalId) {
         Jwt principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userExternalId = principal.getSubject();

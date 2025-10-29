@@ -1,7 +1,6 @@
 package it.getinsight.module.configuration.service;
 
 import it.getinsight.core.exception.BusinessException;
-import it.getinsight.core.message.CoreMessageSource;
 import it.getinsight.module.configuration.dto.AttachmentConfigurationDTO;
 import it.getinsight.module.configuration.entity.AttachmentConfigurationEntity;
 import it.getinsight.module.configuration.enums.FileExtensionType;
@@ -19,8 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static it.getinsight.message.MessageProperty.ERROR_EXPORT_CSV;
-import static it.getinsight.message.MessageProperty.ERROR_IMPORT_CSV;
+import static it.getinsight.message.MessageProperty.*;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +44,7 @@ public class AttachmentConfigurationCsvParser {
             return list;
 
         } catch (Exception e) {
-            throw new BusinessException(CoreMessageSource.get().message(ERROR_IMPORT_CSV.key()), e);
+            throw ERROR_IMPORT_CSV.businessException();
         }
     }
 
