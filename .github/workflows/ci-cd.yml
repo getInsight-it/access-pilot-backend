@@ -66,5 +66,5 @@ jobs:
         run: |
           docker buildx create --use --driver docker-container --bootstrap
           export DOCKER_TAG=$(echo "$TAG" | tr '[:upper:]' '[:lower:]')
-          docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile -t "$DOCKER_TAG" --push .
+          docker buildx build --no-cache --pull --platform linux/amd64,linux/arm64 -f Dockerfile -t "$DOCKER_TAG" --push .
 
