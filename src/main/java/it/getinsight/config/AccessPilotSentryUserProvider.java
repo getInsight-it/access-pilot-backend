@@ -5,6 +5,7 @@ import io.sentry.spring.jakarta.SentryUserProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
@@ -13,6 +14,7 @@ import java.util.Optional;
 
 @Slf4j
 @Component
+@ConditionalOnBooleanProperty("sentry.enabled")
 @RequiredArgsConstructor
 class AccessPilotSentryUserProvider implements SentryUserProvider {
 
