@@ -47,7 +47,7 @@ jobs:
 
       - name: zip
         run: |
-          zip -9 accesspilot-backend-${{ github.ref }} target/*.jar
+          zip -9 accesspilot-backend-${{ github.ref }} ${{ github.workspace }}/target/*.jar
 
       - uses: actions/create-release@v1
         env:
