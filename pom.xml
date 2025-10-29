@@ -6,7 +6,7 @@
     <parent>
         <groupId>it.getinsight</groupId>
         <artifactId>spring-boot-bom</artifactId>
-        <version>2.1.1</version>
+        <version>2.3.1</version>
     </parent>
 
     <artifactId>accesspilot-backend</artifactId>
@@ -72,12 +72,14 @@
     </developers>
 
     <properties>
-        <spring-boot-core.version>2.2.1</spring-boot-core.version>
-        <spring-boot-core-jpa.version>2.1.1</spring-boot-core-jpa.version>
-        <spring-boot-core-dynamic-query.version>1.2.2</spring-boot-core-dynamic-query.version>
-        <spring-boot-core-pagination.version>2.1.2</spring-boot-core-pagination.version>
-        <commons-csv.version>1.14.0</commons-csv.version>
-        <commons-io.version>2.19.0</commons-io.version>
+        <spring-boot-core.version>2.3.1</spring-boot-core.version>
+        <spring-boot-core-jpa.version>2.3.1</spring-boot-core-jpa.version>
+        <spring-boot-core-dynamic-query.version>2.3.1</spring-boot-core-dynamic-query.version>
+        <spring-boot-core-pagination.version>2.3.1</spring-boot-core-pagination.version>
+
+        <minio.version>8.6.0</minio.version>
+        <feign-jackson.version>13.6</feign-jackson.version>
+        <commons-csv.version>1.14.1</commons-csv.version>
     </properties>
 
     <dependencies>
@@ -138,12 +140,12 @@
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
-            <version>8.5.12</version>
+            <version>${minio.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.openfeign</groupId>
             <artifactId>feign-jackson</artifactId>
-            <version>12.2</version>
+            <version>${feign-jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -240,7 +242,6 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>${commons-io.version}</version>
         </dependency>
 
     </dependencies>
@@ -304,7 +305,7 @@
                     <plugin>
                         <groupId>io.sentry</groupId>
                         <artifactId>sentry-maven-plugin</artifactId>
-                        <version>0.0.8</version>
+                        <version>0.9.0</version>
                         <extensions>true</extensions>
                         <configuration>
                             <debugSentryCli>true</debugSentryCli>

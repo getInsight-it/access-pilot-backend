@@ -2,7 +2,7 @@ name: getinsight
 services:
   postgres:
     container_name: getInsight_PostgreSQL
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     hostname: postgres
     restart: unless-stopped
     healthcheck:
@@ -13,7 +13,7 @@ services:
     volumes:
       - type: volume
         source: postgres
-        target: /var/lib/postgresql/data
+        target: /var/lib/postgresql/18/docker
       - type: bind
         source: ./.initdb
         target: /docker-entrypoint-initdb.d
@@ -109,7 +109,7 @@ services:
 
   keycloak:
     container_name: getInsight_Keycloak
-    image: quay.io/keycloak/keycloak:25.0
+    image: quay.io/keycloak/keycloak:26.4
     hostname: keycloak
     restart: unless-stopped
     depends_on:
@@ -131,7 +131,7 @@ services:
           cpus: "2"
           memory: 2G
     healthcheck:
-      test: /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080/ --realm master --user admin --password 123456
+      test: /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080/ --realm master --user admin --password 123456 && /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE
       interval: 10s
       timeout: 3s
       retries: 6
