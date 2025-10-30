@@ -51,7 +51,7 @@ jobs:
 
       - uses: SonarSource/sonarqube-scan-action@v6
         with:
-          projectBaseDir: ${{ github.workspace }}/target/classes
+          projectBaseDir: ${{ github.workspace }}
           args: >
             -Dsonar.java.binaries=${{ github.workspace }}/target/classes
             -Dsonar.java.source=21
