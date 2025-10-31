@@ -88,7 +88,7 @@ jobs:
 
       - name: zip
         run: |
-          zip -9 accesspilot-backend-${{ steps.changelog.outputs.version }} ${{ github.workspace }}/target/*.jar
+          zip -9 ${{ github.workspace }}/accesspilot-backend-${{ steps.changelog.outputs.version }} ${{ github.workspace }}/target/*.jar
 
       - uses: actions/create-release@v1
         id: create_release
@@ -108,7 +108,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ./accesspilot-backend-${{ steps.changelog.outputs.version }}.zip
+          asset_path: ${{ github.workspace }}/accesspilot-backend-${{ steps.changelog.outputs.version }}.zip
           asset_name: accesspilot-backend-${{ steps.changelog.outputs.version }}.zip
           asset_content_type: application/zip
 
