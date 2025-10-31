@@ -3,6 +3,7 @@ package it.getinsight.module.role.service;
 
 import it.getinsight.core.exception.InfraException;
 import it.getinsight.core.helper.PaginationHelper;
+import it.getinsight.utilitario.PropertyPathConstants;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.repository.ClientRepository;
@@ -75,8 +76,8 @@ public class RoleService {
         final var matcher = ExampleMatcher
             .matchingAny()
             .withIgnoreNullValues()
-            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("client.id", ExampleMatcher.GenericPropertyMatcher::exact);
+            .withMatcher(PropertyPathConstants.Role.NAME, ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher(PropertyPathConstants.Role.CLIENT_ID, ExampleMatcher.GenericPropertyMatcher::exact);
 
         final var example = Example.of(model, matcher);
 
@@ -147,7 +148,7 @@ public class RoleService {
     public RoleDTO createRole(RoleDTO roleDTO) {
         roleValidationService.validateRoleInput(roleDTO);
 
-        // Validar hierarquia antes de criar
+
         if (roleDTO.roleParent() != null && roleDTO.roleParent().id() != null) {
             var parentRole = roleRepository.findById(roleDTO.roleParent().id()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::businessException);
             Long parentLevelId = parentRole.getLevel() != null ? parentRole.getLevel().getId() : null;

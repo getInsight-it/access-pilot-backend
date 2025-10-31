@@ -169,7 +169,7 @@ public class LevelService {
             levelMapper.fromDto(levelDTO, levelEntity);
             var levelParent = levelDTO.parentId() != null ?  levelRepository.findById(levelDTO.parentId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException) : null;
 
-            // Validar hierarquia antes de atualizar
+
             if (levelParent != null) {
                 Long parentLevelId = levelParent.getId();
                 Long childLevelId = levelEntity.getId();
