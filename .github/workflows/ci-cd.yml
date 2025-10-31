@@ -68,6 +68,8 @@ jobs:
     environment: dev
     runs-on: ubuntu-latest
     needs: build
+    outputs:
+      tag_name: ${{ steps.changelog.outputs.tag }}
     steps:
       - uses: actions/checkout@v5
 
@@ -136,7 +138,7 @@ jobs:
 
       - name: build-image
         env:
-          TAG: ghcr.io/${{ github.repository }}:${{ steps.changelog.outputs.tag }}
+          TAG: ghcr.io/${{ github.repository }}:${{ needs.release.outputs.tag_name }}
           LATEST: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
         run: |
           docker buildx create --use --driver docker-container --bootstrap
