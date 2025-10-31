@@ -41,4 +41,5 @@ public interface GenericClient {
         @Param("path") String path,
         @Param("apiKey") String apiKey
     );
+
 }

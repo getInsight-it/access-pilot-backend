@@ -3,8 +3,8 @@ package it.getinsight.module.user.service;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-public record ScopeRef(Long clientId, Long roleId, Long levelId, Long itemId) {
-    private static final Pattern P = Pattern.compile("^(\\d+):(\\d+):(\\d+):(\\d+)$");
+public record ScopeRef(Long clientId, Long roleId, Long levelId, String codeItem) {
+    private static final Pattern P = Pattern.compile("^(\\d+):(\\d+):(\\d+):([^:]+)$");
 
     public static Optional<ScopeRef> parse(String raw) {
         if (raw == null || raw.isBlank()) return Optional.empty();
@@ -13,8 +13,8 @@ public record ScopeRef(Long clientId, Long roleId, Long levelId, Long itemId) {
         Long clientId = toLong(m.group(1));
         Long roleId = toLong(m.group(2));
         Long levelId = toLong(m.group(3));
-        Long itemId = toLong(m.group(4));
-        return Optional.of(new ScopeRef(clientId, roleId, levelId, itemId));
+        String item = m.group(4);
+        return Optional.of(new ScopeRef(clientId, roleId, levelId, item));
     }
 
     private static Long toLong(String s) {

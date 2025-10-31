@@ -48,6 +48,9 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long>, JpaSpec
     boolean existsItemEntityByActiveTrueAndLevelAndName(LevelEntity level, String name);
 
     List<ItemEntity> findAllByLevelIdAndParentId(Long id, Long itemId);
+    
+    @Query("select i.id from ItemEntity i where i.externalCode = :externalCode")
+    Optional<Long> findIdByExternalCode(@Param("externalCode") String externalCode);
 
     Page<ItemEntity> findAllByLevelIdAndParentId(Long id, Long itemId, Example<ItemEntity> example, Pageable pageable);
 
@@ -60,7 +63,7 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long>, JpaSpec
             -- Base case: select the starting item
             SELECT i.*
             FROM TB_ESFERA_ITEM i
-            WHERE i.ID = :itemId
+            WHERE i.CODIGO_EXTERNO = :externalCode
             AND i.ATIVO = true
 
             UNION ALL
@@ -75,7 +78,7 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long>, JpaSpec
         FROM item_ancestors ia
         ORDER BY ia.ID ASC
         """, nativeQuery = true)
-    List<ItemEntity> findAscendantTreeById(@Param("itemId") Long itemId);
+    List<ItemEntity> findAscendantTreeByExternalCode(@Param("externalCode") String externalCode);
 
     Integer countByLevel(LevelEntity level);
 }

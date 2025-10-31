@@ -100,14 +100,14 @@ public class RequestService {
         java.util.List<String> raw = claim instanceof java.util.Collection<?> c ? c.stream().map(Object::toString).toList() : java.util.List.of();
         var clientIds = new java.util.ArrayList<Long>();
         var levelIds = new java.util.ArrayList<Long>();
-        var itemIds  = new java.util.ArrayList<Long>();
+        var itemIds  = new java.util.ArrayList<String>();
         for (String v : raw) {
             String[] parts = v.split(":");
             if (parts.length == 4) {
                 try {
                     clientIds.add(Long.valueOf(parts[0]));
                     levelIds.add(Long.valueOf(parts[2]));
-                    itemIds.add(Long.valueOf(parts[3]));
+                    itemIds.add(parts[3]);
                 } catch (NumberFormatException e) {
                     log.warn("Invalid scope: {}", e.getMessage());
                 }

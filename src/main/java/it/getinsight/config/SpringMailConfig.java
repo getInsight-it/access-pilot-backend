@@ -13,12 +13,7 @@ import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class SpringMailConfig {
-
-
-    @Bean
-    ClassLoaderTemplateResolver classLoaderTemplateResolver() {
-        return new ClassLoaderTemplateResolver();
-    }
+    private static final String MAIL_TEMPLATES_PATH = "mail/templates/";
 
 
     @Bean
@@ -29,8 +24,9 @@ public class SpringMailConfig {
     }
 
     @Bean
-    ITemplateResolver emailTemplateResolver(ClassLoaderTemplateResolver templateResolver) {
-        templateResolver.setPrefix("mail/templates/");
+    ITemplateResolver emailTemplateResolver() {
+        ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+        templateResolver.setPrefix(MAIL_TEMPLATES_PATH);
         templateResolver.setSuffix(".html");
         templateResolver.setTemplateMode(TemplateMode.HTML);
         templateResolver.setCharacterEncoding(StandardCharsets.UTF_8.name());
@@ -39,8 +35,9 @@ public class SpringMailConfig {
     }
 
     @Bean
-    ITemplateResolver textTemplateResolver(ClassLoaderTemplateResolver templateResolver) {
-        templateResolver.setPrefix("mail/templates/");
+    ITemplateResolver textTemplateResolver() {
+        ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+        templateResolver.setPrefix(MAIL_TEMPLATES_PATH);
         templateResolver.setSuffix(".txt");
         templateResolver.setTemplateMode(TemplateMode.TEXT);
         templateResolver.setCharacterEncoding(StandardCharsets.UTF_8.name());
@@ -49,7 +46,9 @@ public class SpringMailConfig {
     }
 
     @Bean
-    ITemplateResolver stringTemplateResolver(ClassLoaderTemplateResolver templateResolver) {
+    ITemplateResolver stringTemplateResolver() {
+        ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+        templateResolver.setPrefix(MAIL_TEMPLATES_PATH);
         templateResolver.setTemplateMode(TemplateMode.RAW);
         templateResolver.setCharacterEncoding(StandardCharsets.UTF_8.name());
         templateResolver.setOrder(3);
@@ -57,7 +56,9 @@ public class SpringMailConfig {
     }
 
     @Bean
-    ITemplateResolver htmlTemplateResolver(ClassLoaderTemplateResolver templateResolver) {
+    ITemplateResolver htmlTemplateResolver() {
+        ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+        templateResolver.setPrefix(MAIL_TEMPLATES_PATH);
         templateResolver.setTemplateMode(TemplateMode.HTML);
         templateResolver.setCharacterEncoding(StandardCharsets.UTF_8.name());
         templateResolver.setOrder(4);
@@ -65,7 +66,10 @@ public class SpringMailConfig {
     }
 
     @Bean
-    TemplateEngine emailTemplateEngine(ITemplateResolver textTemplateResolver, ITemplateResolver htmlTemplateResolver, ITemplateResolver stringTemplateResolver, ResourceBundleMessageSource emailMessageSource) {
+    TemplateEngine emailTemplateEngine(ITemplateResolver textTemplateResolver, 
+                                     ITemplateResolver htmlTemplateResolver, 
+                                     ITemplateResolver stringTemplateResolver, 
+                                     ResourceBundleMessageSource emailMessageSource) {
         final SpringTemplateEngine templateEngine = new SpringTemplateEngine();
         templateEngine.addTemplateResolver(textTemplateResolver);
         templateEngine.addTemplateResolver(htmlTemplateResolver);
@@ -73,7 +77,6 @@ public class SpringMailConfig {
         templateEngine.setTemplateEngineMessageSource(emailMessageSource);
         return templateEngine;
     }
-
 }
 
 

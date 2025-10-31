@@ -46,7 +46,7 @@ public class RequestVariableService {
             "role", Optional.ofNullable(roleMapper.toDto(role)).orElse(RoleDTO.builder().build()),
             "client", Optional.ofNullable(clientMapper.toDto(client)).orElse(ClientDTO.builder().build()),
             "level", Optional.ofNullable(levelMapper.toDto(request.getLevel())).orElse(LevelDTO.builder().build()),
-            "item", getItemOrDefault(role, request)
+            "codeItem", getItemOrDefault(role, request)
         );
     }
 

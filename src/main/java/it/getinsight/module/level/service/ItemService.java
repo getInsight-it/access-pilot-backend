@@ -3,6 +3,8 @@ package it.getinsight.module.level.service;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.message.CoreMessageSource;
 import it.getinsight.core.pagination.PageableRequestModel;
+import it.getinsight.module.level.client.ItemQueryParams;
+import it.getinsight.utilitario.PropertyPathConstants;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.level.client.LevelClient;
 import it.getinsight.module.level.dto.ExportationFilterDTO;
@@ -46,7 +48,6 @@ import java.util.stream.Stream;
 
 import static it.getinsight.message.MessageProperty.*;
 
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -56,6 +57,7 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final LevelClient levelClient;
     private final ItemMapper itemMapper;
+    private final ItemResolverService itemResolverService;
     private final ItemHierarchyResumedMapper itemHierarchyResumedMapper;
     private final ItemFilterMapper itemFilterMapper;
     private final LevelHierarchyResumedMapper levelHierarchyResumedMapper;
@@ -82,9 +84,9 @@ public class ItemService {
             .matchingAny()
             .withIgnoreNullValues()
             .withIgnoreCase()
-            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("externalCode", ExampleMatcher.GenericPropertyMatcher::contains);
+            .withMatcher(PropertyPathConstants.Item.NAME, ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher(PropertyPathConstants.Item.DESCRIPTION, ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher(PropertyPathConstants.Item.EXTERNAL_CODE, ExampleMatcher.GenericPropertyMatcher::contains);
 
         final var example = Example.of(model, matcher);
 
@@ -120,7 +122,14 @@ public class ItemService {
 
         if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
             var levelEntityParent = levelEntity.getParent();
-            var page = levelClient.getSubItems(levelEntity.getExternalUrl(),levelEntity.getApiKey(),itemId, configPage.getPageNumber() + 1, configPage.getPageSize(), configPage.getSortField(), configPage.getSortType(), configPage.getFilter().orElse(null));
+            var queryParams = ItemQueryParams.of(
+                configPage.getPageNumber() + 1,
+                configPage.getPageSize(),
+                configPage.getSortField(),
+                configPage.getSortType(),
+                configPage.getFilter().orElse(null)
+            );
+            var page = levelClient.getSubItems(levelEntity.getExternalUrl(), levelEntity.getApiKey(), itemId, queryParams);
             var itemsFormated = page.getItems()
                 .stream().map(o -> formatExternalItem(o, levelEntityParent)).toList();
             page.setItems(itemsFormated);
@@ -138,9 +147,9 @@ public class ItemService {
             .matchingAny()
             .withIgnoreNullValues()
             .withIgnoreCase()
-            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("externalCode", ExampleMatcher.GenericPropertyMatcher::contains);
+            .withMatcher(PropertyPathConstants.Item.NAME, ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher(PropertyPathConstants.Item.DESCRIPTION, ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher(PropertyPathConstants.Item.EXTERNAL_CODE, ExampleMatcher.GenericPropertyMatcher::contains);
 
         final var example = Example.of(model, matcher);
 
@@ -167,7 +176,7 @@ public class ItemService {
             try (Reader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8)) {
 
                 CSVFormat format = CSVFormat.DEFAULT.builder()
-                    .setHeader("id", "parentId", "name", "description", "externalCode")
+                    .setHeader(PropertyPathConstants.Item.CSV_HEADERS)
                     .setSkipHeaderRecord(true)
                     .setDelimiter(',')
                     .setQuote('"')
@@ -180,8 +189,8 @@ public class ItemService {
                     List<ItemEntity> items = new ArrayList<>();
 
                     for (CSVRecord csvRecord : csvParser) {
-                        Long id = Long.parseLong(csvRecord.get("id"));
-                        String parentIdStr = csvRecord.get("parentId");
+                        Long id = Long.parseLong(csvRecord.get(PropertyPathConstants.Common.ID));
+                        String parentIdStr = csvRecord.get(PropertyPathConstants.Common.PARENT_ID);
                         Long parentId = parentIdStr.isEmpty() ? null : Long.parseLong(parentIdStr);
                         var parent = parentId != null ? itemsMap.get(parentId) : null;
 
@@ -189,9 +198,9 @@ public class ItemService {
                         var item = ItemEntity.builder()
                             .parent(parent)
                             .level(level)
-                            .name(csvRecord.get("name"))
-                            .description(csvRecord.isSet("description") ? csvRecord.get("description") : null)
-                            .externalCode(csvRecord.isSet("externalCode") ? csvRecord.get("externalCode") : null)
+                            .name(csvRecord.get(PropertyPathConstants.Item.NAME))
+                            .description(csvRecord.isSet(PropertyPathConstants.Item.DESCRIPTION) ? csvRecord.get(PropertyPathConstants.Item.DESCRIPTION) : null)
+                            .externalCode(csvRecord.isSet(PropertyPathConstants.Item.EXTERNAL_CODE) ? csvRecord.get(PropertyPathConstants.Item.EXTERNAL_CODE) : null)
                             .build();
 
                         itemsMap.put(id, item);
@@ -236,17 +245,24 @@ public class ItemService {
 
     public Optional<ItemHierarchyResumedDTO> findByTypeAndCodeItem(LevelEntity level, String codeItem) {
         var levelType = level.getType();
+
+
+        String resolvedItemId = itemResolverService.resolveItemId(
+            level,
+            codeItem
+        );
+
         if (levelType == LevelType.BUILT_IN || levelType == LevelType.BUSINESS) {
-            var entityFound = itemRepository.findById(Long.parseLong(codeItem))
+            var entityFound = itemRepository.findById(Long.parseLong(resolvedItemId))
                 .orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
             log.info("Item found for request: {}", entityFound);
             return Optional.of(itemHierarchyResumedMapper.toDto(entityFound));
         }
 
         if (levelType == LevelType.EXTERNAL) {
-            var opItemDtoFound = Optional.of(levelClient.getItemByExternalCode(level.getExternalUrl(),level.getApiKey(), codeItem)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
-            log.info("Item found for request: {}", opItemDtoFound);
-            return Optional.of(opItemDtoFound);
+            var itemDto = levelClient.getItemByExternalCode(level.getExternalUrl(), level.getApiKey(), resolvedItemId);
+            log.info("Item found for request: {}", itemDto);
+            return Optional.of(itemDto);
         }
 
         return Optional.empty();
@@ -281,12 +297,25 @@ public class ItemService {
 
     public ItemHierarchyResumedDTO getItemById(Long id, String itemId) {
         var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
-        if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
-            var itemExternal = Optional.of(levelClient.getItemByExternalCode(levelEntity.getExternalUrl(),levelEntity.getApiKey(), itemId));
-            var itemHierarchyDTO = itemExternal.orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
-            return itemHierarchyDTO.withLevel(levelHierarchyResumedMapper.toDto(levelEntity));
+        var levelType = levelEntity.getType();
+
+
+        String resolvedItemId = itemResolverService.resolveItemId(
+            levelEntity,
+            itemId
+        );
+
+        if (LevelType.EXTERNAL.equals(levelType)) {
+            var itemExternal = levelClient.getItemByExternalCode(
+                levelEntity.getExternalUrl(),
+                levelEntity.getApiKey(),
+                resolvedItemId
+            );
+            return itemExternal.withLevel(levelHierarchyResumedMapper.toDto(levelEntity));
         }
-        var entity = itemRepository.findByLevelIdAndId(id, Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+
+        var entity = itemRepository.findByLevelIdAndId(id, Long.parseLong(resolvedItemId))
+            .orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
         return itemHierarchyResumedMapper.toDto(entity);
     }
 
@@ -360,8 +389,6 @@ public class ItemService {
         Collections.reverse(hierarchy);
         return hierarchy;
     }
-
-
 
 }
 

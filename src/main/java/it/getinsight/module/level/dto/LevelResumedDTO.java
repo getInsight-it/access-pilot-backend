@@ -1,3 +1,10 @@
 package it.getinsight.module.level.dto;
 
-public record LevelResumedDTO(Long id, String name) {}
+import org.apache.commons.text.WordUtils;
+
+public record LevelResumedDTO(Long id, String name) {
+
+    public String name() {
+        return name != null ? WordUtils.capitalizeFully(name) : null;
+    }
+}
