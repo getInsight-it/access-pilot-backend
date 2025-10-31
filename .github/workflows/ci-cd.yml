@@ -137,10 +137,10 @@ jobs:
       - name: build-image
         env:
           TAG: ghcr.io/${{ github.repository }}:${{ steps.changelog.outputs.tag }}
-          LATEST: ghcr.io/${{ github.repository }}:latest
+          LATEST: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
         run: |
           docker buildx create --use --driver docker-container --bootstrap
           export DOCKER_TAG=$(echo "$TAG" | tr '[:upper:]' '[:lower:]')
           export LATEST_TAG=$(echo "$LATEST" | tr '[:upper:]' '[:lower:]')
-          docker buildx build --no-cache --pull --platform linux/amd64,linux/arm64 -f Dockerfile -t "$DOCKER_TAG", $"LATEST_TAG" --push .
+          docker buildx build --no-cache --pull --platform linux/amd64,linux/arm64 -f Dockerfile -t "$DOCKER_TAG" -t $"LATEST_TAG" --push .
 
