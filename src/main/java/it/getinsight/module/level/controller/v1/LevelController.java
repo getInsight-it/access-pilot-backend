@@ -134,7 +134,7 @@ public class LevelController {
     }
 
 
-    @Operation(summary = "Update item information", description = "Update item information")
+    @Operation(summary = "Update codeItem information", description = "Update codeItem information")
     @PutMapping(value = "{id}/items/{itemId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> updateItem(@PathVariable Long id, @PathVariable String itemId, @RequestBody ItemDTO itemDTO) {
@@ -151,7 +151,7 @@ public class LevelController {
 
 
 
-    @Operation(summary = "Create a new item", description = "Create a new item")
+    @Operation(summary = "Create a new codeItem", description = "Create a new codeItem")
     @PostMapping(value = "{id}/items", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ItemDTO> createItem(@PathVariable Long id,
@@ -159,7 +159,7 @@ public class LevelController {
         return ResponseEntity.ok(itemService.createItem(id, itemDTO));
     }
 
-    @Operation(summary = "Retrieve subitems of an item", description = "Retrieve subitems related to an item")
+    @Operation(summary = "Retrieve subitems of an codeItem", description = "Retrieve subitems related to an codeItem")
     @GetMapping(value = "{id}/items/{itemId}/subitems", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PageableResponseModel<ItemHierarchyResumedDTO>> getSubItemsPaginatedByItem(@PathVariable Long id, @PathVariable String itemId,
                                                                     @Min(value = 1, message = "O índice da página deve ser no mínimo 1")
@@ -182,7 +182,7 @@ public class LevelController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Delete an item", description = "Delete an item")
+    @Operation(summary = "Delete an codeItem", description = "Delete an codeItem")
     @DeleteMapping(value = "{id}/items/{itemId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize(value = "hasRole('ADMIN')")
     public ResponseEntity<Void> deleteItem(@PathVariable Long id, @PathVariable String itemId) {

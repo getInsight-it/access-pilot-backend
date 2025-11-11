@@ -1,5 +1,6 @@
 package it.getinsight.module.request.service;
 
+
 import it.getinsight.module.level.entity.LevelType;
 import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.level.service.ItemService;
@@ -16,7 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -53,7 +55,8 @@ public class RequestQueryBuilderService {
         Specification<RequestEntity>  specRolesWithLevelIsNull = RequestSpecification.rolesWithLevelIsNull(rolesWithoutLevel);
 
 
-        return spec.and(Specification.where(triplesSpec).or(additionalTriplesSpec).or(specRolesWithLevelIsNull));
+        Specification<RequestEntity> combinedSpec = Specification.anyOf(triplesSpec, additionalTriplesSpec, specRolesWithLevelIsNull);
+        return spec.and(combinedSpec);
     }
 
     private List<String> buildSameLevelFromToken() {
@@ -68,7 +71,7 @@ public class RequestQueryBuilderService {
                             && roleEntity.getRole().getLevel() != null
                             && roleEntity.getRole().getLevel().equals(roleEntity.getLevel())
                     )
-                    .map(roleEntity -> s.clientId() + ":"+ roleEntity.getId() + ":" + s.levelId() + ":" + s.itemId() )
+                    .map(roleEntity -> s.clientId() + ":"+ roleEntity.getId() + ":" + s.levelId() + ":" + s.codeItem() )
 
             )
             .distinct()
@@ -99,11 +102,11 @@ public class RequestQueryBuilderService {
                     )
                     .flatMap(roleEntity ->
                         roleEntity.getLevel().getType() == LevelType.EXTERNAL ?
-                            itemService.getAllSubitemCodes(roleEntity.getLevel().getId(), s.itemId().toString())
-                                .stream()
-                            .map(itemId -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + itemId)
+                            itemService.getAllSubitemCodes(roleEntity.getLevel().getId(), s.codeItem())
+                            .stream()
+                            .map(item -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + item)
 
-                        : itemRepository.findAllByLevelIdAndParentId(roleEntity.getLevel().getId(), s.itemId())
+                        : itemRepository.findAllByLevelIdAndParentId(roleEntity.getLevel().getId(), Long.parseLong(s.codeItem()))
                         .stream()
                         .map(item -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + item.getId())
                     )
@@ -136,6 +139,6 @@ public class RequestQueryBuilderService {
             return buildAssignedRequestsSpecification(model);
         }
 
-        return Specification.where(null);
+        return Specification.anyOf();
     }
 }

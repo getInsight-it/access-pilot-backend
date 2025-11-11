@@ -5,7 +5,6 @@ import it.getinsight.module.notification.enums.NotificationType;
 import it.getinsight.module.notification.service.NotificationService;
 import it.getinsight.module.request.config.EmailNotificationProperties;
 import it.getinsight.module.request.entity.RequestEntity;
-import it.getinsight.module.request.repository.RequestRepository;
 import it.getinsight.module.user.mapper.UserMapper;
 import it.getinsight.module.web_notification.dto.WebNotificationDTO;
 import lombok.RequiredArgsConstructor;
@@ -25,20 +24,15 @@ public class RequestNotificationService {
     private final RequestVariableService requestVariableService;
     private final ApproverEmailBuilderService approverEmailBuilderService;
     private final EmailNotificationProperties emailNotificationProperties;
-    private final RequestRepository requestRepository;
     private final UserMapper userMapper;
 
     @Transactional
     public void sendNotificationsToApprovers(RequestEntity requestEntity) {
         var approvers = approverEmailBuilderService.findApproversForRole(requestEntity);
-        approverEmailBuilderService.updateRequestStatusToPending(requestEntity);
 
         approvers.stream()
             .map(approver -> approverEmailBuilderService.buildEmailForApprover(requestEntity, approver))
-            .forEach(emailDTO -> {
-                requestRepository.save(requestEntity);
-                notificationService.send(emailDTO);
-            });
+            .forEach(notificationService::send);
 
         var variables = requestVariableService.buildVariables(
             requestEntity.getRequestingUser(), null,

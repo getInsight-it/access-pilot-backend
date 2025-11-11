@@ -1,7 +1,9 @@
 package it.getinsight.module.level.dto;
 
+
 import it.getinsight.module.level.entity.LevelType;
 import lombok.Builder;
+import org.apache.commons.text.WordUtils;
 
 import java.io.Serializable;
 import java.util.UUID;
@@ -19,5 +21,9 @@ public record LevelDTO(
     LevelType type,
     String icon,
     String apiKey
-) implements Serializable{
+) implements Serializable {
+
+    public String name() {
+        return name != null ? WordUtils.capitalizeFully(name) : null;
+    }
 }

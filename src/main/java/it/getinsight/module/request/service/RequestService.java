@@ -31,9 +31,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 
-import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.message.MessageProperty.REQUEST_NOT_FOUND_ERROR;
 
 
 @Service
@@ -100,14 +101,14 @@ public class RequestService {
         java.util.List<String> raw = claim instanceof java.util.Collection<?> c ? c.stream().map(Object::toString).toList() : java.util.List.of();
         var clientIds = new java.util.ArrayList<Long>();
         var levelIds = new java.util.ArrayList<Long>();
-        var itemIds  = new java.util.ArrayList<Long>();
+        var itemIds  = new java.util.ArrayList<String>();
         for (String v : raw) {
             String[] parts = v.split(":");
             if (parts.length == 4) {
                 try {
                     clientIds.add(Long.valueOf(parts[0]));
                     levelIds.add(Long.valueOf(parts[2]));
-                    itemIds.add(Long.valueOf(parts[3]));
+                    itemIds.add(parts[3]);
                 } catch (NumberFormatException e) {
                     log.warn("Invalid scope: {}", e.getMessage());
                 }
@@ -163,7 +164,7 @@ public class RequestService {
 
 
     public RequestDTO findById(Long id) {
-        var requestEntity = requestRepository.findById(id).orElseThrow(REQUEST_NOT_FOUND_ERROR::businessException);
+        var requestEntity = requestRepository.findById(id).orElseThrow(REQUEST_NOT_FOUND_ERROR::resourceNotFoundException);
 
         requestValidationService.validateUserAccessToRequest(id, requestEntity);
 

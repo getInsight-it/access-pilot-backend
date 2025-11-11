@@ -8,11 +8,7 @@ import it.getinsight.module.level.entity.LevelType;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -49,6 +45,9 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long>, JpaSpec
 
     List<ItemEntity> findAllByLevelIdAndParentId(Long id, Long itemId);
 
+    @Query("select i.id from ItemEntity i where i.externalCode = :externalCode")
+    Optional<Long> findIdByExternalCode(@Param("externalCode") String externalCode);
+
     Page<ItemEntity> findAllByLevelIdAndParentId(Long id, Long itemId, Example<ItemEntity> example, Pageable pageable);
 
     @EntityGraph(attributePaths = {"level", "parent"})
@@ -60,7 +59,7 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long>, JpaSpec
             -- Base case: select the starting item
             SELECT i.*
             FROM TB_ESFERA_ITEM i
-            WHERE i.ID = :itemId
+            WHERE i.CODIGO_EXTERNO = :externalCode
             AND i.ATIVO = true
 
             UNION ALL
@@ -75,7 +74,7 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long>, JpaSpec
         FROM item_ancestors ia
         ORDER BY ia.ID ASC
         """, nativeQuery = true)
-    List<ItemEntity> findAscendantTreeById(@Param("itemId") Long itemId);
+    List<ItemEntity> findAscendantTreeByExternalCode(@Param("externalCode") String externalCode);
 
     Integer countByLevel(LevelEntity level);
 }

@@ -1,6 +1,7 @@
 package it.getinsight.module.level.dto;
 
 import lombok.Builder;
+import org.apache.commons.text.WordUtils;
 
 import java.io.Serializable;
 import java.util.UUID;
@@ -31,5 +32,9 @@ public record ItemHierarchyResumedDTO(Long id, UUID uuid, String description, St
             this.level,
             newParent
         );
+    }
+
+    public String name() {
+        return name != null ? WordUtils.capitalizeFully(name) : null;
     }
 }

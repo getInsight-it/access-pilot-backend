@@ -1,15 +1,17 @@
 package it.getinsight.module.request.service;
 
+import it.getinsight.module.level.service.ItemResolverService;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.repository.RoleRepository;
-import it.getinsight.module.user.service.SecurityScopes;
 import it.getinsight.module.user.service.AuthenticationContextService;
+import it.getinsight.module.user.service.SecurityScopes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.message.MessageProperty.APPROVE_NOT_AUTHORIZED;
+import static it.getinsight.message.MessageProperty.USER_NOT_AUTHORIZED;
 
 
 @Service
@@ -20,6 +22,7 @@ public class UserAccessValidationService {
     private final RoleRepository roleRepository;
     private final AuthenticationContextService authenticationContextService;
     private final SecurityScopes securityScopes;
+    private final ItemResolverService itemResolverService;
 
 
     public void validateUserAccessToRequest(Long requestId, RequestEntity requestEntity) {
@@ -34,12 +37,14 @@ public class UserAccessValidationService {
     private boolean isSameScope(RequestEntity requestEntity) {
         return securityScopes.all().stream().anyMatch(s -> {
             Long clientId = requestEntity.getRole().getClient().getId();
-            Long levelId = requestEntity.getLevel() != null ? requestEntity.getLevel().getId() : null;
-            Long itemId = requestEntity.getCodeItem() != null ? Long.parseLong(requestEntity.getCodeItem()) : null;
+            var level = requestEntity.getLevel();
+            Long levelId = level != null ? level.getId() : null;
+            String itemKey = requestEntity.getCodeItem() != null && level != null ?
+                itemResolverService.resolveItemId(level, requestEntity.getCodeItem()) : null;
 
             boolean exactMatch = s.clientId().equals(clientId)
                 && s.levelId().equals(levelId)
-                && s.itemId().equals(itemId);
+                && s.codeItem().equals(itemKey);
 
             if (!exactMatch && levelId != null) {
                 return roleRepository.findDescendantRoles(s.roleId(), s.clientId())
