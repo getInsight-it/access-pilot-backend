@@ -18,7 +18,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.message.MessageProperty.INVALID_URL_EMPTY_ERROR;
+import static it.getinsight.message.MessageProperty.INVALID_URL_PROTOCOL_ERROR;
 
 @Component
 public class LevelClient {

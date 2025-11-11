@@ -1,8 +1,8 @@
 package it.getinsight.module.storage.strategy;
 
-import it.getinsight.module.storage.entity.StorageFileEntity;
 import io.minio.*;
 import io.minio.messages.Item;
+import it.getinsight.module.storage.entity.StorageFileEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

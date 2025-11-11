@@ -15,9 +15,6 @@ import it.getinsight.module.client.repository.ClientRepository;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.service.IdentityProviderService;
 import it.getinsight.module.level.dto.ItemResponseNodeDTO;
-import it.getinsight.module.level.repository.ItemRepository;
-import it.getinsight.module.level.service.ItemTreeService;
-import it.getinsight.module.user.service.SecurityScopes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
@@ -28,7 +25,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 

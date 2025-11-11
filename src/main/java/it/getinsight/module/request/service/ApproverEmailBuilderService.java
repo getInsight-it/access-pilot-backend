@@ -1,12 +1,11 @@
 package it.getinsight.module.request.service;
 
 import it.getinsight.module.email.dto.EmailDTO;
-import it.getinsight.module.request.config.EmailNotificationProperties;
 import it.getinsight.module.keycloak.service.IdentityProviderService;
 import it.getinsight.module.notification.enums.NotificationType;
+import it.getinsight.module.request.config.EmailNotificationProperties;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
-import it.getinsight.module.role.service.RoleLevelPolicyService;
 import it.getinsight.module.user.dto.UserDTO;
 import it.getinsight.module.user.mapper.UserMapper;
 import it.getinsight.module.user.service.UserService;
@@ -16,7 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.message.MessageProperty.APPROVERS_NOT_FOUND_ERROR;
 
 
 @Service
@@ -40,7 +39,7 @@ public class ApproverEmailBuilderService {
 
         if (approves.isEmpty()) {
             log.warn("No approvers found for role {}", roleEntity.getName());
-            throw APPROVERS_NOT_FOUND_ERROR.businessException();
+            throw APPROVERS_NOT_FOUND_ERROR.resourceNotFoundException();
         }
 
         return approves;

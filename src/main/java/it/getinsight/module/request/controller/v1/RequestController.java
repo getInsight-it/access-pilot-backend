@@ -27,7 +27,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
 
-import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.message.MessageProperty.INVALID_JSON_FORMAT_ERROR;
 
 @RestController
 @RequestMapping("/v1/requests")

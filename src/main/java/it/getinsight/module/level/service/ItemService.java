@@ -4,9 +4,8 @@ import feign.FeignException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.message.CoreMessageSource;
 import it.getinsight.core.pagination.PageableRequestModel;
-import it.getinsight.module.level.client.ItemQueryParams;
-import it.getinsight.utilitario.PropertyPathConstants;
 import it.getinsight.core.pagination.PageableResponseModel;
+import it.getinsight.module.level.client.ItemQueryParams;
 import it.getinsight.module.level.client.LevelClient;
 import it.getinsight.module.level.dto.ExportationFilterDTO;
 import it.getinsight.module.level.dto.ItemDTO;
@@ -21,6 +20,7 @@ import it.getinsight.module.level.mapper.ItemMapper;
 import it.getinsight.module.level.mapper.LevelHierarchyResumedMapper;
 import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.level.repository.LevelRepository;
+import it.getinsight.utilitario.PropertyPathConstants;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -66,7 +66,7 @@ public class ItemService {
 
 
     public PageableResponseModel<ItemHierarchyResumedDTO> getItemsPaginatedByLevel(Long levelId, PageableRequestModel<ItemFilterDTO> configPage) {
-        var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
 
         if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
             var page = levelClient.getItems(levelEntity.getExternalUrl(), levelEntity.getApiKey(), configPage.getPageNumber() + 1, configPage.getPageSize(), configPage.getSortField(), configPage.getSortType(), configPage.getFilter().orElse(null));
@@ -120,7 +120,7 @@ public class ItemService {
     }
 
     public PageableResponseModel<ItemHierarchyResumedDTO> getSubItemsPaginatedByLevel(Long levelId, String itemId, PageableRequestModel<ItemFilterDTO> configPage) {
-        var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
 
         if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
             return getSubItemsPaginatedByLevelExternal(itemId, configPage, levelEntity);
@@ -163,7 +163,7 @@ public class ItemService {
         var levelEntityParent = levelEntity.getParent() != null ? levelEntity.getParent() : levelEntity;
         String itemExternalCodeResolved = null;
         if (!LevelType.EXTERNAL.equals(levelEntityParent.getType())) {
-            itemExternalCodeResolved = itemRepository.findByLevelIdAndId(levelEntityParent.getId(), Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException).getExternalCode();
+            itemExternalCodeResolved = itemRepository.findByLevelIdAndId(levelEntityParent.getId(), Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::resourceNotFoundException).getExternalCode();
         }
 
         var queryParams = ItemQueryParams.of(
@@ -181,7 +181,7 @@ public class ItemService {
             page.setItems(itemsFormated);
             return page;
         } catch (FeignException e) {
-            throw ITEM_NOT_FOUND_ERROR.businessException();
+            throw ITEM_NOT_FOUND_ERROR.resourceNotFoundException();
         }
     }
 
@@ -189,7 +189,7 @@ public class ItemService {
     public void importItems(Long levelId,MultipartFile file) {
         try {
             var itemsMap = new HashMap<Long, ItemEntity>();
-            var level = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+            var level = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
             try (Reader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8)) {
 
                 CSVFormat format = CSVFormat.DEFAULT.builder()
@@ -271,7 +271,7 @@ public class ItemService {
 
         if (levelType == LevelType.BUILT_IN || levelType == LevelType.BUSINESS) {
             var entityFound = itemRepository.findById(Long.parseLong(resolvedItemId))
-                .orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+                .orElseThrow(ITEM_NOT_FOUND_ERROR::resourceNotFoundException);
             log.info("Item found for request: {}", entityFound);
             return Optional.of(itemHierarchyResumedMapper.toDto(entityFound));
         }
@@ -287,17 +287,17 @@ public class ItemService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void updateItem(Long id, String itemId, ItemDTO itemDTO) {
-        var level = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        var level = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
         if (LevelType.BUILT_IN.equals(level.getType())) {
             throw CREATE_BUILT_IN_ITEM.businessException();
         }
-        var itemEntity = itemRepository.findByLevelIdAndId(id, Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+        var itemEntity = itemRepository.findByLevelIdAndId(id, Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::resourceNotFoundException);
         itemMapper.fromDto(itemDTO, itemEntity);
         itemMapper.toDto(itemRepository.save(itemEntity));
     }
 
     public Integer getCountItemsByLevel(Long id) {
-        var level = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        var level = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
         if (level.getType() == LevelType.EXTERNAL) {
             return levelClient.getCountLevel(level.getExternalUrl(), level.getApiKey());
         }
@@ -305,7 +305,7 @@ public class ItemService {
     }
 
     public List<String> getAllSubitemCodes(Long levelId, String itemId) {
-        var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
         if (LevelType.EXTERNAL.equals(levelEntity.getType())) {
             return levelClient.getAllSubitemCodes(levelEntity.getExternalUrl(), levelEntity.getApiKey(), itemId);
         }
@@ -313,7 +313,7 @@ public class ItemService {
     }
 
     public ItemHierarchyResumedDTO getItemById(Long id, String itemId) {
-        var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
         var levelType = levelEntity.getType();
 
 
@@ -332,14 +332,14 @@ public class ItemService {
         }
 
         var entity = itemRepository.findByLevelIdAndId(id, Long.parseLong(resolvedItemId))
-            .orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+            .orElseThrow(ITEM_NOT_FOUND_ERROR::resourceNotFoundException);
         return itemHierarchyResumedMapper.toDto(entity);
     }
 
 
     @Transactional(propagation = Propagation.REQUIRED)
     public ItemDTO createItem(Long id, ItemDTO itemDTO) {
-        var level = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        var level = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
         var entity = itemMapper.toEntity(itemDTO);
         entity.setLevel(level);
         validateItemBeforeCreate(entity);
@@ -356,17 +356,17 @@ public class ItemService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void deleteItem(Long id, String itemId) {
-        var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
         if (!LevelType.EXTERNAL.equals(levelEntity.getType())) {
-            var itemEntity = itemRepository.findByLevelIdAndId(id, Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+            var itemEntity = itemRepository.findByLevelIdAndId(id, Long.parseLong(itemId)).orElseThrow(ITEM_NOT_FOUND_ERROR::resourceNotFoundException);
             itemRepository.softDelete(itemEntity.getId());
         }
     }
 
     public List<ItemHierarchyResumedDTO> getItemHierarchy(Long levelId, String itemId) {
-        var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+        var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
         if (levelEntity == null) {
-            throw LEVEL_NOT_FOUND_ERROR.businessException();
+            throw LEVEL_NOT_FOUND_ERROR.resourceNotFoundException();
         }
 
         if (levelEntity.getType() != null && LevelType.EXTERNAL.equals(levelEntity.getType())) {
@@ -374,10 +374,10 @@ public class ItemService {
             return getExternalHierarchy(levelEntity, itemIdResolved);
         }
         var item = itemRepository.findById(Long.valueOf(itemId))
-            .orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+            .orElseThrow(ITEM_NOT_FOUND_ERROR::resourceNotFoundException);
 
         if (!levelEntity.getId().equals(levelId)) {
-            throw ITEM_NOT_FOUND_ERROR.businessException();
+            throw ITEM_NOT_FOUND_ERROR.resourceNotFoundException();
         }
 
         var hierarchy = Stream.iterate(item, Objects::nonNull, ItemEntity::getParent)

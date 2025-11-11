@@ -10,7 +10,10 @@ import it.getinsight.module.level.dto.LevelFilterDTO;
 import it.getinsight.module.level.dto.LevelResponseDTO;
 import it.getinsight.module.level.entity.LevelEntity;
 import it.getinsight.module.level.entity.LevelType;
-import it.getinsight.module.level.mapper.*;
+import it.getinsight.module.level.mapper.LevelFilterMapper;
+import it.getinsight.module.level.mapper.LevelHierarchyResponseMapper;
+import it.getinsight.module.level.mapper.LevelMapper;
+import it.getinsight.module.level.mapper.LevelResponseMapper;
 import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.level.repository.LevelRepository;
 import it.getinsight.module.role.service.RoleLevelPolicyService;
@@ -71,7 +74,7 @@ public class LevelService {
     }
 
     public List<LevelResponseDTO> getHierarchy(Long id) {
-        var hierarchy = Stream.iterate(levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException),
+        var hierarchy = Stream.iterate(levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException),
                 Objects::nonNull,
                 LevelEntity::getParent)
             .collect(Collectors.toList());
@@ -162,12 +165,12 @@ public class LevelService {
             throw UPDATE_BUILT_IN_LEVEL.businessException();
         }
         if (levelRepository.existsById(id)) {
-            var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+            var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
             if (!levelEntity.getType().equals(levelDTO.type())) {
                 throw  ERROR_UPDATE_LEVEL_TYPE.businessException();
             }
             levelMapper.fromDto(levelDTO, levelEntity);
-            var levelParent = levelDTO.parentId() != null ?  levelRepository.findById(levelDTO.parentId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException) : null;
+            var levelParent = levelDTO.parentId() != null ?  levelRepository.findById(levelDTO.parentId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException) : null;
 
 
             if (levelParent != null) {
@@ -191,7 +194,7 @@ public class LevelService {
     @Transactional(propagation = Propagation.REQUIRED)
     public void delete(Long id) {
         if (levelRepository.existsById(id)) {
-            var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException);
+            var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
             levelRepository.softDelete(levelEntity.getId());
         }
     }

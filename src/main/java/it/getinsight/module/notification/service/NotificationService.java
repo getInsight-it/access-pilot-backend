@@ -87,7 +87,7 @@ public class NotificationService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void updateOpenNotification(Long id, Boolean read) {
-        var notification = notificationRepository.findById(id).orElseThrow(NOTIFICATION_NOT_FOUND_ERROR::businessException);
+        var notification = notificationRepository.findById(id).orElseThrow(NOTIFICATION_NOT_FOUND_ERROR::resourceNotFoundException);
         notification.setIsOpened(read);
         notificationRepository.save(notification);
     }

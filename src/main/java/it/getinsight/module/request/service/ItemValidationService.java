@@ -1,8 +1,5 @@
 package it.getinsight.module.request.service;
 
-import it.getinsight.module.level.client.LevelClient;
-import it.getinsight.module.level.entity.LevelType;
-import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.level.service.ItemResolverService;
 import it.getinsight.module.role.entity.RoleEntity;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +23,7 @@ public class ItemValidationService {
         Optional.ofNullable(roleEntity.getLevel()).ifPresent(level -> {
             if (StringUtils.isBlank(codeItem)) {
                 log.warn("Request received without codeItem for role {}", roleEntity.getName());
-                throw CODE_ITEM_NOT_FOUND_FOR_ROLE.businessException();
+                throw CODE_ITEM_NOT_FOUND_FOR_ROLE.resourceNotFoundException();
             }
 
             try {
@@ -34,7 +31,7 @@ public class ItemValidationService {
                 log.info("Item found for request with ID: {}", resolvedItemId);
             } catch (Exception e) {
                 log.warn("Item validation failed for codeItem: {} and role: {}", codeItem, roleEntity.getName(), e);
-                throw ITEM_NOT_FOUND_ERROR.businessException();
+                throw ITEM_NOT_FOUND_ERROR.resourceNotFoundException();
             }
         });
     }

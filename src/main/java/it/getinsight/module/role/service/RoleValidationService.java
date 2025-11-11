@@ -25,12 +25,12 @@ public class RoleValidationService {
 
         if (roleDTO == null) {
             log.error("RoleDTO is null");
-            throw ROLE_NOT_FOUND_ERROR.businessException();
+            throw ROLE_NOT_FOUND_ERROR.resourceNotFoundException();
         }
 
         if (roleDTO.client() == null) {
             log.error("Client is null for role: {}", roleDTO.name());
-            throw CLIENT_NOT_FOUND_ERROR.businessException();
+            throw CLIENT_NOT_FOUND_ERROR.resourceNotFoundException();
         }
 
         if (StringValidationUtils.isUpperSnakeCase(roleDTO.name())) {

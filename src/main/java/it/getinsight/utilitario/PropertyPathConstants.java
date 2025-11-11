@@ -13,6 +13,18 @@ public final class PropertyPathConstants {
         private Common() {}
     }
 
+    public static final class AttachmentConfigurationCSV {
+        public static final String NAME = "name";
+        public static final String DESCRIPTION = "description";
+        public static final String ALLOWED_EXTENSIONS = "allowedExtensions";
+        public static final String ICON = "icon";
+        public static final String REQUIRED = "required";
+        public static final String KEY = "key";
+
+
+        private AttachmentConfigurationCSV() {}
+    }
+
     public static final class Item {
         public static final String NAME = "name";
         public static final String DESCRIPTION = "description";

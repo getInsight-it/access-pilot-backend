@@ -15,7 +15,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.message.MessageProperty.ROLE_NOT_FOUND_ERROR;
+import static it.getinsight.message.MessageProperty.USER_NOT_FOUND_ERROR;
 
 
 @Service
@@ -35,7 +36,7 @@ public class RequestStatusUpdateService {
         var currentUserId = authenticationContextService.getCurrentUserId();
         var approvingUserDTO = userService.findOrImportByExternalId(currentUserId);
         var roleEntityParent = roleRepository.findByRoleExternalId(requestEntity.getRole().getRoleExternalId())
-            .orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
+            .orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
         var approvingUsersDTO = roleService.getOrImportApprovesByRoleId(roleEntityParent.getId());
 
         return approvingUsersDTO.stream().anyMatch(obj -> obj.id().equals(approvingUserDTO.id()));

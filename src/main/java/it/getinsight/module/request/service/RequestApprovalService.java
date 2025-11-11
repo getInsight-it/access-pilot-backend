@@ -45,7 +45,7 @@ public class RequestApprovalService {
 
     private RequestEntity findAndValidateRequest(Long id) {
         return requestRepository.findById(id)
-            .orElseThrow(REQUEST_NOT_FOUND_ERROR::businessException);
+            .orElseThrow(REQUEST_NOT_FOUND_ERROR::resourceNotFoundException);
     }
 
     private void validateUpdatePermissions(RequestEntity requestEntity) {

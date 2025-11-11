@@ -31,9 +31,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 
-import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.message.MessageProperty.REQUEST_NOT_FOUND_ERROR;
 
 
 @Service
@@ -163,7 +164,7 @@ public class RequestService {
 
 
     public RequestDTO findById(Long id) {
-        var requestEntity = requestRepository.findById(id).orElseThrow(REQUEST_NOT_FOUND_ERROR::businessException);
+        var requestEntity = requestRepository.findById(id).orElseThrow(REQUEST_NOT_FOUND_ERROR::resourceNotFoundException);
 
         requestValidationService.validateUserAccessToRequest(id, requestEntity);
 

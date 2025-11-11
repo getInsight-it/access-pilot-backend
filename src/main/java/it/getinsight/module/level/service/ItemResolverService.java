@@ -7,9 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import static it.getinsight.message.MessageProperty.CODE_ITEM_NOT_FOUND_FOR_ROLE;
-import static it.getinsight.message.MessageProperty.ITEM_NOT_FOUND_ERROR;
-import static it.getinsight.message.MessageProperty.UNSUPPORTED_SPHERE_TYPE;
+import static it.getinsight.message.MessageProperty.*;
 
 @Service
 @RequiredArgsConstructor

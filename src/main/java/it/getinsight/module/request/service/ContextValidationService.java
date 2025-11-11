@@ -7,7 +7,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.message.MessageProperty.CLIENT_NOT_PUBLISHED_ERROR;
+import static it.getinsight.message.MessageProperty.ROLE_NOT_FOUND_PARENT_ERROR;
 
 
 @Service
@@ -25,7 +26,7 @@ public class ContextValidationService {
 
     public void validateRoleParent(RoleEntity roleEntity) {
         if (roleEntity.getRole() == null) {
-            throw ROLE_NOT_FOUND_PARENT_ERROR.businessException();
+            throw ROLE_NOT_FOUND_PARENT_ERROR.resourceNotFoundException();
         }
     }
 }

@@ -3,9 +3,9 @@ package it.getinsight.module.client.service;
 
 import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.level.dto.ItemResponseNodeDTO;
+import it.getinsight.module.level.service.ItemTreeService;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.repository.RoleRepository;
-import it.getinsight.module.level.service.ItemTreeService;
 import it.getinsight.module.user.service.SecurityScopes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

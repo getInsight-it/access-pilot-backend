@@ -60,7 +60,7 @@ public class EmailService implements NotificationSender {
 
      private void sendMail(EmailDTO emailDTO){
          final var content = isTrue(emailDTO.isHtml()) ? processContentByTemplate(emailDTO.templateName(), emailDTO.variables()) : emailDTO.content();
-         final var userEntity = userRepository.findById(emailDTO.userId()).orElseThrow(USER_NOT_FOUND_ERROR::businessException);
+         final var userEntity = userRepository.findById(emailDTO.userId()).orElseThrow(USER_NOT_FOUND_ERROR::resourceNotFoundException);
          final var emailSent = EmailSentEntity.builder()
                  .uuid(UUID.randomUUID())
                  .user(userEntity)
@@ -179,14 +179,14 @@ public class EmailService implements NotificationSender {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void updateEmail(Long emailId, EmailDTO emailDTO) {
-        final var emailSent = emailRepository.findById(emailId).orElseThrow(EMAIL_NOT_FOUND_ERROR::businessException);
+        final var emailSent = emailRepository.findById(emailId).orElseThrow(EMAIL_NOT_FOUND_ERROR::resourceNotFoundException);
         emailMapper.fromDto(emailDTO, emailSent);
         emailRepository.save(emailSent);
     }
 
 
     public EmailDTO getEmailById(Long emailId) {
-        final var emailSent = emailRepository.findById(emailId).orElseThrow(EMAIL_NOT_FOUND_ERROR::businessException);
+        final var emailSent = emailRepository.findById(emailId).orElseThrow(EMAIL_NOT_FOUND_ERROR::resourceNotFoundException);
         return emailMapper.toDto(emailSent);
     }
 

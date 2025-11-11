@@ -22,12 +22,12 @@ public class StoragePolicyService {
         fileValidationService.validateOwnerId(ownerId);
     }
 
-    public boolean shouldBePublic(String context, String fileType) {
-        return fileValidationService.shouldBePublic(context, fileType);
+    public boolean shouldBePublic(String context) {
+        return fileValidationService.shouldBePublic(context);
     }
 
-    public boolean shouldBeEphemeral(String context, String fileType) {
-        return fileValidationService.shouldBeEphemeral(context, fileType);
+    public boolean shouldBeEphemeral(String context) {
+        return fileValidationService.shouldBeEphemeral(context);
     }
 
     public String getDefaultPrivateBucket() {

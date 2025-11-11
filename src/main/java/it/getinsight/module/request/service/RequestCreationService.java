@@ -66,7 +66,7 @@ public class RequestCreationService {
 
     private RoleEntity findAndValidateRole(RequestDTO requestDTO) {
         return roleRepository.findById(requestDTO.role().id())
-            .orElseThrow(REQUEST_NOT_FOUND_ERROR::businessException);
+            .orElseThrow(REQUEST_NOT_FOUND_ERROR::resourceNotFoundException);
     }
 
     private void validateRequestCreation(RequestDTO requestDTO, RoleEntity roleEntity,

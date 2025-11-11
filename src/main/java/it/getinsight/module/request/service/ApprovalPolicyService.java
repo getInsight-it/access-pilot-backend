@@ -13,7 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
-import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.message.MessageProperty.REQUEST_ERROR_WHEN_TRYING_TO_ASSIGN_ROLE;
+import static it.getinsight.message.MessageProperty.ROLE_NOT_FOUND_ERROR;
 
 @Service
 @RequiredArgsConstructor
@@ -42,8 +43,8 @@ public class ApprovalPolicyService {
     private void confirmRoles(RequestEntity entity) {
         try {
             var roleEntity = roleRepository.findById(entity.getRole().getId())
-                .orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
-            Optional.ofNullable(identityProviderService.getRoleByNameAndClientUUID(roleEntity.getName(), roleEntity.getClient().getClientUUID())).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
+                .orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
+            Optional.ofNullable(identityProviderService.getRoleByNameAndClientUUID(roleEntity.getName(), roleEntity.getClient().getClientUUID())).orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
 
             if (entity.getCodeItem() != null) {
                 userAttributeService.updateUserAttributes(entity, roleEntity);

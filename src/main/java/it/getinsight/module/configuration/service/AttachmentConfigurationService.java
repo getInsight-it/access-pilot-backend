@@ -31,12 +31,12 @@ public class AttachmentConfigurationService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void delete(Long id) {
-        var configurationEntity = attachmentConfigurationRepository.findById(id).orElseThrow(ERROR_CONFIGURATION_NOT_FOUND::businessException);
+        var configurationEntity = attachmentConfigurationRepository.findById(id).orElseThrow(ERROR_CONFIGURATION_NOT_FOUND::resourceNotFoundException);
         attachmentConfigurationRepository.softDelete(configurationEntity.getId());
     }
 
     public AttachmentConfigurationDTO findById(Long id) {
-        var configurationEntity = attachmentConfigurationRepository.findById(id).orElseThrow(ERROR_CONFIGURATION_NOT_FOUND::businessException);
+        var configurationEntity = attachmentConfigurationRepository.findById(id).orElseThrow(ERROR_CONFIGURATION_NOT_FOUND::resourceNotFoundException);
         return attachmentConfigurationMapper.toDto(configurationEntity);
     }
 

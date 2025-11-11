@@ -1,12 +1,12 @@
 package it.getinsight.module.level.dto;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import it.getinsight.module.role.dto.RoleDTO;
 import it.getinsight.module.role.dto.RoleResponseResumedDTO;
 import lombok.Data;
 import org.apache.commons.text.WordUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 public final class ItemResponseNodeDTO {
