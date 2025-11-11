@@ -165,9 +165,10 @@ public class RequestService {
 
     public RequestDTO findById(Long id) {
         var requestEntity = requestRepository.findById(id).orElseThrow(REQUEST_NOT_FOUND_ERROR::resourceNotFoundException);
-
-        requestValidationService.validateUserAccessToRequest(id, requestEntity);
-
+        var isRequester = authenticationContextService.getCurrentUserId().equals(requestEntity.getRequestingUser().getExternalId());
+        if (!isRequester) {
+            requestValidationService.validateUserAccessToRequest(id, requestEntity);
+        }
         return requestMapper.toDto(requestEntity);
     }
 
