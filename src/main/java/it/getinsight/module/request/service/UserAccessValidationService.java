@@ -2,7 +2,6 @@ package it.getinsight.module.request.service;
 
 import it.getinsight.module.level.service.ItemResolverService;
 import it.getinsight.module.request.entity.RequestEntity;
-import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.user.service.AuthenticationContextService;
 import it.getinsight.module.user.service.SecurityScopes;
@@ -26,15 +25,13 @@ public class UserAccessValidationService {
 
 
     public void validateUserAccessToRequest(Long requestId, RequestEntity requestEntity) {
-        var currentUserId = authenticationContextService.getCurrentUserId();
-        boolean isRequestingUser = requestEntity.getRequestingUser().getExternalId().equals(currentUserId);
-        if (!isRequestingUser && !(isSameScope(requestEntity) && isHierarchyOk(requestEntity))) {
-            log.warn("Unauthorized access attempt to request {} by user {}", requestId, currentUserId);
+        if (hasNoValidScopeWithHierarchy(requestEntity)) {
+            log.warn("Unauthorized access attempt to request {} by user {}", requestId, authenticationContextService.getCurrentUserId());
             throw APPROVE_NOT_AUTHORIZED.accessForbiddenException();
         }
     }
 
-    private boolean isSameScope(RequestEntity requestEntity) {
+    private boolean hasNoValidScopeWithHierarchy(RequestEntity requestEntity) {
         return securityScopes.all().stream().anyMatch(s -> {
             Long clientId = requestEntity.getRole().getClient().getId();
             var level = requestEntity.getLevel();
@@ -63,18 +60,8 @@ public class UserAccessValidationService {
         });
     }
 
-    private boolean isHierarchyOk(RequestEntity requestEntity) {
-        return securityScopes.all().stream().anyMatch(s -> {
-            var approvables = roleRepository.findDescendantRoles(s.roleId(), s.clientId())
-                .stream().map(RoleEntity::getId).toList();
-            return approvables.contains(requestEntity.getRole().getId()) || requestEntity.getRole().getId().equals(s.roleId());
-        });
-    }
-
     public void validateUserPermissionToUpdateRequest(RequestEntity requestEntity) {
-        var currentUserId = authenticationContextService.getCurrentUserId();
-        boolean isRequestingUser = requestEntity.getRequestingUser().getExternalId().equals(currentUserId);
-        if (!isRequestingUser && !(isSameScope(requestEntity) && isHierarchyOk(requestEntity))) {
+        if (hasNoValidScopeWithHierarchy(requestEntity)) {
             throw USER_NOT_AUTHORIZED.accessForbiddenException();
         }
     }
