@@ -1,5 +1,6 @@
 package it.getinsight.module.request.service;
 
+
 import it.getinsight.module.level.entity.LevelType;
 import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.level.service.ItemService;
@@ -101,8 +102,8 @@ public class RequestQueryBuilderService {
                     .flatMap(roleEntity ->
                         roleEntity.getLevel().getType() == LevelType.EXTERNAL ?
                             itemService.getAllSubitemCodes(roleEntity.getLevel().getId(), s.codeItem())
-                                .stream()
-                            .map(itemId -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + itemId)
+                            .stream()
+                            .map(item -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + item)
 
                         : itemRepository.findAllByLevelIdAndParentId(roleEntity.getLevel().getId(), Long.parseLong(s.codeItem()))
                         .stream()

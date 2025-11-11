@@ -3,6 +3,7 @@ package it.getinsight.module.request.service;
 import it.getinsight.module.request.dto.RequestDTO;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
+import it.getinsight.module.request.event.RequestCreatedEvent;
 import it.getinsight.module.request.mapper.RequestMapper;
 import it.getinsight.module.request.repository.RequestRepository;
 import it.getinsight.module.role.entity.RoleEntity;
@@ -13,6 +14,7 @@ import it.getinsight.module.user.repository.UserRepository;
 import it.getinsight.module.user.service.AuthenticationContextService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,9 +36,9 @@ public class RequestCreationService {
 
     private final RequestValidationService requestValidationService;
     private final RequestAttachmentService requestAttachmentService;
-    private final RequestNotificationService requestNotificationService;
     private final ProtocolGeneratorService protocolGeneratorService;
     private final RoleLevelPolicyService roleLevelPolicyService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public RequestDTO createRequest(final RequestDTO requestDTO, MultiValueMap<String, MultipartFile> attachments) {
@@ -50,14 +52,14 @@ public class RequestCreationService {
         var currentUserId = authenticationContextService.getCurrentUserId();
         var user = findOrCreateUser(currentUserId);
 
-        var entity = buildRequestEntity(requestDTO, user, roleEntity);
+        var entity = buildRequestEntityWithPendingStatus(requestDTO, user, roleEntity);
 
         requestRepository.save(entity);
         log.info("Request created with protocol: {} for user: {}", entity.getProtocolCode(), user.getEmail());
 
         requestAttachmentService.saveRequestFiles(attachments, configurations, entity);
 
-        requestNotificationService.sendNotificationsToApprovers(entity);
+        applicationEventPublisher.publishEvent(new RequestCreatedEvent(entity.getId()));
 
         return requestMapper.toDto(entity);
     }
@@ -82,13 +84,13 @@ public class RequestCreationService {
         }
     }
 
-    private RequestEntity buildRequestEntity(RequestDTO requestDTO, UserEntity user, RoleEntity roleEntity) {
+    private RequestEntity buildRequestEntityWithPendingStatus(RequestDTO requestDTO, UserEntity user, RoleEntity roleEntity) {
         var entity = requestMapper.toEntity(requestDTO);
         entity.setRequestingUser(user);
         entity.setRole(roleEntity);
         entity.setLevel(roleEntity.getLevel());
         entity.setCodeItem(requestDTO.codeItem());
-        entity.setStatus(RequestStatus.CREATED);
+        entity.setStatus(RequestStatus.PENDING);
         entity.setProtocolCode(protocolGeneratorService.generateUniqueProtocolCode());
         return entity;
     }

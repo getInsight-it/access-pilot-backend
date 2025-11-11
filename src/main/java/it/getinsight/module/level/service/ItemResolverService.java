@@ -27,7 +27,7 @@ public class ItemResolverService {
                 }
 
                 var dto = levelClient.getItemByExternalCode(levelEntity.getExternalUrl(), levelEntity.getApiKey(), codeItem);
-                return dto.id().toString();
+                return dto.externalCode();
             }
             case BUILT_IN, BUSINESS -> {
                 if (codeItem == null || codeItem.isBlank()) {

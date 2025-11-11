@@ -50,11 +50,11 @@ public class LevelClient {
         return new ConcurrentHashMap<>();
     }
 
-    public ItemHierarchyResumedDTO getItemHierarchy(String externalUrl, String apiKey, String id) {
+    public List<ItemHierarchyResumedDTO> getItemsHierarchy(String externalUrl, String apiKey, String id) {
         final ApiConfig cfg = ApiConfig.from(externalUrl);
         final GenericClient client = getClient(cfg.baseUrl());
         final String path = joinPath(cfg.extraPath(), ITEMS_ENDPOINT, id, "hierarchies");
-        return client.getDynamic(path, apiKey, Collections.emptyMap());
+        return client.getDynamicAsList(path, apiKey, Collections.emptyMap());
     }
 
     record ApiConfig(String baseUrl, String extraPath) {
@@ -192,7 +192,7 @@ public class LevelClient {
         }
         final ApiConfig cfg = ApiConfig.from(url);
         final GenericClient client = getClient(cfg.baseUrl());
-        final String path = joinPath(cfg.extraPath(), ITEMS_ENDPOINT, itemId, "subitems", "codes");
+        final String path = joinPath(cfg.extraPath(), ITEMS_ENDPOINT, itemId, "siblings", "codes");
         return client.getAllSubitemCodes(path, apiKey);
     }
 }

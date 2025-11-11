@@ -5,11 +5,13 @@ import it.getinsight.module.request.dto.RequestUpdateDTO;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.role.repository.RoleRepository;
-import it.getinsight.module.role.service.RoleLevelPolicyService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 import static it.getinsight.message.MessageProperty.*;
 
@@ -25,7 +27,7 @@ public class ApprovalPolicyService {
     private final UserAttributeService userAttributeService;
     private final RequestStatusUpdateService requestStatusUpdateService;
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRED)
     public void processRequestStatusUpdate(Long id, RequestUpdateDTO requestUpdateDTO, RequestEntity requestEntity) {
         requestStatusUpdateService.updateRequestBasicFields(requestEntity, requestUpdateDTO);
 
@@ -36,12 +38,12 @@ public class ApprovalPolicyService {
         }
     }
 
-    @Transactional
-    public void confirmRoles(RequestEntity entity) {
+
+    private void confirmRoles(RequestEntity entity) {
         try {
             var roleEntity = roleRepository.findById(entity.getRole().getId())
                 .orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
-            var role = identityProviderService.getRoleByNameAndClientUUID(roleEntity.getName(), roleEntity.getClient().getClientUUID());
+            Optional.ofNullable(identityProviderService.getRoleByNameAndClientUUID(roleEntity.getName(), roleEntity.getClient().getClientUUID())).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
 
             if (entity.getCodeItem() != null) {
                 userAttributeService.updateUserAttributes(entity, roleEntity);

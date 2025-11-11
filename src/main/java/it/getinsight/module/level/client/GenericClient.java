@@ -30,6 +30,14 @@ public interface GenericClient {
 
     @RequestLine("GET {path}")
     @Headers("apiKey: {apiKey}")
+    List<ItemHierarchyResumedDTO> getDynamicAsList(
+        @Param("path") String path,
+        @Param("apiKey") String apiKey,
+        @QueryMap Map<String, Object> queryParams
+    );
+
+    @RequestLine("GET {path}")
+    @Headers("apiKey: {apiKey}")
     Integer getCountDynamic(
         @Param("path") String path,
         @Param("apiKey") String apiKey

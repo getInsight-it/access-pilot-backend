@@ -1,12 +1,14 @@
 package it.getinsight.module.client.service;
 
+
 import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.level.dto.ItemResponseNodeDTO;
-import it.getinsight.module.level.entity.LevelEntity;
-import it.getinsight.module.level.repository.LevelRepository;
+import it.getinsight.module.role.entity.RoleEntity;
+import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.level.service.ItemTreeService;
 import it.getinsight.module.user.service.SecurityScopes;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,22 +16,23 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class ClientItemTreeService {
 
     private final SecurityScopes securityScopes;
+    private final RoleRepository roleRepository;
     private final ItemTreeService itemTreeService;
-    private final LevelRepository levelRepository;
 
     @Transactional(readOnly = true)
     public List<ItemResponseNodeDTO> buildTreeForClient(ClientEntity client) {
-        Map<LevelEntity, Set<String>> itemsByLevel = securityScopes.all().stream()
+        Map<RoleEntity, Set<String>> itemsByRole = securityScopes.all().stream()
                 .filter(scope -> scope.clientId().equals(client.getId())
-                    && scope.levelId() != null
+                    && scope.roleId() != null
                     && scope.codeItem() != null)
                 .map(scope -> {
-                    Optional<LevelEntity> level = levelRepository.findById(scope.levelId());
-                    return level.map(l -> new AbstractMap.SimpleEntry<>(l, scope));
+                    Optional<RoleEntity> role = roleRepository.findById(scope.roleId());
+                    return role.map(l -> new AbstractMap.SimpleEntry<>(l, scope));
                 })
                 .filter(Optional::isPresent)
                 .map(Optional::get)
@@ -38,12 +41,12 @@ public class ClientItemTreeService {
                     Collectors.mapping(e -> e.getValue().codeItem(), Collectors.toSet())
                 ));
 
-        if (itemsByLevel.isEmpty()) {
+        if (itemsByRole.isEmpty()) {
             return Collections.emptyList();
         }
 
 
-        return itemsByLevel.entrySet().stream()
+        return itemsByRole.entrySet().stream()
                 .map(o -> itemTreeService.buildTreeFromScopeItemIds(o.getKey(),o.getValue()))
                 .flatMap(List::stream)
                 .toList();
