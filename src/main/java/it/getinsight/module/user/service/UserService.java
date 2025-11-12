@@ -1,7 +1,6 @@
 package it.getinsight.module.user.service;
 
 import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
-import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
@@ -15,7 +14,6 @@ import it.getinsight.module.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.security.core.Authentication;
@@ -30,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.message.MessageProperty.USER_NOT_FOUND_ERROR;
 
 @Service
 @RequiredArgsConstructor
@@ -41,9 +39,7 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final KeycloakClient keycloakClient;
     private final UserMapper userMapper;
-
-    @Value("${jwt.auth.converter.resource-id}")
-    private String clientId;
+    private final AuthenticationContextService authenticationContextService;
 
     private static final String NAME_QUERY_FIND_ALL_USERS = "find-all-users";
 
@@ -86,7 +82,7 @@ public class UserService {
     }
 
     public UserDTO findById(Long id) {
-        var entity = userRepository.findById(id).orElseThrow(USER_NOT_FOUND_ERROR::businessException);
+        var entity = userRepository.findById(id).orElseThrow(USER_NOT_FOUND_ERROR::resourceNotFoundException);
         return userMapper.toDto(entity);
     }
 
@@ -123,7 +119,7 @@ public class UserService {
 
 
     public UserDTO getMe() {
-        var principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        var principal = authenticationContextService.getCurrentJwt();
         Map<String, List<String>> resourceAccess = principal.getClaim("resource_access");
         var roles = roleRepository.findAll(RoleSpecification.byResourceAccess(resourceAccess)).stream().toList();
         var rolesChildren = roleRepository.findAllByRoleIn(roles);

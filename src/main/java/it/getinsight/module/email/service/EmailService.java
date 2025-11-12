@@ -1,8 +1,6 @@
 package it.getinsight.module.email.service;
 
 
-import it.getinsight.core.exception.InfraException;
-import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
@@ -62,7 +60,7 @@ public class EmailService implements NotificationSender {
 
      private void sendMail(EmailDTO emailDTO){
          final var content = isTrue(emailDTO.isHtml()) ? processContentByTemplate(emailDTO.templateName(), emailDTO.variables()) : emailDTO.content();
-         final var userEntity = userRepository.findById(emailDTO.userId()).orElseThrow(USER_NOT_FOUND_ERROR::businessException);
+         final var userEntity = userRepository.findById(emailDTO.userId()).orElseThrow(USER_NOT_FOUND_ERROR::resourceNotFoundException);
          final var emailSent = EmailSentEntity.builder()
                  .uuid(UUID.randomUUID())
                  .user(userEntity)
@@ -78,6 +76,11 @@ public class EmailService implements NotificationSender {
 
       private void sendEmail(EmailSentEntity emailSentEntity) {
         Map<String, File> attachments = null;
+
+        emailSentEntity.setSuccess(null);
+        final var savedEntity = emailRepository.save(emailSentEntity);
+        final var entityId = savedEntity.getId();
+
         try{
             var mimeMessageMapPair = makeEmail(emailSentEntity);
             var message = mimeMessageMapPair.getLeft();
@@ -85,9 +88,10 @@ public class EmailService implements NotificationSender {
             log.info("Sending email: {} - {}", emailSentEntity.getTo(), emailSentEntity.getSubject());
             emailSender.send(message);
 
-            emailSentEntity.setSuccess(true);
-            emailSentEntity.setStatus(EmailStatus.SENT);
-            emailRepository.save(emailSentEntity);
+            savedEntity.setSuccess(true);
+            savedEntity.setStatus(EmailStatus.SENT);
+            emailRepository.save(savedEntity);
+
             final var content = emailSentEntity.getContent();
             storageFileService.upload(PRIVATE_GETINSIGHT_ACCESSPILOT_EMAILS_BUCKET,
                 false,
@@ -95,17 +99,24 @@ public class EmailService implements NotificationSender {
                 emailSentEntity.getUuid(), "%s.html".formatted(emailSentEntity.getUuid()), "text/html", (long) content.getBytes().length, new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
             log.info("EmailDTO sent successfully: {} - {}", emailSentEntity.getTo(), emailSentEntity.getSubject());
         }catch (Exception e){
-            handleEmailError(e, emailSentEntity);
+            handleEmailError(e, entityId);
         }finally {
             cleanupAttachments(attachments);
         }
 
     }
 
-    private void handleEmailError(Exception e, EmailSentEntity emailSentEntity) {
-        emailSentEntity.setSuccess(false);
-        emailRepository.save(emailSentEntity);
-        log.info("EmailDTO send error: {} - {}", emailSentEntity.getTo(), emailSentEntity.getSubject(), e);
+    private void handleEmailError(Exception e, Long entityId) {
+        try {
+            emailRepository.findById(entityId).ifPresent(entity -> {
+                entity.setSuccess(false);
+                entity.setStatus(EmailStatus.ERROR);
+                emailRepository.save(entity);
+            });
+        } catch (Exception saveException) {
+            log.error("Error saving email failure status for entity ID: {}", entityId, saveException);
+        }
+        log.error("EmailDTO send error for entity ID: {}", entityId, e);
         throw EMAIL_SEND_FAILED_ERROR.infraException();
     }
 
@@ -168,14 +179,14 @@ public class EmailService implements NotificationSender {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void updateEmail(Long emailId, EmailDTO emailDTO) {
-        final var emailSent = emailRepository.findById(emailId).orElseThrow(EMAIL_NOT_FOUND_ERROR::businessException);
+        final var emailSent = emailRepository.findById(emailId).orElseThrow(EMAIL_NOT_FOUND_ERROR::resourceNotFoundException);
         emailMapper.fromDto(emailDTO, emailSent);
         emailRepository.save(emailSent);
     }
 
 
     public EmailDTO getEmailById(Long emailId) {
-        final var emailSent = emailRepository.findById(emailId).orElseThrow(EMAIL_NOT_FOUND_ERROR::businessException);
+        final var emailSent = emailRepository.findById(emailId).orElseThrow(EMAIL_NOT_FOUND_ERROR::resourceNotFoundException);
         return emailMapper.toDto(emailSent);
     }
 

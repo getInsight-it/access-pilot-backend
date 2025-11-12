@@ -23,6 +23,7 @@ import it.getinsight.module.role.mapper.RoleResponseMapper;
 import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.user.dto.UserDTO;
 import it.getinsight.module.user.service.UserService;
+import it.getinsight.utilitario.PropertyPathConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -37,7 +38,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static it.getinsight.message.MessageProperty.*;
-import static it.getinsight.module.role.repository.specification.RoleSpecification.*;
+import static it.getinsight.module.role.repository.specification.RoleSpecification.hasClientId;
+import static it.getinsight.module.role.repository.specification.RoleSpecification.hasParent;
 
 
 @Service
@@ -61,7 +63,7 @@ public class RoleService {
     private final RoleLevelPolicyService roleLevelPolicyService;
 
     public List<RoleResponseDTO> getAllRoles(String filter, Boolean hasParent) {
-        return roleRepository.findAll(Specification.where(hasClientId(filter)).and(hasParent(hasParent))).stream()
+        return roleRepository.findAll(hasClientId(filter).and(hasParent(hasParent))).stream()
             .map(roleResponseMapper::toDto)
             .toList();
     }
@@ -75,8 +77,8 @@ public class RoleService {
         final var matcher = ExampleMatcher
             .matchingAny()
             .withIgnoreNullValues()
-            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("client.id", ExampleMatcher.GenericPropertyMatcher::exact);
+            .withMatcher(PropertyPathConstants.Role.NAME, ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher(PropertyPathConstants.Role.CLIENT_ID, ExampleMatcher.GenericPropertyMatcher::exact);
 
         final var example = Example.of(model, matcher);
 
@@ -101,7 +103,7 @@ public class RoleService {
     }
 
     public RoleResponseDTO getById(Long id) {
-        var entity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
+        var entity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
         return roleResponseMapper.toDto(entity);
     }
 
@@ -113,8 +115,8 @@ public class RoleService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public List<UserDTO> getOrImportApprovesByRoleId(Long id) {
-        var roleEntity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
-        var roleParent = Optional.ofNullable(roleEntity.getRole()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::businessException);
+        var roleEntity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
+        var roleParent = Optional.ofNullable(roleEntity.getRole()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::resourceNotFoundException);
         var role = identityProviderService.getRoleByNameAndClientUUID(roleParent.getName(), roleEntity.getClient().getClientUUID());
         return identityProviderService.getUsersByClientUUIDAndRoleName(roleEntity.getClient().getClientUUID(), role.name()).stream()
             .map(user ->
@@ -126,9 +128,9 @@ public class RoleService {
     @Transactional(propagation = Propagation.REQUIRED)
     public void updateHierarchyRoles(List<RoleUpdateHierarchyDTO> roles) {
         for (RoleUpdateHierarchyDTO role : roles) {
-            final var entity = roleRepository.findById(role.id()).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
-            final var roleEntityParent = role.parentId() != null ? roleRepository.findById(role.parentId()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::businessException) : null;
-            final var clientEntity = role.clientId() != null ? clientRepository.findById(role.clientId()).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException) : null;
+            final var entity = roleRepository.findById(role.id()).orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
+            final var roleEntityParent = role.parentId() != null ? roleRepository.findById(role.parentId()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::resourceNotFoundException) : null;
+            final var clientEntity = role.clientId() != null ? clientRepository.findById(role.clientId()).orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException) : null;
 
             if (roleEntityParent != null) {
                 Long parentLevelId = roleEntityParent.getLevel() != null ? roleEntityParent.getLevel().getId() : null;
@@ -147,9 +149,9 @@ public class RoleService {
     public RoleDTO createRole(RoleDTO roleDTO) {
         roleValidationService.validateRoleInput(roleDTO);
 
-        // Validar hierarquia antes de criar
+
         if (roleDTO.roleParent() != null && roleDTO.roleParent().id() != null) {
-            var parentRole = roleRepository.findById(roleDTO.roleParent().id()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::businessException);
+            var parentRole = roleRepository.findById(roleDTO.roleParent().id()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::resourceNotFoundException);
             Long parentLevelId = parentRole.getLevel() != null ? parentRole.getLevel().getId() : null;
             Long childLevelId = roleDTO.levelId();
 
@@ -179,7 +181,7 @@ public class RoleService {
     private RoleRepresentationDTO mapToRepresentation(RoleDTO roleDTO) {
         return Optional.of(roleDTO)
             .map(roleRepresentationMapper::toRoleRepresentationDTO)
-            .orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
+            .orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
     }
 
     public Long getTotalRoles() {
@@ -193,7 +195,7 @@ public class RoleService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public RoleDTO update(Long id, RoleDTO roleDTO) {
-        var entity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
+        var entity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
         if (requestRepository.countByStatusAndRole(RequestStatus.PENDING, entity) > 0) {
             throw ROLE_WITH_PENDING_REQUESTS_ERROR.businessException();
         }
@@ -228,7 +230,7 @@ public class RoleService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void delete(Long id) {
-        var roleEntity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
+        var roleEntity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
         try {
             identityProviderService.deleteRole(roleEntity.getClient().getClientUUID(), roleEntity.getName());
         } catch (InfraException e) {

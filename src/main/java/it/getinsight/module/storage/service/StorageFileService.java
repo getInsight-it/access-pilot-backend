@@ -1,8 +1,6 @@
 package it.getinsight.module.storage.service;
 
 
-import it.getinsight.core.exception.InfraException;
-import it.getinsight.core.exception.ResourceNotFoundException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
@@ -27,7 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.message.MessageProperty.FILE_NOT_FOUND_ERROR;
+import static it.getinsight.message.MessageProperty.FILE_SAVE_ERROR;
 
 @Service
 @RequiredArgsConstructor
@@ -40,7 +39,7 @@ public class StorageFileService {
     private final StoragePolicyService storagePolicyService;
 
     public StorageFileDTO findById(Long id) {
-        return storageFileMapper.toDto(storageRepository.findById(id).orElseThrow(FILE_NOT_FOUND_ERROR::businessException));
+        return storageFileMapper.toDto(storageRepository.findById(id).orElseThrow(FILE_NOT_FOUND_ERROR::resourceNotFoundException));
     }
 
     public void delete(Long id) {
@@ -68,18 +67,18 @@ public class StorageFileService {
 
     public StorageFileDTO findByName(String name) {
         return storageFileMapper.toDto(storageRepository.findByOriginalFilename(name)
-            .orElseThrow(FILE_NOT_FOUND_ERROR::businessException));
+            .orElseThrow(FILE_NOT_FOUND_ERROR::resourceNotFoundException));
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRED)
     public List<StorageFileEntity> saveAll(List<MultipartFile> attachments, String bucket, Boolean isPublic, Boolean ephemeral, UUID ownerId) {
         var files = new ArrayList<StorageFileEntity>();
         if (attachments != null && !attachments.isEmpty()){
             attachments.forEach(file -> {
                 try {
                     var actualBucket = bucket != null ? bucket : storagePolicyService.getDefaultPrivateBucket();
-                    var actualIsPublic = isPublic != null ? isPublic : storagePolicyService.shouldBePublic("default", file.getContentType());
-                    var actualEphemeral = ephemeral != null ? ephemeral : storagePolicyService.shouldBeEphemeral("default", file.getContentType());
+                    var actualIsPublic = isPublic != null ? isPublic : storagePolicyService.shouldBePublic("default");
+                    var actualEphemeral = ephemeral != null ? ephemeral : storagePolicyService.shouldBeEphemeral("default");
 
                     var fileUploaded = upload(actualBucket, actualIsPublic, actualEphemeral, ownerId, file.getOriginalFilename(),
                         file.getContentType(), file.getSize(), file.getInputStream());
@@ -127,7 +126,7 @@ public class StorageFileService {
     @Transactional(propagation = Propagation.REQUIRED)
     public InputStreamResource download(Long fileId, boolean registerDownload) {
         var storageFileEntity = storageRepository.findById(fileId)
-            .orElseThrow(FILE_NOT_FOUND_ERROR::businessException);
+            .orElseThrow(FILE_NOT_FOUND_ERROR::resourceNotFoundException);
         var fileInputStream = storageService.download(storageFileEntity.getBucket(), storageFileEntity.getFileId().toString());
         var file = new InputStreamResource(fileInputStream);
 

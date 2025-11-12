@@ -4,14 +4,13 @@ import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.SetBucketPolicyArgs;
 import io.minio.messages.Bucket;
-import it.getinsight.core.exception.InfraException;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
-import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.message.MessageProperty.STORAGE_BUCKET_CREATION_ERROR;
 
 @Configuration
 @EnableConfigurationProperties({MinioConfigProperties.class})

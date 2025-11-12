@@ -1,7 +1,7 @@
 package it.getinsight.module.request.service;
 
-import it.getinsight.module.keycloak.service.IdentityProviderService;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
+import it.getinsight.module.keycloak.service.IdentityProviderService;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.repository.RoleRepository;
@@ -12,7 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.message.MessageProperty.REQUEST_ERROR_WHEN_TRYING_TO_ASSIGN_ROLE;
+import static it.getinsight.message.MessageProperty.ROLE_NOT_FOUND_ERROR;
 
 
 @Service
@@ -28,7 +29,7 @@ public class RoleAssignmentService {
     public void confirmRoles(RequestEntity entity) {
         try {
             var roleEntity = roleRepository.findById(entity.getRole().getId())
-                .orElseThrow(ROLE_NOT_FOUND_ERROR::businessException);
+                .orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
             var role = identityProviderService.getRoleByNameAndClientUUID(roleEntity.getName(), roleEntity.getClient().getClientUUID());
 
             log.info("Assigning role {} to user {}", role.name(), entity.getRequestingUser().getExternalId());

@@ -50,7 +50,7 @@ public class RoleSynchronizationService {
     private void synchronizeClientRoles(ClientRepresentationDTO client) {
         var roles = identityProviderService.getRolesByClientUUID(client.getId());
         var clientEntity = clientRepository.findByClientId(client.getClientId())
-            .orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
+            .orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException);
         roles.forEach(role -> synchronizeRole(role, clientEntity, null, null, null));
     }
 
@@ -107,19 +107,19 @@ public class RoleSynchronizationService {
     private LevelEntity resolveLevel(RoleEntity roleEntity) {
         return roleEntity.getLevel() != null
             ? levelRepository.findById(roleEntity.getLevel().getId())
-                .orElseThrow(LEVEL_NOT_FOUND_ERROR::businessException)
+                .orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException)
             : null;
     }
 
     private ClientEntity resolveClient(RoleEntity roleEntity) {
         return clientRepository.findByClientId(roleEntity.getClient().getClientId())
-            .orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
+            .orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException);
     }
 
     private RoleEntity resolveParentRole(RoleEntity roleEntity) {
         return roleEntity.getRole() != null
             ? roleRepository.findById(roleEntity.getRole().getId())
-                .orElseThrow(ROLE_NOT_FOUND_ERROR::businessException)
+                .orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException)
             : null;
     }
 }

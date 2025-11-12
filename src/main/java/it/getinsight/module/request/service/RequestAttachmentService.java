@@ -17,7 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.UUID;
 
-import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.message.MessageProperty.REQUEST_NOT_FOUND_ERROR;
 
 
 @Service
@@ -35,7 +35,7 @@ public class RequestAttachmentService {
     public List<RequestAttachmentEntity> findAllByRequest(Long requestId) {
         log.debug("Finding all attachments for request: {}", requestId);
         RequestEntity request = requestRepository.findById(requestId)
-            .orElseThrow(REQUEST_NOT_FOUND_ERROR::businessException);
+            .orElseThrow(REQUEST_NOT_FOUND_ERROR::resourceNotFoundException);
         return requestAttachmentRepository.findAllByRequest(request);
     }
 

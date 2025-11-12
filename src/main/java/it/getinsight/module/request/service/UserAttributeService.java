@@ -1,7 +1,6 @@
 package it.getinsight.module.request.service;
 
 import it.getinsight.module.keycloak.service.IdentityProviderService;
-import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
 import it.getinsight.module.level.client.LevelClient;
 import it.getinsight.module.level.entity.LevelEntity;
 import it.getinsight.module.level.repository.ItemRepository;
@@ -50,7 +49,7 @@ public class UserAttributeService {
 
     private String resolveItemCodeItem(LevelEntity level, String codeItem) {
         if (codeItem == null || codeItem.isBlank()) {
-            throw CODE_ITEM_NOT_FOUND_FOR_ROLE.businessException();
+            throw CODE_ITEM_NOT_FOUND_FOR_ROLE.resourceNotFoundException();
         }
         return switch (level.getType()) {
             case EXTERNAL -> {
@@ -63,7 +62,7 @@ public class UserAttributeService {
             }
             case BUILT_IN, BUSINESS -> {
                 var local = itemRepository.findByLevelIdAndId(level.getId(), Long.parseLong(codeItem))
-                    .orElseThrow(ITEM_NOT_FOUND_ERROR::businessException);
+                    .orElseThrow(ITEM_NOT_FOUND_ERROR::resourceNotFoundException);
                 yield local.getId().toString();
             }
         };

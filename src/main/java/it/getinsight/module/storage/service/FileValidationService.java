@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
-import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.message.MessageProperty.OWNER_ID_REQUIRED_ERROR;
 
 @Service
 @RequiredArgsConstructor
@@ -19,11 +19,11 @@ public class FileValidationService {
         }
     }
 
-    public boolean shouldBePublic(String context, String fileType) {
+    public boolean shouldBePublic(String context) {
         return "public-documents".equals(context) || "profile-images".equals(context);
     }
 
-    public boolean shouldBeEphemeral(String context, String fileType) {
+    public boolean shouldBeEphemeral(String context) {
         return "temporary".equals(context) || "cache".equals(context);
     }
 }

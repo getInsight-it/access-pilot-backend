@@ -3,9 +3,11 @@ package it.getinsight.module.request.service;
 import it.getinsight.module.request.dto.RequestUpdateDTO;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
+import it.getinsight.module.request.event.RequestStatusToUserEvent;
 import it.getinsight.module.request.repository.RequestRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,16 +22,14 @@ import static it.getinsight.message.MessageProperty.REQUEST_NOT_FOUND_ERROR;
 public class RequestApprovalService {
 
     private final RequestRepository requestRepository;
-    private final RequestVariableService requestVariableService;
-
     private final RequestValidationService requestValidationService;
-    private final RequestNotificationService requestNotificationService;
     private final ApprovalPolicyService approvalPolicyService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void processRequestUpdate(Long id, RequestUpdateDTO requestUpdateDTO) {
         log.debug("Processing request update for ID: {} with status: {}", id, requestUpdateDTO.status());
-        
+
         var requestEntity = findAndValidateRequest(id);
 
         validateUpdatePermissions(requestEntity);
@@ -37,15 +37,15 @@ public class RequestApprovalService {
         approvalPolicyService.processRequestStatusUpdate(id, requestUpdateDTO, requestEntity);
 
         if (shouldSendStatusNotification(requestEntity.getStatus())) {
-            sendStatusNotification(requestEntity);
+            publishStatusNotificationEvent(requestEntity);
         }
-        
+
         log.info("Request {} updated to status: {}", id, requestEntity.getStatus());
     }
 
     private RequestEntity findAndValidateRequest(Long id) {
         return requestRepository.findById(id)
-            .orElseThrow(REQUEST_NOT_FOUND_ERROR::businessException);
+            .orElseThrow(REQUEST_NOT_FOUND_ERROR::resourceNotFoundException);
     }
 
     private void validateUpdatePermissions(RequestEntity requestEntity) {
@@ -58,15 +58,10 @@ public class RequestApprovalService {
             .contains(status);
     }
 
-    private void sendStatusNotification(RequestEntity requestEntity) {
-        var variables = requestVariableService.buildVariables(
-            requestEntity.getRequestingUser(), 
-            requestEntity.getApprovingUser(), 
-            requestEntity, 
-            requestEntity.getRole(), 
-            requestEntity.getRole().getClient()
+    private void publishStatusNotificationEvent(RequestEntity requestEntity) {
+        applicationEventPublisher.publishEvent(
+            new RequestStatusToUserEvent(requestEntity.getId())
         );
-        requestNotificationService.sendNotificationStatusToUser(requestEntity, variables);
     }
 }
 

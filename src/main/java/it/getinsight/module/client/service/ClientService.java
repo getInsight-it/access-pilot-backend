@@ -1,8 +1,5 @@
 package it.getinsight.module.client.service;
 
-import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
-import it.getinsight.core.exception.BusinessException;
-import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.dto.ClientDTO;
@@ -10,7 +7,6 @@ import it.getinsight.module.client.dto.ClientFilterDTO;
 import it.getinsight.module.client.dto.ClientFullResponseDTO;
 import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.client.entity.ClientStatus;
-import it.getinsight.module.client.mapper.ClientFilterMapper;
 import it.getinsight.module.client.mapper.ClientFullResponseMapper;
 import it.getinsight.module.client.mapper.ClientMapper;
 import it.getinsight.module.client.mapper.ClientRepresentationMapper;
@@ -20,34 +16,26 @@ import it.getinsight.module.configuration.entity.AttachmentConfigurationEntity;
 import it.getinsight.module.configuration.mapper.AttachmentConfigurationMapper;
 import it.getinsight.module.configuration.repository.AttachmentConfigurationRepository;
 import it.getinsight.module.configuration.service.AttachmentConfigurationService;
-import it.getinsight.module.keycloak.config.KeycloakProperties;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.service.IdentityProviderService;
 import it.getinsight.module.role.entity.RoleEntity;
-import it.getinsight.module.role.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.boot.actuate.web.mappings.MappingsEndpoint;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.List;
+import java.util.Optional;
 
-import static it.getinsight.message.MessageProperty.*;
+import static it.getinsight.message.MessageProperty.CLIENT_NOT_FOUND_ERROR;
+import static it.getinsight.message.MessageProperty.ERROR_CONFIGURATION_NOT_FOUND;
 
 
 @Service
@@ -55,7 +43,6 @@ import static it.getinsight.message.MessageProperty.*;
 @Slf4j
 public class ClientService {
 
-    public static final String IDP_KEYCLOAK_NAME_ACL_CLIENT_MANAGED = "acl.client.managed";
     private final ClientRepository clientRepository;
     private final ClientMapper clientMapper;
     private final ClientRepresentationMapper clientRepresentationMapper;
@@ -65,7 +52,7 @@ public class ClientService {
     private final AttachmentConfigurationRepository attachmentConfigurationRepository;
     private final AttachmentConfigurationMapper attachmentConfigurationMapper;
     private final AttachmentConfigurationService attachmentConfigurationService;
-    
+
     private final ClientValidationService clientValidationService;
     private final ClientQueryService clientQueryService;
 
@@ -84,13 +71,13 @@ public class ClientService {
 
     @Cacheable(value = "clients", key = "#id")
     public ClientFullResponseDTO findById(Long id) {
-        var entity = clientRepository.findById(id).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
+        var entity = clientRepository.findById(id).orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException);
         return clientFullResponseMapper.toDto(entity);
     }
 
     @Cacheable(value = "clients", key = "#clientId")
     public ClientDTO findByClientId(String clientId) {
-        var entity = clientRepository.findByClientId(clientId).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
+        var entity = clientRepository.findByClientId(clientId).orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException);
         return clientMapper.toDto(entity);
     }
 
@@ -111,9 +98,9 @@ public class ClientService {
         var entity = clientMapper.toEntity(dto);
         var opConfigurations = Optional.ofNullable(entity.getConfigurations()).filter(CollectionUtils::isNotEmpty);
         entity.setClientId(dto.clientId().toLowerCase());
-        
+
         clientValidationService.validateClientIdNotExists(entity.getClientId(), clientRepository);
-        
+
         if (opConfigurations.isPresent()){
             entity.getConfigurations().forEach(o -> o.setClient(entity));
             clientValidationService.validateAttachmentConfigurations(entity.getConfigurations());
@@ -145,7 +132,7 @@ public class ClientService {
 
     @CacheEvict(value = "clients", allEntries = true)
     public void updateManaged(Long id, ClientDTO clientUpdatedDTO) {
-        var entityUpdated = clientRepository.findById(id).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
+        var entityUpdated = clientRepository.findById(id).orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException);
         if (BooleanUtils.isTrue(clientUpdatedDTO.managed()) && StringUtils.isBlank(entityUpdated.getClientUUID())) {
             handleManagedClient(entityUpdated);
             return;
@@ -170,7 +157,7 @@ public class ClientService {
                             attachmentConfigurationMapper.fromDto(configuration, existing);
                             return existing;
                         })
-                        .orElseThrow(ERROR_CONFIGURATION_NOT_FOUND::businessException)
+                        .orElseThrow(ERROR_CONFIGURATION_NOT_FOUND::resourceNotFoundException)
                         : attachmentConfigurationMapper.toEntity(configuration);
 
                     entity.setClient(entityUpdated);
@@ -196,7 +183,7 @@ public class ClientService {
 
     @CacheEvict(value = "clients", allEntries = true)
     public ClientDTO update(Long id, String status) {
-        var entity = clientRepository.findById(id).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
+        var entity = clientRepository.findById(id).orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException);
         clientValidationService.validateStatusTransition(entity, status);
         entity.setStatus(ClientStatus.valueOf(status));
         return clientMapper.toDto(clientRepository.save(entity));
@@ -213,7 +200,7 @@ public class ClientService {
 
 
     public byte[] exportAttachmentConfigurations(Long clientId) {
-        var client = clientRepository.findById(clientId).orElseThrow(CLIENT_NOT_FOUND_ERROR::businessException);
+        var client = clientRepository.findById(clientId).orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException);
         return attachmentConfigurationService.toCsv(client.getConfigurations());
     }
 }
