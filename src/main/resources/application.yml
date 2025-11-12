@@ -216,6 +216,8 @@ springdoc:
     disable-swagger-default-url: true
     display-request-duration: true
     oauth:
+      authorization-url: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/auth
+      token-url: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/token
       client-id: ${jwt.auth.converter.resource-id}
       client-secret: ${spring.security.oauth2.resourceserver.opaquetoken.client-secret}
       realm: ${provider.keycloak.realm}
