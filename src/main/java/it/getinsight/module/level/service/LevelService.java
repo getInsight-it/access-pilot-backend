@@ -16,6 +16,8 @@ import it.getinsight.module.level.mapper.LevelMapper;
 import it.getinsight.module.level.mapper.LevelResponseMapper;
 import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.level.repository.LevelRepository;
+import it.getinsight.module.request.enuns.RequestStatus;
+import it.getinsight.module.request.repository.RequestRepository;
 import it.getinsight.module.role.service.RoleLevelPolicyService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +41,9 @@ import java.util.stream.Stream;
 
 import static it.getinsight.message.MessageProperty.*;
 
-
+/**
+ * Service for managing levels.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -47,6 +51,7 @@ public class LevelService {
 
     private final LevelRepository levelRepository;
     private final ItemRepository itemRepository;
+    private final RequestRepository requestRepository;
     private final LevelMapper levelMapper;
     private final LevelResponseMapper levelResponseMapper;
     private final LevelHierarchyResponseMapper levelHierarchyResponseMapper;
@@ -191,7 +196,23 @@ public class LevelService {
     @Transactional(propagation = Propagation.REQUIRED)
     public void delete(Long id) {
         if (levelRepository.existsById(id)) {
-            var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
+            var levelEntity = levelRepository.findById(id)
+                .orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
+
+            boolean hasActiveChildren = levelRepository.existsByParentIdAndActiveTrue(id);
+            if (hasActiveChildren) {
+                throw LEVEL_CANNOT_DELETE_WITH_CHILDREN.businessException();
+            }
+
+            boolean hasPendingRequests = requestRepository.existsByLevelIdAndStatusIn(
+                id,
+                List.of(RequestStatus.CREATED, RequestStatus.PENDING)
+            );
+
+            if (hasPendingRequests) {
+                throw ROLE_WITH_PENDING_REQUESTS_ERROR.businessException();
+            }
+
             levelRepository.softDelete(levelEntity.getId());
         }
     }

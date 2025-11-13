@@ -41,4 +41,6 @@ public interface LevelRepository extends JpaRepository<LevelEntity, Long>, Dynam
         FROM level_ancestors la
         """, nativeQuery = true)
     List<LevelEntity> findAncestorLevels(@Param("childLevelId") Long childLevelId);
+
+    boolean existsByParentIdAndActiveTrue(Long id);
 }

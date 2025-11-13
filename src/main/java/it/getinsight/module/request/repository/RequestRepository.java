@@ -49,4 +49,5 @@ public interface RequestRepository extends JpaRepository<RequestEntity, Long>, D
     """)
     Optional<RequestEntity> findByIdWithRelationships(@Param("id") Long id);
 
+    boolean existsByLevelIdAndStatusIn(Long id, List<RequestStatus> created);
 }

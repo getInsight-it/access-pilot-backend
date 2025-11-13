@@ -71,7 +71,7 @@ public class RequestService {
     }
 
 
-
+    @Transactional(readOnly = true)
     public PageableResponseModel<RequestDTO> getAllRequestsMine(PageableRequestModel<RequestFilterDTO> configPage) {
         log.debug("Fetching requests with filters: {}", configPage.getFilter());
 
