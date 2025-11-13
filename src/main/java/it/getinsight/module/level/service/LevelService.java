@@ -84,7 +84,6 @@ public class LevelService {
     }
 
 
-
     public LevelResponseDTO findById(Long id) {
         return levelRepository.findById(id).map(levelHierarchyResponseMapper::toDto).orElse(null);
     }
@@ -94,7 +93,7 @@ public class LevelService {
         if (LevelType.BUILT_IN.equals(levelDTO.type())) {
             throw CREATE_BUILT_IN_LEVEL.businessException();
         }
-        if (Boolean.TRUE.equals(levelRepository.existsByName(levelDTO.name()))) {
+        if (levelRepository.existsByName(levelDTO.name())) {
             throw LEVEL_ALREADY_EXISTS_ERROR.businessException();
         }
         var entity = levelMapper.toEntity(levelDTO);
@@ -164,31 +163,31 @@ public class LevelService {
         if (LevelType.BUILT_IN.equals(levelDTO.type())) {
             throw UPDATE_BUILT_IN_LEVEL.businessException();
         }
-        if (levelRepository.existsById(id)) {
-            var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
-            if (!levelEntity.getType().equals(levelDTO.type())) {
-                throw  ERROR_UPDATE_LEVEL_TYPE.businessException();
-            }
-            levelMapper.fromDto(levelDTO, levelEntity);
-            var levelParent = levelDTO.parentId() != null ?  levelRepository.findById(levelDTO.parentId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException) : null;
 
-
-            if (levelParent != null) {
-                Long parentLevelId = levelParent.getId();
-                Long childLevelId = levelEntity.getId();
-
-                roleLevelPolicyService.validateChildLevelAssignment( parentLevelId,  childLevelId);
-            }
-
-            if (Boolean.TRUE.equals(itemRepository.existsItemEntityByActiveTrueAndLevel(levelEntity)) && Boolean.TRUE.equals(itemRepository.existsItemEntityByActiveTrueAndLevel(levelParent))) {
-                throw  ERROR_UPDATE_LEVEL_PARENT_WITH_ITEMS.businessException();
-            }
-            if(StringUtils.isNotBlank(levelDTO.apiKey()) && !levelDTO.apiKey().equals(levelEntity.getApiKey())) {
-                levelEntity.setApiKey(levelDTO.apiKey());
-            }
-            levelEntity.setParent(levelParent);
-            levelRepository.save(levelEntity);
+        var levelEntity = levelRepository.findById(id).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
+        if (!levelEntity.getType().equals(levelDTO.type())) {
+            throw ERROR_UPDATE_LEVEL_TYPE.businessException();
         }
+        levelMapper.fromDto(levelDTO, levelEntity);
+        var levelParent = levelDTO.parentId() != null ? levelRepository.findById(levelDTO.parentId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException) : null;
+
+
+        if (levelParent != null) {
+            Long parentLevelId = levelParent.getId();
+            Long childLevelId = levelEntity.getId();
+
+            roleLevelPolicyService.validateChildLevelAssignment(parentLevelId, childLevelId);
+        }
+
+        if (Boolean.TRUE.equals(itemRepository.existsItemEntityByActiveTrueAndLevel(levelEntity)) && Boolean.TRUE.equals(itemRepository.existsItemEntityByActiveTrueAndLevel(levelParent))) {
+            throw ERROR_UPDATE_LEVEL_PARENT_WITH_ITEMS.businessException();
+        }
+        if (StringUtils.isNotBlank(levelDTO.apiKey()) && !levelDTO.apiKey().equals(levelEntity.getApiKey())) {
+            levelEntity.setApiKey(levelDTO.apiKey());
+        }
+        levelEntity.setParent(levelParent);
+        levelRepository.save(levelEntity);
+
     }
 
     @Transactional(propagation = Propagation.REQUIRED)

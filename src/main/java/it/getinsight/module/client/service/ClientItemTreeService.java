@@ -45,10 +45,13 @@ public class ClientItemTreeService {
             return Collections.emptyList();
         }
 
-
+        try {
         return itemsByRole.entrySet().stream()
                 .map(o -> itemTreeService.buildTreeFromScopeItemIds(o.getKey(),o.getValue()))
                 .flatMap(List::stream)
                 .toList();
+        }catch (Exception e){
+            return  Collections.emptyList();
+        }
     }
 }
