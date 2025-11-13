@@ -1,5 +1,11 @@
 FROM registry.gitlab.com/getinsight.it/arquitetura/docker-base-images/runtime/runtime-java:21
 
+USER root
+
+RUN apt install rinetd -y
+
+USER java
+
 ADD target/*.jar app.jar
 
 EXPOSE 8080

@@ -202,8 +202,6 @@ sentry:
   attach-threads: true
   enable-deduplication: true
   enable-app-start-profiling: true
-  enable-metrics: true
-  enable-tracing: true
   logging:
     enabled: true
 
