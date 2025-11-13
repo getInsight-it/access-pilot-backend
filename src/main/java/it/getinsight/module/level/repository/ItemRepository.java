@@ -25,6 +25,8 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long>, JpaSpec
 
     Optional<ItemEntity> findByLevelIdAndId(Long id, Long itemId);
 
+    Optional<ItemEntity> findByLevelIdAndExternalCode(Long id, String codeItem);
+
     List<ItemEntity> findAllByLevelNameIn(List<String> names);
 
     @Query("SELECT CASE WHEN i.level.type = :type THEN CAST(i.id AS string) ELSE i.externalCode END " +

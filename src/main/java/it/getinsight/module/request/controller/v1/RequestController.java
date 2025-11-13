@@ -12,6 +12,7 @@ import it.getinsight.module.request.dto.RequestCreateDTO;
 import it.getinsight.module.request.dto.RequestDTO;
 import it.getinsight.module.request.dto.RequestFilterDTO;
 import it.getinsight.module.request.dto.RequestUpdateDTO;
+import it.getinsight.module.request.enuns.RequestAction;
 import it.getinsight.module.request.service.RequestService;
 import it.getinsight.module.role.dto.RoleDTO;
 import jakarta.validation.constraints.Min;
@@ -134,6 +135,9 @@ public class RequestController {
         return ResponseEntity.ok(requestService.findById(id));
     }
 
-
+    @GetMapping("/{id}/my-available-actions")
+    public ResponseEntity<List<RequestAction>> getActionsForRequest(@PathVariable Long id) {
+        return ResponseEntity.ok(requestService.getActionsForRequest(id));
+    }
 
 }

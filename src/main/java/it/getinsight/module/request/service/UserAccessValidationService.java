@@ -31,7 +31,7 @@ public class UserAccessValidationService {
         }
     }
 
-    private boolean hasNoValidScopeWithHierarchy(RequestEntity requestEntity) {
+    public boolean hasNoValidScopeWithHierarchy(RequestEntity requestEntity) {
         return securityScopes.all().stream().noneMatch(s -> {
             Long clientId = requestEntity.getRole().getClient().getId();
             var level = requestEntity.getLevel();

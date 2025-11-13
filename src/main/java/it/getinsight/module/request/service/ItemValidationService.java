@@ -27,7 +27,7 @@ public class ItemValidationService {
             }
 
             try {
-                String resolvedItemId = itemResolverService.resolveItemId(level, codeItem);
+                String resolvedItemId = itemResolverService.resolveCodeItem(level, codeItem);
                 log.info("Item found for request with ID: {}", resolvedItemId);
             } catch (Exception e) {
                 log.warn("Item validation failed for codeItem: {} and role: {}", codeItem, roleEntity.getName(), e);

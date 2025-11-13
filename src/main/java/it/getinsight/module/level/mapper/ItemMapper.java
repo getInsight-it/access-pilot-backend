@@ -6,9 +6,10 @@ import it.getinsight.module.level.dto.ItemDTO;
 import it.getinsight.module.level.entity.ItemEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface ItemMapper extends BaseMapper<ItemEntity, ItemDTO>, BaseGenericObjectMapper<ItemDTO> {
 
     @Mapping(target = "parent", expression = "java(mapParent(itemDTO.parentId()))")

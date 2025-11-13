@@ -8,6 +8,7 @@ import it.getinsight.module.request.dto.RequestDTO;
 import it.getinsight.module.request.dto.RequestFilterDTO;
 import it.getinsight.module.request.dto.RequestUpdateDTO;
 import it.getinsight.module.request.entity.RequestEntity;
+import it.getinsight.module.request.enuns.RequestAction;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.request.mapper.RequestFilterMapper;
 import it.getinsight.module.request.mapper.RequestMapper;
@@ -31,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,6 +48,7 @@ public class RequestService {
     private final RequestMapper requestMapper;
     private final RequestFilterMapper requestFilterMapper;
     private final AuthenticationContextService authenticationContextService;
+    private final UserAccessValidationService userAccessValidationService;
 
     private final RequestCreationService requestCreationService;
     private final RequestApprovalService requestApprovalService;
@@ -170,6 +173,21 @@ public class RequestService {
             requestValidationService.validateUserAccessToRequest(id, requestEntity);
         }
         return requestMapper.toDto(requestEntity);
+    }
+
+    public List<RequestAction> getActionsForRequest(Long requestId) {
+        var requestEntity = requestRepository.findById(requestId).orElseThrow(REQUEST_NOT_FOUND_ERROR::resourceNotFoundException);
+        var isOwnerRequester = authenticationContextService.getCurrentUserId().equals(requestEntity.getRequestingUser().getExternalId());
+        var canApproveOrReject = !userAccessValidationService.hasNoValidScopeWithHierarchy(requestEntity);
+        List<RequestAction> actions = new ArrayList<>();
+        if (isOwnerRequester){
+            actions.add(RequestAction.CANCEL);
+        }
+        if (canApproveOrReject) {
+            actions.add(RequestAction.APPROVE);
+            actions.add(RequestAction.REJECT);
+        }
+        return actions;
     }
 
 }

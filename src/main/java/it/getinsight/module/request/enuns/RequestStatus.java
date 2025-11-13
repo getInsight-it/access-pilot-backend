@@ -12,7 +12,6 @@ public enum RequestStatus {
     APPROVED("request.status.approved"),
     CANCELED("request.status.canceled");
 
-
     private String key;
 
     RequestStatus(String key) {
