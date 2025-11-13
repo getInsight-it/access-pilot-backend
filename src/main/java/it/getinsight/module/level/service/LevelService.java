@@ -172,11 +172,9 @@ public class LevelService {
         var levelParent = levelDTO.parentId() != null ? levelRepository.findById(levelDTO.parentId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException) : null;
 
 
-        if (levelParent != null) {
-            Long parentLevelId = levelParent.getId();
-            Long childLevelId = levelEntity.getId();
 
-            roleLevelPolicyService.validateChildLevelAssignment(parentLevelId, childLevelId);
+        if(levelParent != null && Objects.equals(levelParent.getId(), levelEntity.getId())){
+            throw LEVEL_HIERARCHY_INVALID_ERROR.businessException();
         }
 
         if (Boolean.TRUE.equals(itemRepository.existsItemEntityByActiveTrueAndLevel(levelEntity)) && Boolean.TRUE.equals(itemRepository.existsItemEntityByActiveTrueAndLevel(levelParent))) {

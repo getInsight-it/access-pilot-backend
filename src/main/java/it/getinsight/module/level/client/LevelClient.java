@@ -2,6 +2,7 @@ package it.getinsight.module.level.client;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import feign.Feign;
 import feign.Request;
 import feign.Retryer;
@@ -10,6 +11,7 @@ import feign.jackson.JacksonEncoder;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.level.dto.ItemFilterDTO;
 import it.getinsight.module.level.dto.ItemHierarchyResumedDTO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
@@ -22,6 +24,7 @@ import static it.getinsight.message.MessageProperty.INVALID_URL_EMPTY_ERROR;
 import static it.getinsight.message.MessageProperty.INVALID_URL_PROTOCOL_ERROR;
 
 @Component
+@Slf4j
 public class LevelClient {
 
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
@@ -154,7 +157,12 @@ public class LevelClient {
         final GenericClient client = getClient(cfg.baseUrl());
         final Map<String, Object> query = buildQuery(queryParams);
         final String path = joinPath(cfg.extraPath(), ITEMS_ENDPOINT);
-        return client.getDynamicPaginated(path, apiKey, query);
+        try {
+            return client.getDynamicPaginated(path, apiKey, query);
+        }catch (Exception e){
+            log.error("Error fetching items for level {}: {}", url, e.getMessage());
+            return PageableResponseModel.of(0L, Lists.newArrayList());
+        }
     }
 
 
@@ -167,7 +175,12 @@ public class LevelClient {
         final GenericClient client = getClient(cfg.baseUrl());
         final Map<String, Object> query = buildQuery(queryParams);
         final String path = joinPath(cfg.extraPath(), ITEMS_ENDPOINT, itemId, "subitems");
-        return client.getDynamicPaginated(path, apiKey, query);
+        try {
+            return client.getDynamicPaginated(path, apiKey, query);
+        }catch (Exception e){
+            log.error("Error fetching subitems for item {}: {}", itemId, e.getMessage());
+            return PageableResponseModel.of(0L, Lists.newArrayList());
+        }
     }
 
     public ItemHierarchyResumedDTO getItemByExternalCode(String url, String apiKey, String code) {
@@ -177,14 +190,24 @@ public class LevelClient {
         final ApiConfig cfg = ApiConfig.from(url);
         final GenericClient client = getClient(cfg.baseUrl());
         final String path = joinPath(cfg.extraPath(), ITEMS_ENDPOINT, code);
-        return client.getDynamic(path, apiKey, Collections.emptyMap());
+        try {
+            return client.getDynamic(path, apiKey, Collections.emptyMap());
+        }catch (Exception e){
+            log.error("Error fetching item by external code {}: {}", code, e.getMessage());
+            return null;
+        }
     }
 
     public Integer getCountLevel(String url, String apiKey) {
         final ApiConfig cfg = ApiConfig.from(url);
         final GenericClient client = getClient(cfg.baseUrl());
         final String path = joinPath(cfg.extraPath(), "count");
-        return client.getCountDynamic(path, apiKey);
+        try {
+            return client.getCountDynamic(path, apiKey);
+        }catch (Exception e){
+            log.error("Error fetching count for level {}: {}", url, e.getMessage());
+            return 0;
+        }
     }
 
     public List<String> getAllSubitemCodes(String url, String apiKey, String itemId) {
@@ -194,6 +217,11 @@ public class LevelClient {
         final ApiConfig cfg = ApiConfig.from(url);
         final GenericClient client = getClient(cfg.baseUrl());
         final String path = joinPath(cfg.extraPath(), ITEMS_ENDPOINT, itemId, "siblings", "codes");
-        return client.getAllSubitemCodes(path, apiKey);
+        try{
+            return client.getAllSubitemCodes(path, apiKey);
+        }catch (Exception e){
+            log.error("Error fetching subitem codes for item {}: {}", itemId, e.getMessage());
+            return Collections.emptyList();
+        }
     }
 }

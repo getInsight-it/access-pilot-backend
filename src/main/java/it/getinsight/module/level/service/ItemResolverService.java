@@ -1,7 +1,6 @@
 package it.getinsight.module.level.service;
 
 import it.getinsight.module.level.client.LevelClient;
-import it.getinsight.module.level.entity.ItemEntity;
 import it.getinsight.module.level.entity.LevelEntity;
 import it.getinsight.module.level.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
@@ -60,8 +59,8 @@ public class ItemResolverService {
                     throw CODE_ITEM_NOT_FOUND_FOR_ROLE.resourceNotFoundException();
                 }
 
-                return itemRepository.findByLevelIdAndId(levelEntity.getId(), Long.valueOf(codeItem))
-                    .map(ItemEntity::getExternalCode)
+                return itemRepository.findByLevelIdAndExternalCode(levelEntity.getId(), codeItem)
+                    .map(item -> item.getId().toString())
                     .orElseThrow(ITEM_NOT_FOUND_ERROR::resourceNotFoundException);
             }
             default -> throw UNSUPPORTED_SPHERE_TYPE.businessException();

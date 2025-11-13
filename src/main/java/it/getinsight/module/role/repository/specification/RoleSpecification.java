@@ -16,6 +16,10 @@ public class RoleSpecification {
     private RoleSpecification(){}
 
     public static Specification<RoleEntity> byResourceAccess(Map<String, List<String>> resourceAccess) {
+        if (resourceAccess == null || resourceAccess.isEmpty()) {
+            return (root, query, builder) -> builder.disjunction();
+        }
+
         return (root, query, builder) -> {
 
             List<Predicate> predicates = resourceAccess.entrySet()

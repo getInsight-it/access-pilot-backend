@@ -108,7 +108,7 @@ public class ItemService {
     }
 
     private ItemHierarchyResumedDTO formatExternalItem(ItemHierarchyResumedDTO o, LevelEntity levelEntity) {
-         var levelParent = levelRepository.findById(levelEntity.getParent().getId()).orElse(null);
+        var levelParent = levelRepository.findById(levelEntity.getParent().getId()).orElse(null);
         var resumedDTO = o.withLevel(levelHierarchyResumedMapper.toDto(levelEntity));
         if (o.parent() != null) {
             resumedDTO = resumedDTO.withParent(o.parent());
@@ -149,7 +149,7 @@ public class ItemService {
             Predicate itemParentPredicate = cb.equal(root.get("parent").get("id"), itemId);
 
             if (examplePredicate != null) {
-                return cb.and(levelPredicate,itemParentPredicate, examplePredicate);
+                return cb.and(levelPredicate, itemParentPredicate, examplePredicate);
             } else {
                 return cb.and(levelPredicate, itemParentPredicate);
             }
@@ -186,7 +186,7 @@ public class ItemService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void importItems(Long levelId,MultipartFile file) {
+    public void importItems(Long levelId, MultipartFile file) {
         try {
             var itemsMap = new HashMap<Long, ItemEntity>();
             var level = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
@@ -350,7 +350,7 @@ public class ItemService {
         if (LevelType.BUILT_IN.equals(entity.getLevel().getType()))
             throw CREATE_BUILT_IN_ITEM.businessException();
 
-        if(itemRepository.existsItemEntityByActiveTrueAndLevelAndName(entity.getLevel(), entity.getName()))
+        if (itemRepository.existsItemEntityByActiveTrueAndLevelAndName(entity.getLevel(), entity.getName()))
             throw ITEM_ALREADY_EXISTS_ERROR.businessException();
     }
 
@@ -372,22 +372,25 @@ public class ItemService {
         if (levelEntity.getType() != null && LevelType.EXTERNAL.equals(levelEntity.getType())) {
             var itemIdResolved = itemResolverService.resolveItemId(levelEntity, itemId);
             return getExternalHierarchy(levelEntity, itemIdResolved);
+        } else if (LevelType.BUILT_IN.equals(levelEntity.getType()) || LevelType.BUSINESS.equals(levelEntity.getType())) {
+            var itemIdResolved = itemResolverService.resolveItemId(levelEntity, itemId);
+            var item = itemRepository.findById(Long.valueOf(itemIdResolved))
+                .orElseThrow(ITEM_NOT_FOUND_ERROR::resourceNotFoundException);
+
+            if (!levelEntity.getId().equals(levelId)) {
+                throw ITEM_NOT_FOUND_ERROR.resourceNotFoundException();
+            }
+
+            var hierarchy = Stream.iterate(item, Objects::nonNull, ItemEntity::getParent)
+                .collect(Collectors.toList());
+
+            Collections.reverse(hierarchy);
+
+            return hierarchy.stream()
+                .map(itemHierarchyResumedMapper::toDto)
+                .toList();
         }
-        var item = itemRepository.findById(Long.valueOf(itemId))
-            .orElseThrow(ITEM_NOT_FOUND_ERROR::resourceNotFoundException);
-
-        if (!levelEntity.getId().equals(levelId)) {
-            throw ITEM_NOT_FOUND_ERROR.resourceNotFoundException();
-        }
-
-        var hierarchy = Stream.iterate(item, Objects::nonNull, ItemEntity::getParent)
-            .collect(Collectors.toList());
-
-        Collections.reverse(hierarchy);
-
-        return hierarchy.stream()
-            .map(itemHierarchyResumedMapper::toDto)
-            .toList();
+        return Collections.emptyList();
     }
 
     public List<ItemHierarchyResumedDTO> getExternalHierarchy(LevelEntity levelEntity, String itemId) {
@@ -396,12 +399,12 @@ public class ItemService {
         LevelEntity currentLevel = levelEntity;
 
         do {
-            if (LevelType.EXTERNAL.equals(currentLevel.getType())){
-            currentItem = levelClient.getItemByExternalCode(
-                currentLevel.getExternalUrl(),
-                currentLevel.getApiKey(),
-                currentItem == null ? itemId : String.valueOf(currentItem.id())
-            );
+            if (LevelType.EXTERNAL.equals(currentLevel.getType())) {
+                currentItem = levelClient.getItemByExternalCode(
+                    currentLevel.getExternalUrl(),
+                    currentLevel.getApiKey(),
+                    currentItem == null ? itemId : String.valueOf(currentItem.id())
+                );
 
             }
             hierarchy.add(currentItem);
