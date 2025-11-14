@@ -196,7 +196,6 @@ public class RequestSpecification {
             } else {
                 p = addRoleFiltersByIdWithIn(p, root, cb, roles);
             }
-            roles.stream().filter(Objects::nonNull).forEach(o -> log.info("Role: {}", o));
         }
         return p;
     }

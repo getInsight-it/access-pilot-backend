@@ -9,6 +9,7 @@ import feign.Retryer;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.level.dto.ItemFilterDTO;
 import it.getinsight.module.level.dto.ItemHierarchyResumedDTO;
@@ -31,30 +32,17 @@ public class LevelClient {
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
     public static final String ITEMS_ENDPOINT = "items";
 
+    private static final int CONNECT_TIMEOUT_MS = 10_000;
+    private static final int READ_TIMEOUT_MS = 30_000;
+
     private final ObjectMapper objectMapper;
-    private final LevelClientProperties props;
-    private final Map<String, GenericClient> clientCache;
+    private final Map<String, GenericClient> clientCache = new ConcurrentHashMap<>();
 
-    LevelClient(ObjectMapper objectMapper, LevelClientProperties props) {
+    LevelClient(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
-        this.props = props;
-        this.clientCache = buildCache();
     }
 
-
-    private Map<String, GenericClient> buildCache() {
-        int max = Objects.requireNonNull(props).getCache().getMaxEntries();
-        if (max > 0) {
-            return Collections.synchronizedMap(new LinkedHashMap<>(16, 0.75f, true) {
-                @Override
-                protected boolean removeEldestEntry(Map.Entry<String, GenericClient> eldest) {
-                    return size() > max;
-                }
-            });
-        }
-        return new ConcurrentHashMap<>();
-    }
-
+    @Retry(name = "levelClient")
     @CircuitBreaker(name = "levelClient", fallbackMethod = "getItemsHierarchyFallback")
     public List<ItemHierarchyResumedDTO> getItemsHierarchy(String externalUrl, String apiKey, String id) {
         final ApiConfig cfg = ApiConfig.from(externalUrl);
@@ -106,9 +94,9 @@ public class LevelClient {
 
     private GenericClient createGenericClient(String baseUrl) {
         Request.Options options = new Request.Options(
-            Objects.requireNonNull(props).getTimeout().getConnectMs(),
+            CONNECT_TIMEOUT_MS,
             TimeUnit.MILLISECONDS,
-            Objects.requireNonNull(props).getTimeout().getReadMs(),
+            READ_TIMEOUT_MS,
             TimeUnit.MILLISECONDS,
             true
         );
@@ -116,17 +104,9 @@ public class LevelClient {
         Feign.Builder builder = Feign.builder()
             .options(options)
             .decoder(new JacksonDecoder(objectMapper))
-            .encoder(new JacksonEncoder(objectMapper));
+            .encoder(new JacksonEncoder(objectMapper))
+            .retryer(Retryer.NEVER_RETRY);
 
-        if (props.getRetry().isEnabled()) {
-            builder = builder.retryer(new Retryer.Default(
-                props.getRetry().getPeriodMs(),
-                props.getRetry().getMaxPeriodMs(),
-                props.getRetry().getMaxAttempts()
-            ));
-        } else {
-            builder = builder.retryer(Retryer.NEVER_RETRY);
-        }
         return builder.target(GenericClient.class, baseUrl);
     }
 
@@ -154,6 +134,7 @@ public class LevelClient {
         return getItems(url, apiKey, ItemQueryParams.of(pageIndex, pageSize, sortField, sortType, filterDTO));
     }
 
+    @Retry(name = "levelClient")
     @CircuitBreaker(name = "levelClient", fallbackMethod = "getItemsFallback")
     public PageableResponseModel<ItemHierarchyResumedDTO> getItems(String url, String apiKey, ItemQueryParams queryParams) {
         final ApiConfig cfg = ApiConfig.from(url);
@@ -164,6 +145,7 @@ public class LevelClient {
     }
 
 
+    @Retry(name = "levelClient")
     @CircuitBreaker(name = "levelClient", fallbackMethod = "getSubItemsFallback")
     public PageableResponseModel<ItemHierarchyResumedDTO> getSubItems(String url, String apiKey, String itemId,
                                                                     ItemQueryParams queryParams) {
@@ -177,6 +159,7 @@ public class LevelClient {
         return client.getDynamicPaginated(path, apiKey, query);
     }
 
+    @Retry(name = "levelClient")
     @CircuitBreaker(name = "levelClient", fallbackMethod = "getItemByExternalCodeFallback")
     public ItemHierarchyResumedDTO getItemByExternalCode(String url, String apiKey, String code) {
         if (code == null || code.isBlank()) {
@@ -188,6 +171,7 @@ public class LevelClient {
         return client.getDynamic(path, apiKey, Collections.emptyMap());
     }
 
+    @Retry(name = "levelClient")
     @CircuitBreaker(name = "levelClient", fallbackMethod = "getCountLevelFallback")
     public Integer getCountLevel(String url, String apiKey) {
         final ApiConfig cfg = ApiConfig.from(url);
@@ -196,6 +180,7 @@ public class LevelClient {
         return client.getCountDynamic(path, apiKey);
     }
 
+    @Retry(name = "levelClient")
     @CircuitBreaker(name = "levelClient", fallbackMethod = "getAllSubitemCodesFallback")
     public List<String> getAllSubitemCodes(String url, String apiKey, String itemId) {
         if (itemId == null || itemId.isBlank()) {

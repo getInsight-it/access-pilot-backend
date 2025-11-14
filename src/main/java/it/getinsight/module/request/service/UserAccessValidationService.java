@@ -30,14 +30,13 @@ public class UserAccessValidationService {
             throw APPROVE_NOT_AUTHORIZED.accessForbiddenException();
         }
     }
-
     public boolean hasNoValidScopeWithHierarchy(RequestEntity requestEntity) {
         return securityScopes.all().stream().noneMatch(s -> {
             Long clientId = requestEntity.getRole().getClient().getId();
             var level = requestEntity.getLevel();
             Long levelId = level != null ? level.getId() : null;
             String itemKey = requestEntity.getCodeItem() != null && level != null ?
-                itemResolverService.resolveItemId(level, requestEntity.getCodeItem()) : null;
+                itemResolverService.resolveCodeItem(level, requestEntity.getCodeItem()) : null;
 
             boolean exactMatch = s.clientId().equals(clientId)
                 && s.levelId().equals(levelId)
