@@ -106,7 +106,7 @@ public class RequestQueryBuilderService {
                             .stream()
                             .map(item -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + item)
 
-                        : itemRepository.findAllByLevelIdAndParentId(roleEntity.getLevel().getId(), Long.parseLong(s.codeItem()))
+                        : itemRepository.findAllByLevelIdAndParentExternalCode(roleEntity.getLevel().getId(), s.codeItem())
                         .stream()
                         .map(item -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + item.getId())
                     )
