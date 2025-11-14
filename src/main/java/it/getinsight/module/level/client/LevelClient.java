@@ -8,6 +8,7 @@ import feign.Request;
 import feign.Retryer;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.level.dto.ItemFilterDTO;
 import it.getinsight.module.level.dto.ItemHierarchyResumedDTO;
@@ -54,6 +55,7 @@ public class LevelClient {
         return new ConcurrentHashMap<>();
     }
 
+    @CircuitBreaker(name = "levelClient", fallbackMethod = "getItemsHierarchyFallback")
     public List<ItemHierarchyResumedDTO> getItemsHierarchy(String externalUrl, String apiKey, String id) {
         final ApiConfig cfg = ApiConfig.from(externalUrl);
         final GenericClient client = getClient(cfg.baseUrl());
@@ -152,20 +154,17 @@ public class LevelClient {
         return getItems(url, apiKey, ItemQueryParams.of(pageIndex, pageSize, sortField, sortType, filterDTO));
     }
 
+    @CircuitBreaker(name = "levelClient", fallbackMethod = "getItemsFallback")
     public PageableResponseModel<ItemHierarchyResumedDTO> getItems(String url, String apiKey, ItemQueryParams queryParams) {
         final ApiConfig cfg = ApiConfig.from(url);
         final GenericClient client = getClient(cfg.baseUrl());
         final Map<String, Object> query = buildQuery(queryParams);
         final String path = joinPath(cfg.extraPath(), ITEMS_ENDPOINT);
-        try {
-            return client.getDynamicPaginated(path, apiKey, query);
-        }catch (Exception e){
-            log.error("Error fetching items for level {}: {}", url, e.getMessage());
-            return PageableResponseModel.of(0L, Lists.newArrayList());
-        }
+        return client.getDynamicPaginated(path, apiKey, query);
     }
 
 
+    @CircuitBreaker(name = "levelClient", fallbackMethod = "getSubItemsFallback")
     public PageableResponseModel<ItemHierarchyResumedDTO> getSubItems(String url, String apiKey, String itemId,
                                                                     ItemQueryParams queryParams) {
         if (itemId == null || itemId.isBlank()) {
@@ -175,14 +174,10 @@ public class LevelClient {
         final GenericClient client = getClient(cfg.baseUrl());
         final Map<String, Object> query = buildQuery(queryParams);
         final String path = joinPath(cfg.extraPath(), ITEMS_ENDPOINT, itemId, "subitems");
-        try {
-            return client.getDynamicPaginated(path, apiKey, query);
-        }catch (Exception e){
-            log.error("Error fetching subitems for item {}: {}", itemId, e.getMessage());
-            return PageableResponseModel.of(0L, Lists.newArrayList());
-        }
+        return client.getDynamicPaginated(path, apiKey, query);
     }
 
+    @CircuitBreaker(name = "levelClient", fallbackMethod = "getItemByExternalCodeFallback")
     public ItemHierarchyResumedDTO getItemByExternalCode(String url, String apiKey, String code) {
         if (code == null || code.isBlank()) {
             throw INVALID_URL_EMPTY_ERROR.businessException();
@@ -190,26 +185,18 @@ public class LevelClient {
         final ApiConfig cfg = ApiConfig.from(url);
         final GenericClient client = getClient(cfg.baseUrl());
         final String path = joinPath(cfg.extraPath(), ITEMS_ENDPOINT, code);
-        try {
-            return client.getDynamic(path, apiKey, Collections.emptyMap());
-        }catch (Exception e){
-            log.error("Error fetching item by external code {}: {}", code, e.getMessage());
-            return null;
-        }
+        return client.getDynamic(path, apiKey, Collections.emptyMap());
     }
 
+    @CircuitBreaker(name = "levelClient", fallbackMethod = "getCountLevelFallback")
     public Integer getCountLevel(String url, String apiKey) {
         final ApiConfig cfg = ApiConfig.from(url);
         final GenericClient client = getClient(cfg.baseUrl());
         final String path = joinPath(cfg.extraPath(), "count");
-        try {
-            return client.getCountDynamic(path, apiKey);
-        }catch (Exception e){
-            log.error("Error fetching count for level {}: {}", url, e.getMessage());
-            return 0;
-        }
+        return client.getCountDynamic(path, apiKey);
     }
 
+    @CircuitBreaker(name = "levelClient", fallbackMethod = "getAllSubitemCodesFallback")
     public List<String> getAllSubitemCodes(String url, String apiKey, String itemId) {
         if (itemId == null || itemId.isBlank()) {
             throw INVALID_URL_EMPTY_ERROR.businessException();
@@ -217,11 +204,42 @@ public class LevelClient {
         final ApiConfig cfg = ApiConfig.from(url);
         final GenericClient client = getClient(cfg.baseUrl());
         final String path = joinPath(cfg.extraPath(), ITEMS_ENDPOINT, itemId, "siblings", "codes");
-        try{
-            return client.getAllSubitemCodes(path, apiKey);
-        }catch (Exception e){
-            log.error("Error fetching subitem codes for item {}: {}", itemId, e.getMessage());
-            return Collections.emptyList();
-        }
+        return client.getAllSubitemCodes(path, apiKey);
+    }
+
+    @SuppressWarnings("unused")
+    private List<ItemHierarchyResumedDTO> getItemsHierarchyFallback(String externalUrl, String apiKey, String id, Throwable throwable) {
+        log.error("Fallback: error fetching items hierarchy for id {}: {}", id, throwable.toString());
+        return Collections.emptyList();
+    }
+
+    @SuppressWarnings("unused")
+    private PageableResponseModel<ItemHierarchyResumedDTO> getItemsFallback(String url, String apiKey, ItemQueryParams queryParams, Throwable throwable) {
+        log.error("Fallback: error fetching items for level {}: {}", url, throwable.toString());
+        return PageableResponseModel.of(0L, Lists.newArrayList());
+    }
+
+    @SuppressWarnings("unused")
+    private PageableResponseModel<ItemHierarchyResumedDTO> getSubItemsFallback(String url, String apiKey, String itemId, ItemQueryParams queryParams, Throwable throwable) {
+        log.error("Fallback: error fetching subitems for item {}: {}", itemId, throwable.toString());
+        return PageableResponseModel.of(0L, Lists.newArrayList());
+    }
+
+    @SuppressWarnings("unused")
+    private ItemHierarchyResumedDTO getItemByExternalCodeFallback(String url, String apiKey, String code, Throwable throwable) {
+        log.error("Fallback: error fetching item by external code {}: {}", code, throwable.toString());
+        return null;
+    }
+
+    @SuppressWarnings("unused")
+    private Integer getCountLevelFallback(String url, String apiKey, Throwable throwable) {
+        log.error("Fallback: error fetching count for level {}: {}", url, throwable.toString());
+        return 0;
+    }
+
+    @SuppressWarnings("unused")
+    private List<String> getAllSubitemCodesFallback(String url, String apiKey, String itemId, Throwable throwable) {
+        log.error("Fallback: error fetching subitem codes for item {}: {}", itemId, throwable.toString());
+        return Collections.emptyList();
     }
 }

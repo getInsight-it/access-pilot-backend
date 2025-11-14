@@ -118,7 +118,7 @@ spring:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
-    password: postgres
+    password: ${$DB_PASSWORD:postgres}
     hikari:
       auto-commit: false
       connection-init-sql: SELECT 1;
@@ -141,7 +141,7 @@ spring:
         implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl
     properties:
       hibernate:
-        show_sql: true
+        show_sql: false
         format_sql: true
         use_sql_comments: true
         envers:
@@ -265,6 +265,15 @@ resilience4j:
         permittedNumberOfCallsInHalfOpenState: 3
         waitDurationInOpenState: 10s
         failureRateThreshold: 50
+        slowCallRateThreshold: 100
+        slowCallDurationThreshold: 2s
+      levelClient:
+        registerHealthIndicator: true
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
         slowCallRateThreshold: 100
         slowCallDurationThreshold: 2s
 
