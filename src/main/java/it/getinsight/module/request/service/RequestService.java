@@ -51,7 +51,7 @@ public class RequestService {
     private final UserAccessValidationService userAccessValidationService;
 
     private final RequestCreationService requestCreationService;
-    private final RequestApprovalService requestApprovalService;
+    private final RequestManagementService requestManagementService;
     private final RequestValidationService requestValidationService;
     private final RequestQueryBuilderService requestQueryBuilderService;
 
@@ -66,8 +66,8 @@ public class RequestService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void publishRequestUpdateEvent(Long id, RequestUpdateDTO requestUpdateDTO) {
-        log.debug("Delegating request approval to RequestApprovalService for ID: {}", id);
-        requestApprovalService.processRequestUpdate(id, requestUpdateDTO);
+        log.debug("Delegating request approval to RequestManagementService for ID: {}", id);
+        requestManagementService.processRequestUpdate(id, requestUpdateDTO);
     }
 
 

@@ -19,7 +19,7 @@ import static it.getinsight.message.MessageProperty.REQUEST_NOT_FOUND_ERROR;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class RequestApprovalService {
+public class RequestManagementService {
 
     private final RequestRepository requestRepository;
     private final RequestValidationService requestValidationService;
