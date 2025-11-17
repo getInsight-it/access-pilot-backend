@@ -48,4 +48,32 @@ public class RoleAssignmentService {
             List.of(role)
         );
     }
+
+    @Transactional
+    public void revokeRoles(RequestEntity entity) {
+        try {
+            var roleEntity = roleRepository.findById(entity.getRole().getId())
+                .orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
+            var role = identityProviderService.getRoleByNameAndClientUUID(roleEntity.getName(), roleEntity.getClient().getClientUUID());
+
+            if (role == null) {
+                log.warn("Role {} not found in IDP for user {}, nothing to revoke", roleEntity.getName(), entity.getRequestingUser().getExternalId());
+                return;
+            }
+
+            log.info("Revoking role {} from user {}", role.name(), entity.getRequestingUser().getExternalId());
+            removeRoleFromUser(entity, roleEntity, role);
+        } catch (Exception e) {
+            log.error("Error revoking role from user {}", entity.getRequestingUser().getExternalId(), e);
+            throw REQUEST_ERROR_WHEN_TRYING_TO_ASSIGN_ROLE.businessException();
+        }
+    }
+
+    private void removeRoleFromUser(RequestEntity entity, RoleEntity roleEntity, RoleRepresentationDTO role) {
+        identityProviderService.removeRoles(
+            entity.getRequestingUser().getExternalId(),
+            roleEntity.getClient().getClientUUID(),
+            List.of(role)
+        );
+    }
 }

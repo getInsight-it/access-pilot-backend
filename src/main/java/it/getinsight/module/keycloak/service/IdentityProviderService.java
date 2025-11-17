@@ -25,6 +25,10 @@ public interface IdentityProviderService {
 
     void assignRoles(String userId, String clientUUID, List<RoleRepresentationDTO> roleNames);
 
+    void removeRoles(String userId, String clientUUID, List<RoleRepresentationDTO> roles);
+
+    void logoutUser(String userId);
+
     List<RoleRepresentationDTO> getUserRoles(String userId);
 
 
@@ -41,7 +45,6 @@ public interface IdentityProviderService {
     void updateRole(String clientUUID, String roleName, RoleRepresentationDTO role);
 
     void deleteRole(String clientUUID, String roleName);
-
 
     List<ClientRepresentationDTO> getClients();
 

@@ -58,6 +58,18 @@ public class KeycloakIdentityProviderService implements IdentityProviderService 
     }
 
     @Override
+    public void removeRoles(String userId, String clientUUID, List<RoleRepresentationDTO> roles) {
+        log.debug("Removing roles {} from user {}", roles, userId);
+        keycloakClient.removeRoles(userId, clientUUID, roles);
+    }
+
+    @Override
+    public void logoutUser(String userId) {
+        log.debug("Forcing logout for user {}", userId);
+        keycloakClient.logoutUser(userId);
+    }
+
+    @Override
     @CircuitBreaker(name = "keycloak", fallbackMethod = "getUsersFallback")
     @Retry(name = "keycloak")
     public List<UserRepresentationDTO> getUsers(Map<String, String> searchCriteria) {

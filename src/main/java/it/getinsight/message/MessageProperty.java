@@ -14,6 +14,7 @@ public enum MessageProperty implements IMessageProperty {
     EXAMPLE_ERROR_MESSAGE("example.of.error"),
     REQUEST_NOT_FOUND_ERROR("request.not.found"),
     REQUEST_ERROR_WHEN_TRYING_TO_ASSIGN_ROLE("request.error.when.trying.to.assign.role"),
+    REQUEST_INVALID_STATUS_TRANSITION("request.invalid.status.transition"),
     EXAMPLE_MESSAGE_WITH_PARAMETER("example.of.error.with.parameter"),
     APPROVE_NOT_AUTHORIZED("requester.approve.not.authorized"),
     USER_NOT_AUTHORIZED("user.not.authorized"),

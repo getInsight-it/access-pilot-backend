@@ -49,6 +49,9 @@ public class RequestEntity extends AuditableEntity<Long, String> {
     @Column(name = "JUSTIFICATIVA_FINAL")
     private String finalReason;
 
+    @Column(name = "JUSTIFICATIVA_REVOGACAO")
+    private String revocationReason;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_ROLE", referencedColumnName = "ID")
     private RoleEntity role;
@@ -67,6 +70,10 @@ public class RequestEntity extends AuditableEntity<Long, String> {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_USUARIO_APROVADOR", referencedColumnName = "ID")
     private UserEntity approvingUser;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ID_USUARIO_REVOGADOR", referencedColumnName = "ID")
+    private UserEntity revokingUser;
 
 
     @PrePersist

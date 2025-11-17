@@ -27,6 +27,8 @@ public record RequestDTO(
 
     String finalReason,
 
+    String revocationReason,
+
     String protocolCode,
 
     String codeItem,
@@ -40,6 +42,8 @@ public record RequestDTO(
     UserDTO requestingUser,
 
     UserDTO approvingUser,
+
+    UserDTO revokingUser,
 
     Date criacao
 ) implements Serializable {

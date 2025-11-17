@@ -18,7 +18,10 @@ public record RequestUpdateDTO(
     String description,
 
     @Size(max = 1000)
-    String finalReason
+    String finalReason,
+
+    @Size(max = 1000)
+    String revocationReason
 
 ) implements Serializable {
 

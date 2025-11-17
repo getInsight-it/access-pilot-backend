@@ -23,7 +23,7 @@ public class RequestApprovalService {
 
     private final RequestRepository requestRepository;
     private final RequestValidationService requestValidationService;
-    private final ApprovalPolicyService approvalPolicyService;
+    private final RequestStatusManagementService requestStatusManagementService;
     private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -34,7 +34,7 @@ public class RequestApprovalService {
 
         validateUpdatePermissions(requestEntity);
 
-        approvalPolicyService.processRequestStatusUpdate(id, requestUpdateDTO, requestEntity);
+        requestStatusManagementService.processRequestStatusUpdate(id, requestUpdateDTO, requestEntity);
 
         if (shouldSendStatusNotification(requestEntity.getStatus())) {
             publishStatusNotificationEvent(requestEntity);
@@ -54,7 +54,7 @@ public class RequestApprovalService {
     }
 
     private boolean shouldSendStatusNotification(RequestStatus status) {
-        return List.of(RequestStatus.APPROVED, RequestStatus.REJECTED, RequestStatus.CANCELED)
+        return List.of(RequestStatus.APPROVED, RequestStatus.REJECTED, RequestStatus.CANCELED, RequestStatus.REVOKED)
             .contains(status);
     }
 

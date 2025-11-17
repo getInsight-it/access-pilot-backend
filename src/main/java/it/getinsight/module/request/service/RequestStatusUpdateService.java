@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import static it.getinsight.message.MessageProperty.REQUEST_INVALID_STATUS_TRANSITION;
 import static it.getinsight.message.MessageProperty.ROLE_NOT_FOUND_ERROR;
 import static it.getinsight.message.MessageProperty.USER_NOT_FOUND_ERROR;
 
@@ -32,7 +33,7 @@ public class RequestStatusUpdateService {
     private final RequestRepository requestRepository;
 
 
-    public boolean canUserApproveRequest(RequestEntity requestEntity) {
+    public boolean isLoggedUserAssignedAsApprover(RequestEntity requestEntity) {
         var currentUserId = authenticationContextService.getCurrentUserId();
         var approvingUserDTO = userService.findOrImportByExternalId(currentUserId);
         var roleEntityParent = roleRepository.findByRoleExternalId(requestEntity.getRole().getRoleExternalId())
@@ -49,9 +50,28 @@ public class RequestStatusUpdateService {
         var approvingUserEntity = userRepository.findById(approvingUserDTO.id())
             .orElseThrow(USER_NOT_FOUND_ERROR::businessException);
 
-        requestEntity.setStatus(RequestStatus.valueOf(requestUpdateDTO.status()));
-        requestEntity.setApprovingUser(approvingUserEntity);
-        requestEntity.setFinalReason(requestUpdateDTO.finalReason());
+        var newStatus = RequestStatus.valueOf(requestUpdateDTO.status());
+        var currentStatus = requestEntity.getStatus();
+
+        if (newStatus == RequestStatus.REVOKED && currentStatus != RequestStatus.APPROVED) {
+                throw REQUEST_INVALID_STATUS_TRANSITION
+                    .bind(currentStatus.name(), newStatus.name())
+                    .businessException();
+        }
+
+        requestEntity.setStatus(newStatus);
+
+        switch (newStatus) {
+            case REVOKED -> {
+                requestEntity.setRevokingUser(approvingUserEntity);
+                requestEntity.setRevocationReason(requestUpdateDTO.revocationReason());
+            }
+            case APPROVED, REJECTED -> {
+                requestEntity.setApprovingUser(approvingUserEntity);
+                requestEntity.setFinalReason(requestUpdateDTO.finalReason());
+            }
+            default -> log.warn("Invalid status transition from {} to {}", currentStatus, newStatus);
+        }
     }
 
 
@@ -65,6 +85,6 @@ public class RequestStatusUpdateService {
 
 
     public boolean shouldPersistRequest(RequestStatus status) {
-        return List.of(RequestStatus.REJECTED, RequestStatus.CANCELED).contains(status);
+        return List.of(RequestStatus.REJECTED, RequestStatus.CANCELED, RequestStatus.REVOKED).contains(status);
     }
 }

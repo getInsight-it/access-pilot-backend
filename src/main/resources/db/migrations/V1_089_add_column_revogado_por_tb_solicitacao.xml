@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_089" author="system">
+
+        <addColumn tableName="TB_SOLICITACAO" >
+            <column name="ID_USUARIO_REVOGADOR" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addForeignKeyConstraint
+            baseTableName="TB_SOLICITACAO"
+            baseColumnNames="ID_USUARIO_REVOGADOR"
+            constraintName="FK_USUARIO_REVOGADOR"
+            referencedTableName="TB_USUARIO"
+            referencedColumnNames="ID"/>
+
+        <rollback>
+            <dropForeignKeyConstraint baseTableName="TB_SOLICITACAO" constraintName="FK_USUARIO_REVOGADOR"/>
+            <dropColumn tableName="TB_SOLICITACAO" columnName="ID_USUARIO_REVOGADOR"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
+

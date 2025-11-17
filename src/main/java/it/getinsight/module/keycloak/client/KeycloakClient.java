@@ -26,6 +26,12 @@ public interface KeycloakClient {
     @PostMapping("/users/{id}/role-mappings/clients/{clientUUID}")
     void assignRoles(@PathVariable String id, @PathVariable String clientUUID, @RequestBody List<RoleRepresentationDTO> roles);
 
+    @DeleteMapping("/users/{id}/role-mappings/clients/{clientUUID}")
+    void removeRoles(@PathVariable String id, @PathVariable String clientUUID, @RequestBody List<RoleRepresentationDTO> roles);
+
+    @PostMapping("/users/{id}/logout")
+    void logoutUser(@PathVariable String id);
+
     @GetMapping("/clients/{clientUUID}/roles/{roleName}")
     @Retry(name = "keycloak")
     RoleRepresentationDTO getRole(@PathVariable String clientUUID, @PathVariable String roleName);

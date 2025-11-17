@@ -47,6 +47,26 @@ public class UserAttributeService {
         }
     }
 
+    public void removeUserAttributes(RequestEntity entity, RoleEntity roleEntity) {
+        var user = identityProviderService.getUsers(Map.of("externalId", entity.getRequestingUser().getExternalId())).get(0);
+        var item = resolveItemCodeItem(entity.getLevel(), entity.getCodeItem());
+        String levelAccess = String.join(":",
+            roleEntity.getClient().getId().toString(),
+            roleEntity.getId().toString(),
+            entity.getLevel().getId().toString(),
+            item);
+
+        var levelAttributes = new ArrayList<>(Optional.ofNullable(user.attributes()).orElse(Collections.emptyMap()).getOrDefault("levelAttributes", Collections.emptyList()));
+
+        if (levelAttributes.contains(levelAccess)) {
+            levelAttributes.remove(levelAccess);
+            log.info("Revoking level attribute '{}' from user {}", levelAccess, entity.getRequestingUser().getExternalId());
+            identityProviderService.updateUser(entity.getRequestingUser().getExternalId(), user.withLevelAttributes(levelAttributes));
+        } else {
+            log.debug("Level attribute '{}' not found for user {}, nothing to revoke", levelAccess, entity.getRequestingUser().getExternalId());
+        }
+    }
+
     private String resolveItemCodeItem(LevelEntity level, String codeItem) {
         if (codeItem == null || codeItem.isBlank()) {
             throw CODE_ITEM_NOT_FOUND_FOR_ROLE.resourceNotFoundException();

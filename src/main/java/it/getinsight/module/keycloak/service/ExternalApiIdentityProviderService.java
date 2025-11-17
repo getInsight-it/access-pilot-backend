@@ -37,6 +37,18 @@ public class ExternalApiIdentityProviderService implements IdentityProviderServi
     }
 
     @Override
+    public void removeRoles(String userId, String clientUUID, List<RoleRepresentationDTO> roles) {
+        log.debug("External API: Removing roles {} at client {} from user {}", roles, clientUUID, userId);
+        throw new UnsupportedOperationException("External API provider not yet implemented");
+    }
+
+    @Override
+    public void logoutUser(String userId) {
+        log.debug("External API: Forcing logout for user {}", userId);
+        throw new UnsupportedOperationException("External API provider not yet implemented");
+    }
+
+    @Override
     public List<UserRepresentationDTO> getUsers(Map<String, String> searchCriteria) {
         log.debug("External API: Getting users with criteria: {}", searchCriteria);
         throw new UnsupportedOperationException("External API provider not yet implemented");

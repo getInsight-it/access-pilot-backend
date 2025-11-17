@@ -47,6 +47,8 @@ public interface ItemRepository extends JpaRepository<ItemEntity, Long>, JpaSpec
 
     List<ItemEntity> findAllByLevelIdAndParentId(Long id, Long itemId);
 
+    List<ItemEntity> findAllByLevelIdAndParentExternalCode(Long id, String externalCode);
+
     @Query("select i.id from ItemEntity i where i.externalCode = :externalCode")
     Optional<Long> findIdByExternalCode(@Param("externalCode") String externalCode);
 
