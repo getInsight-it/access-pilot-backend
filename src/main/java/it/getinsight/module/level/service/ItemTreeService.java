@@ -33,9 +33,8 @@ public class ItemTreeService {
             return List.of();
         }
 
-        List<ItemEntity> fetchItems = fetchItems(levelEntity, codeItems).stream()
-            .filter(it -> it.getParent() != null)
-            .toList();
+        List<ItemEntity> fetchItems = fetchItems(levelEntity, codeItems);
+
         if (fetchItems.isEmpty()) {
             return List.of();
         }
