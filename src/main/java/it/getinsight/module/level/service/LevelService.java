@@ -199,15 +199,12 @@ public class LevelService {
             var levelEntity = levelRepository.findById(id)
                 .orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
 
-            boolean hasActiveChildren = levelRepository.existsByParentIdAndActiveTrue(id);
+            final boolean hasActiveChildren = levelRepository.existsByParentIdAndActiveTrue(id);
             if (hasActiveChildren) {
                 throw LEVEL_CANNOT_DELETE_WITH_CHILDREN.businessException();
             }
 
-            boolean hasPendingRequests = requestRepository.existsByLevelIdAndStatusIn(
-                id,
-                List.of(RequestStatus.CREATED, RequestStatus.PENDING)
-            );
+            final boolean hasPendingRequests = requestRepository.existsByLevelIdAndStatusIn(id, List.of(RequestStatus.PENDING));
 
             if (hasPendingRequests) {
                 throw ROLE_WITH_PENDING_REQUESTS_ERROR.businessException();

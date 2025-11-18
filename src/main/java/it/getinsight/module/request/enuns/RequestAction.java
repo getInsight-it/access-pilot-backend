@@ -8,7 +8,8 @@ public enum RequestAction {
 
     REJECT("Rejeitar", RequestStatus.REJECTED),
     APPROVE("Aprovar", RequestStatus.APPROVED),
-    CANCEL("Cancelar", RequestStatus.CANCELED);
+    CANCEL("Cancelar", RequestStatus.CANCELED),
+    REVOKE("Revogar", RequestStatus.REVOKED);
 
     private final String description;
     private final RequestStatus targetStatus;

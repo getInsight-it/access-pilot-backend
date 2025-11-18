@@ -187,6 +187,9 @@ public class RequestService {
             actions.add(RequestAction.APPROVE);
             actions.add(RequestAction.REJECT);
         }
+        if (RequestStatus.APPROVED.equals(requestEntity.getStatus())) {
+            actions.add(RequestAction.REVOKE);
+        }
         return actions;
     }
 
