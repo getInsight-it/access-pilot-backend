@@ -24,11 +24,17 @@ public class SecurityScopes {
             if (authCtx != null && authCtx.isAuthenticated()) {
                 var jwt = authCtx.getCurrentJwt();
                 if (jwt != null) {
-                    return extractor.extract(jwt);
+                    log.debug("JWT found, extracting scopes...");
+                    List<ScopeRef> extracted = extractor.extract(jwt);
+                    log.debug("Extracted scopes: {}", extracted);
+                    return extracted;
                 }
+                log.debug("JWT is null");
+            } else {
+                log.debug("User not authenticated or auth context is null");
             }
         } catch (Exception e) {
-            log.error("Failed to extract scopes from JWT", e);
+            log.error("Error processing scopes", e);
         }
         return List.of();
     }
