@@ -60,7 +60,7 @@ public class RequestQueryBuilderService {
     }
 
     private List<String> buildSameLevelFromToken() {
-        return securityScopes.all().stream()
+        List<String> sameLevels = securityScopes.all().stream()
             .flatMap(s ->
                 roleRepository.findDescendantRoles(s.roleId(), s.clientId())
                     .stream()
@@ -71,11 +71,13 @@ public class RequestQueryBuilderService {
                             && roleEntity.getRole().getLevel() != null
                             && roleEntity.getRole().getLevel().equals(roleEntity.getLevel())
                     )
-                    .map(roleEntity -> s.clientId() + ":"+ roleEntity.getId() + ":" + s.levelId() + ":" + s.codeItem() )
+                    .map(roleEntity -> s.clientId() + ":" + roleEntity.getId() + ":" + s.levelId() + ":" + s.codeItem())
 
             )
             .distinct()
             .toList();
+        log.debug("sameLevels: {}", sameLevels);
+        return sameLevels;
     }
 
     private List<String> buildRolesWithoutLevelFromToken() {
@@ -89,7 +91,7 @@ public class RequestQueryBuilderService {
 
 
     private List<String> buildHierarchyLevelFromToken() {
-        return securityScopes.all().stream()
+        List<String> hierarchyLevels = securityScopes.all().stream()
             .flatMap(s ->
                 roleRepository.findDescendantRoles(s.roleId(), s.clientId())
                     .stream()
@@ -103,16 +105,18 @@ public class RequestQueryBuilderService {
                     .flatMap(roleEntity ->
                         roleEntity.getLevel().getType() == LevelType.EXTERNAL ?
                             itemService.getAllSubitemCodes(roleEntity.getLevel().getId(), s.codeItem())
-                            .stream()
-                            .map(item -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + item)
+                                .stream()
+                                .map(item -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + item)
 
-                        : itemRepository.findAllByLevelIdAndParentExternalCode(roleEntity.getLevel().getId(), s.codeItem())
-                        .stream()
-                        .map(item -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + item.getExternalCode())
+                            : itemRepository.findAllByLevelIdAndParentExternalCode(roleEntity.getLevel().getId(), s.codeItem())
+                            .stream()
+                            .map(item -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + item.getExternalCode())
                     )
             )
             .distinct()
             .toList();
+        log.debug("hierarchyLevels: {}", hierarchyLevels);
+        return hierarchyLevels;
     }
 
 
