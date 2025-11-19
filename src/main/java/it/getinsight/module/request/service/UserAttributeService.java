@@ -31,12 +31,11 @@ public class UserAttributeService {
 
     public void updateUserAttributes(RequestEntity entity, RoleEntity roleEntity) {
         var user = identityProviderService.getUsers(Map.of("externalId", entity.getRequestingUser().getExternalId())).get(0);
-        var item = resolveItemCodeItem(entity.getLevel(), entity.getCodeItem());
         String levelAccess = String.join(":",
             roleEntity.getClient().getId().toString(),
             roleEntity.getId().toString(),
             entity.getLevel().getId().toString(),
-            item);
+            entity.getCodeItem());
 
         var levelAttributes = new ArrayList<>(Optional.ofNullable(user.attributes()).orElse(Collections.emptyMap()).getOrDefault("levelAttributes", Collections.emptyList()));
 
