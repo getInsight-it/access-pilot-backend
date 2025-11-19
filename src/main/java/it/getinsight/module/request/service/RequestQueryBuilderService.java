@@ -108,7 +108,7 @@ public class RequestQueryBuilderService {
 
                         : itemRepository.findAllByLevelIdAndParentExternalCode(roleEntity.getLevel().getId(), s.codeItem())
                         .stream()
-                        .map(item -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + item.getId())
+                        .map(item -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + item.getExternalCode())
                     )
             )
             .distinct()
