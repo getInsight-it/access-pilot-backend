@@ -81,7 +81,7 @@ public class UserAttributeService {
                 yield dto.externalCode();
             }
             case BUILT_IN, BUSINESS -> {
-                var local = itemRepository.findByLevelIdAndId(level.getId(), Long.parseLong(codeItem))
+                var local = itemRepository.findByLevelIdAndExternalCode(level.getId(), codeItem)
                     .orElseThrow(ITEM_NOT_FOUND_ERROR::resourceNotFoundException);
                 yield local.getId().toString();
             }
