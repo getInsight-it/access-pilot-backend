@@ -12,12 +12,14 @@ import it.getinsight.module.role.dto.RoleDTO;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.mapper.RoleMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Stream;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class ItemTreeService {
 
@@ -34,6 +36,7 @@ public class ItemTreeService {
         }
 
         List<ItemEntity> fetchItems = fetchItems(levelEntity, codeItems);
+        log.debug("fetchItems: {}", fetchItems);
 
         if (fetchItems.isEmpty()) {
             return List.of();
@@ -99,6 +102,7 @@ public class ItemTreeService {
 
     private List<ItemResponseNodeDTO> buildTreeSimpleByExternalCode(List<ItemEntity> items, RoleDTO roleDTO) {
         if (items == null || items.isEmpty()) {
+            log.debug("No items found for role: {}", roleDTO);
             return List.of();
         }
 
@@ -112,6 +116,8 @@ public class ItemTreeService {
                 attachToParent(item, nodeByCode, node, children, roleDTO);
             }
         }
+        log.debug("nodeByCode: {}", nodeByCode);
+        log.debug("children: {}", children);
 
         return extractRootNodes(nodeByCode, children);
     }
@@ -125,6 +131,7 @@ public class ItemTreeService {
                                 ItemResponseNodeDTO node, Set<String> children, RoleDTO roleDTO) {
         String parentCode = item.getParent().getExternalCode();
         if (parentCode == null) {
+            log.debug("Parent code is null for item: {}", item);
             return;
         }
 

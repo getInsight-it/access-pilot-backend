@@ -40,8 +40,10 @@ public class ClientItemTreeService {
                     Map.Entry::getKey,
                     Collectors.mapping(e -> e.getValue().codeItem(), Collectors.toSet())
                 ));
+        log.debug("itemsByRole: {}", itemsByRole);
 
         if (itemsByRole.isEmpty()) {
+            log.debug("No items found for client: {}", client.getId());
             return Collections.emptyList();
         }
 
@@ -51,6 +53,7 @@ public class ClientItemTreeService {
                 .flatMap(List::stream)
                 .toList();
         }catch (Exception e){
+            log.error("Error building tree for client: {}", client.getId(), e);
             return  Collections.emptyList();
         }
     }
