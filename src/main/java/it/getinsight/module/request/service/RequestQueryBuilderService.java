@@ -60,22 +60,56 @@ public class RequestQueryBuilderService {
     }
 
     private List<String> buildSameLevelFromToken() {
+        log.debug("Iniciando buildSameLevelFromToken");
         List<String> sameLevels = securityScopes.all().stream()
-            .flatMap(s ->
-                roleRepository.findDescendantRoles(s.roleId(), s.clientId())
+            .peek(s -> log.debug("Processando scope: roleId={}, clientId={}, levelId={}, codeItem={}", 
+                s.roleId(), s.clientId(), s.levelId(), s.codeItem()))
+            .flatMap(s -> {
+                log.debug("Buscando roles descendentes para roleId: {}, clientId: {}", s.roleId(), s.clientId());
+                return roleRepository.findDescendantRoles(s.roleId(), s.clientId())
                     .stream()
-                    .filter(roleEntity ->
-                        roleEntity != null
+                    .peek(role -> log.debug("Role encontrada: {}", role != null ? 
+                        String.format("id=%s, role=%s, level=%s", 
+                            role.getId(),
+                            role.getRole() != null ? role.getRole().getName() : "null",
+                            role.getLevel() != null ? role.getLevel().getName() : "null") : "null"))
+                    .filter(roleEntity -> {
+                        boolean isValid = roleEntity != null
                             && roleEntity.getRole() != null
                             && roleEntity.getLevel() != null
                             && roleEntity.getRole().getLevel() != null
-                            && roleEntity.getRole().getLevel().equals(roleEntity.getLevel())
-                    )
-                    .map(roleEntity -> s.clientId() + ":" + roleEntity.getId() + ":" + s.levelId() + ":" + s.codeItem())
-
-            )
+                            && roleEntity.getRole().getLevel().equals(roleEntity.getLevel());
+                        
+                        if (log.isDebugEnabled()) {
+                            if (!isValid) {
+                                log.debug("Role inválida ou níveis não correspondentes: {}", 
+                                    roleEntity != null ? 
+                                        String.format("roleLevel=%s, entityLevel=%s",
+                                            roleEntity.getRole() != null && roleEntity.getRole().getLevel() != null ? 
+                                                roleEntity.getRole().getLevel().getId() : "null",
+                                            roleEntity.getLevel() != null ? 
+                                                roleEntity.getLevel().getId() : "null") : "null");
+                            } else {
+                                log.debug("Role válida com níveis correspondentes: roleLevel={}, entityLevel={}",
+                                    roleEntity.getRole().getLevel().getId(),
+                                    roleEntity.getLevel().getId());
+                            }
+                        }
+                        return isValid;
+                    })
+                    .peek(role -> log.debug("Role após filtro: {} (roleId: {}, levelId: {})", 
+                        role.getRole().getName(), role.getId(), role.getLevel().getId()))
+                    .map(roleEntity -> {
+                        String result = s.clientId() + ":" + roleEntity.getId() + ":" + s.levelId() + ":" + s.codeItem();
+                        log.debug("Mapeando para formato de saída: {}", result);
+                        return result;
+                    });
+            })
+            .peek(item -> log.debug("Item antes do distinct: {}", item))
             .distinct()
             .toList();
+            
+        log.debug("Total de sameLevels gerados: {}", sameLevels.size());
         log.debug("sameLevels: {}", sameLevels);
         return sameLevels;
     }
@@ -91,30 +125,55 @@ public class RequestQueryBuilderService {
 
 
     private List<String> buildHierarchyLevelFromToken() {
+        log.debug("Iniciando buildHierarchyLevelFromToken");
         List<String> hierarchyLevels = securityScopes.all().stream()
-            .flatMap(s ->
-                roleRepository.findDescendantRoles(s.roleId(), s.clientId())
+            .peek(s -> log.debug("Processando scope: roleId={}, clientId={}, codeItem={}", 
+                s.roleId(), s.clientId(), s.codeItem()))
+            .flatMap(s -> {
+                log.debug("Buscando roles descendentes para roleId: {}, clientId: {}", s.roleId(), s.clientId());
+                return roleRepository.findDescendantRoles(s.roleId(), s.clientId())
                     .stream()
-                    .filter(roleEntity ->
-                        roleEntity != null
+                    .peek(role -> log.debug("Role encontrada: {}", role != null ? role.getId() : "null"))
+                    .filter(roleEntity -> {
+                        boolean isValid = roleEntity != null
                             && roleEntity.getRole() != null
                             && roleEntity.getLevel() != null
                             && roleEntity.getRole().getLevel() != null
-                            && !roleEntity.getRole().getLevel().equals(roleEntity.getLevel())
-                    )
-                    .flatMap(roleEntity ->
-                        roleEntity.getLevel().getType() == LevelType.EXTERNAL ?
-                            itemService.getAllSubitemCodes(roleEntity.getLevel().getId(), s.codeItem())
-                                .stream()
-                                .map(item -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + item)
+                            && !roleEntity.getRole().getLevel().equals(roleEntity.getLevel());
+                        if (log.isDebugEnabled() && !isValid) {
+                            log.debug("Role inválida ou sem nível associado: {}", 
+                                roleEntity != null ? roleEntity.toString() : "null");
+                        }
+                        return isValid;
+                    })
+                    .peek(role -> log.debug("Role após filtro: {} (roleId: {}, levelId: {})",
+                        role.getRole().getName(), role.getRole().getId(), role.getLevel().getId()))
+                    .flatMap(roleEntity -> {
+                        log.debug("Processando role: {} (nivel: {})",
+                            roleEntity.getRole().getName(), roleEntity.getLevel().getType());
 
-                            : itemRepository.findAllByLevelIdAndParentExternalCode(roleEntity.getLevel().getId(), s.codeItem())
-                            .stream()
-                            .map(item -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + item.getExternalCode())
-                    )
-            )
+                        if (roleEntity.getLevel().getType() == LevelType.EXTERNAL) {
+                            log.debug("Processando nível EXTERNO para levelId: {}, codeItem: {}",
+                                roleEntity.getLevel().getId(), s.codeItem());
+                            return itemService.getAllSubitemCodes(roleEntity.getLevel().getId(), s.codeItem())
+                                .stream()
+                                .peek(item -> log.debug("Subitem encontrado: {}", item))
+                                .map(item -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + item);
+                        } else {
+                            log.debug("Processando nível INTERNO para levelId: {}, codeItem: {}",
+                                roleEntity.getLevel().getId(), s.codeItem());
+                            return itemRepository.findAllByLevelIdAndParentExternalCode(roleEntity.getLevel().getId(), s.codeItem())
+                                .stream()
+                                .peek(item -> log.debug("Item encontrado: {}", item.getExternalCode()))
+                                .map(item -> s.clientId() + ":" + roleEntity.getId() + ":" + roleEntity.getLevel().getId() + ":" + item.getExternalCode());
+                        }
+                    });
+            })
+            .peek(item -> log.debug("Item processado: {}", item))
             .distinct()
             .toList();
+        
+        log.debug("Total de hierarchyLevels gerados: {}", hierarchyLevels.size());
         log.debug("hierarchyLevels: {}", hierarchyLevels);
         return hierarchyLevels;
     }
