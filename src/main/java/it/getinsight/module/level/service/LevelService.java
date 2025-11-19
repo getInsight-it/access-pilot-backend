@@ -56,7 +56,6 @@ public class LevelService {
     private final LevelResponseMapper levelResponseMapper;
     private final LevelHierarchyResponseMapper levelHierarchyResponseMapper;
     private final LevelFilterMapper levelFilterMapper;
-    private final RoleLevelPolicyService roleLevelPolicyService;
 
     public PageableResponseModel<LevelResponseDTO> getAllPaginatedLevels(PageableRequestModel<LevelFilterDTO> configPage) {
         final var filter = configPage.getFilter();

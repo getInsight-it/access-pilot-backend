@@ -6,6 +6,7 @@ import it.getinsight.module.level.dto.ItemResponseNodeDTO;
 import it.getinsight.module.level.service.ItemTreeService;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.repository.RoleRepository;
+import it.getinsight.module.user.service.ScopeRef;
 import it.getinsight.module.user.service.SecurityScopes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,35 +27,57 @@ public class ClientItemTreeService {
 
     @Transactional(readOnly = true)
     public List<ItemResponseNodeDTO> buildTreeForClient(ClientEntity client) {
-        Map<RoleEntity, Set<String>> itemsByRole = securityScopes.all().stream()
-                .filter(scope -> scope.clientId().equals(client.getId())
-                    && scope.roleId() != null
-                    && scope.codeItem() != null)
-                .map(scope -> {
-                    Optional<RoleEntity> role = roleRepository.findById(scope.roleId());
-                    return role.map(l -> new AbstractMap.SimpleEntry<>(l, scope));
-                })
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.groupingBy(
-                    Map.Entry::getKey,
-                    Collectors.mapping(e -> e.getValue().codeItem(), Collectors.toSet())
-                ));
+        log.debug("Building tree for client: {}", client.getId());
+        List<ScopeRef> scopes = securityScopes.all();
+
+
+        List<ScopeRef> clientScopes = scopes.stream()
+            .filter(scope -> scope.clientId().equals(client.getId())
+                && scope.roleId() != null
+                && scope.codeItem() != null)
+            .toList();
+
+        if (clientScopes.isEmpty()) {
+            log.debug("No scopes found for client: {}", client.getId());
+            return Collections.emptyList();
+        }
+
+
+        Set<Long> roleIds = clientScopes.stream()
+            .map(ScopeRef::roleId)
+            .collect(Collectors.toSet());
+
+        List<RoleEntity> roles = roleRepository.findAllById(roleIds);
+        Map<Long, RoleEntity> rolesById = roles.stream()
+            .collect(Collectors.toMap(RoleEntity::getId, r -> r));
+
+
+        Map<RoleEntity, Set<String>> itemsByRole = clientScopes.stream()
+            .map(scope -> {
+                RoleEntity role = rolesById.get(scope.roleId());
+                return role != null ? new AbstractMap.SimpleEntry<>(role, scope) : null;
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.groupingBy(
+                Map.Entry::getKey,
+                Collectors.mapping(e -> e.getValue().codeItem(), Collectors.toSet())
+            ));
+
         log.debug("itemsByRole: {}", itemsByRole);
 
         if (itemsByRole.isEmpty()) {
-            log.debug("No items found for client: {}", client.getId());
+            log.debug("No items found for client after role mapping: {}", client.getId());
             return Collections.emptyList();
         }
 
         try {
-        return itemsByRole.entrySet().stream()
-                .map(o -> itemTreeService.buildTreeFromScopeItemIds(o.getKey(),o.getValue()))
+            return itemsByRole.entrySet().stream()
+                .map(o -> itemTreeService.buildTreeFromScopeItemIds(o.getKey(), o.getValue()))
                 .flatMap(List::stream)
                 .toList();
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error("Error building tree for client: {}", client.getId(), e);
-            return  Collections.emptyList();
+            return Collections.emptyList();
         }
     }
 }

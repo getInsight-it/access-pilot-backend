@@ -363,20 +363,6 @@ public class ItemService {
         }
     }
 
-    public List<ItemHierarchyResumedDTO> getDeepHierarchy(Long levelId, String itemId) {
-        var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
-        if (levelEntity == null) {
-            throw LEVEL_NOT_FOUND_ERROR.resourceNotFoundException();
-        }
-
-
-        List<ItemHierarchyResumedDTO> itemHierarchy = getItemHierarchy(levelId, itemId);
-
-        return itemHierarchy.stream().map(ItemHierarchyResumedDTO::parent).filter(Objects::nonNull)
-            .map(o -> getItemHierarchy(levelId, o.externalCode())).flatMap(List::stream).toList();
-
-    }
-
     public List<ItemHierarchyResumedDTO> getItemHierarchy(Long levelId, String itemId) {
         var levelEntity = levelRepository.findById(levelId).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException);
         if (levelEntity == null) {
@@ -387,7 +373,7 @@ public class ItemService {
             var itemIdResolved = itemResolverService.resolveCodeItem(levelEntity, itemId);
             return getExternalHierarchy(levelEntity, itemIdResolved);
         } else if (LevelType.BUILT_IN.equals(levelEntity.getType()) || LevelType.BUSINESS.equals(levelEntity.getType())) {
-            var itemIdResolved = itemResolverService.resolveItemId(levelEntity, itemId);
+            var itemIdResolved = itemResolverService.resolveCodeItem(levelEntity, itemId);
             var item = itemRepository.findById(Long.valueOf(itemIdResolved))
                 .orElseThrow(ITEM_NOT_FOUND_ERROR::resourceNotFoundException);
 
