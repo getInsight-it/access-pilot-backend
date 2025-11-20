@@ -177,6 +177,17 @@ spring:
 
   cache:
     type: redis
+    redis:
+      time-to-live: 60s
+      cache-null-values: false
+      key-prefix: "${PIPELINE_ID:v1}::"
+      use-key-prefix: true
+    app:
+      default-ttl: 60s
+      ttl:
+        clients: 300s
+        getTotalClients: 60s
+        securityScopes: 300s
   data:
     redis:
       host: localhost

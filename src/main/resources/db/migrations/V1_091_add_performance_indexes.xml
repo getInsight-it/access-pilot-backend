@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_091" author="luan.rodrigues@getinsight.it">
+
+
+        <createIndex indexName="idx_tb_role_parent_active"
+                     tableName="TB_ROLE">
+            <column name="ID_ROLE_PARENT"/>
+            <column name="ATIVO"/>
+        </createIndex>
+
+        <createIndex indexName="idx_tb_role_client"
+                     tableName="TB_ROLE">
+            <column name="ID_CLIENTE"/>
+        </createIndex>
+
+        <createIndex indexName="idx_tb_role_client_name"
+                     tableName="TB_ROLE">
+            <column name="ID_CLIENTE"/>
+            <column name="NOME"/>
+        </createIndex>
+
+
+        <createIndex indexName="idx_tb_esfera_parent_active"
+                     tableName="TB_ESFERA">
+            <column name="ID_PARENT"/>
+            <column name="ATIVO"/>
+        </createIndex>
+
+
+        <createIndex indexName="idx_tb_esfera_item_level"
+                     tableName="TB_ESFERA_ITEM">
+            <column name="ID_ESFERA"/>
+        </createIndex>
+
+        <createIndex indexName="idx_tb_esfera_item_level_parent"
+                     tableName="TB_ESFERA_ITEM">
+            <column name="ID_ESFERA"/>
+            <column name="ID_PARENT"/>
+        </createIndex>
+
+        <createIndex indexName="idx_tb_esfera_item_external_active"
+                     tableName="TB_ESFERA_ITEM">
+            <column name="CODIGO_EXTERNO"/>
+            <column name="ATIVO"/>
+        </createIndex>
+
+
+        <createIndex indexName="idx_tb_solicitacao_level_status"
+                     tableName="TB_SOLICITACAO">
+            <column name="ESFERA_ID"/>
+            <column name="STATUS"/>
+        </createIndex>
+
+        <createIndex indexName="idx_tb_solicitacao_role_status"
+                     tableName="TB_SOLICITACAO">
+            <column name="ID_ROLE"/>
+            <column name="STATUS"/>
+        </createIndex>
+
+        <createIndex indexName="idx_tb_solicitacao_requesting_user_status"
+                     tableName="TB_SOLICITACAO">
+            <column name="ID_USUARIO_SOLICITANTE"/>
+            <column name="STATUS"/>
+        </createIndex>
+
+        <createIndex indexName="idx_tb_solicitacao_approving_user_status"
+                     tableName="TB_SOLICITACAO">
+            <column name="ID_USUARIO_APROVADOR"/>
+            <column name="STATUS"/>
+        </createIndex>
+
+
+        <createIndex indexName="idx_tb_solicitacao_arquivo_request"
+                     tableName="TB_SOLICITACAO_ARQUIVO">
+            <column name="ID_SOLICITACAO"/>
+        </createIndex>
+
+
+        <createIndex indexName="idx_tb_usuario_external_id"
+                     tableName="TB_USUARIO">
+            <column name="ID_USUARIO_EXTERNO"/>
+        </createIndex>
+
+        <createIndex indexName="idx_tb_usuario_email"
+                     tableName="TB_USUARIO">
+            <column name="EMAIL"/>
+        </createIndex>
+
+
+        <createIndex indexName="idx_tb_notificacao_user_opened_type"
+                     tableName="TB_NOTIFICACAO">
+            <column name="USER_ID"/>
+            <column name="IS_OPENED"/>
+            <column name="TIPO"/>
+        </createIndex>
+
+
+        <createIndex indexName="idx_tb_storage_file_uuid"
+                     tableName="TB_STORAGE_FILE">
+            <column name="FILE_ID"/>
+        </createIndex>
+
+        <createIndex indexName="idx_tb_storage_file_original_name"
+                     tableName="TB_STORAGE_FILE">
+            <column name="ORIGINAL_FILENAME"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex indexName="idx_tb_role_parent_active" tableName="TB_ROLE"/>
+            <dropIndex indexName="idx_tb_role_client" tableName="TB_ROLE"/>
+            <dropIndex indexName="idx_tb_role_client_name" tableName="TB_ROLE"/>
+            <dropIndex indexName="idx_tb_esfera_parent_active" tableName="TB_ESFERA"/>
+            <dropIndex indexName="idx_tb_esfera_item_level" tableName="TB_ESFERA_ITEM"/>
+            <dropIndex indexName="idx_tb_esfera_item_level_parent" tableName="TB_ESFERA_ITEM"/>
+            <dropIndex indexName="idx_tb_esfera_item_external_active" tableName="TB_ESFERA_ITEM"/>
+            <dropIndex indexName="idx_tb_solicitacao_level_status" tableName="TB_SOLICITACAO"/>
+            <dropIndex indexName="idx_tb_solicitacao_role_status" tableName="TB_SOLICITACAO"/>
+            <dropIndex indexName="idx_tb_solicitacao_requesting_user_status" tableName="TB_SOLICITACAO"/>
+            <dropIndex indexName="idx_tb_solicitacao_approving_user_status" tableName="TB_SOLICITACAO"/>
+            <dropIndex indexName="idx_tb_solicitacao_arquivo_request" tableName="TB_SOLICITACAO_ARQUIVO"/>
+            <dropIndex indexName="idx_tb_usuario_external_id" tableName="TB_USUARIO"/>
+            <dropIndex indexName="idx_tb_usuario_email" tableName="TB_USUARIO"/>
+            <dropIndex indexName="idx_tb_notificacao_user_opened_type" tableName="TB_NOTIFICACAO"/>
+            <dropIndex indexName="idx_tb_storage_file_uuid" tableName="TB_STORAGE_FILE"/>
+            <dropIndex indexName="idx_tb_storage_file_original_name" tableName="TB_STORAGE_FILE"/>
+        </rollback>
+
+    </changeSet>
+
+</databaseChangeLog>
+
