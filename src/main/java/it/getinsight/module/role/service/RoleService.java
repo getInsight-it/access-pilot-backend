@@ -29,7 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -200,11 +199,10 @@ public class RoleService {
             throw ROLE_WITH_PENDING_REQUESTS_ERROR.businessException();
         }
 
+        Long newLevelId = roleDTO.levelId();
         if (entity.getRole() != null && entity.getRole().getId() != null) {
-            Long parentLevelId =  entity.getRole().getLevel() != null ? entity.getRole().getLevel().getId() : null;
-            Long selfLevelId = roleDTO.levelId();
-
-            roleLevelPolicyService.validateChildLevelAssignment(parentLevelId,selfLevelId);
+            Long parentLevelId = entity.getRole().getLevel() != null ? entity.getRole().getLevel().getId() : null;
+            roleLevelPolicyService.validateChildLevelAssignment(parentLevelId, newLevelId);
         }
 
         if (StringUtils.isNotBlank(entity.getRoleExternalId())) {
@@ -214,8 +212,10 @@ public class RoleService {
                     .description(roleDTO.description())
                     .build()));
         }
-        if (roleDTO.levelId() != null) {
-            levelRepository.findById(roleDTO.levelId()).ifPresent(entity::setLevel);
+        if (newLevelId != null) {
+            levelRepository.findById(newLevelId).ifPresent(entity::setLevel);
+        } else {
+            entity.setLevel(null);
         }
         if (roleDTO.roleParent() != null && roleDTO.roleParent().id() != null) {
             roleRepository.findById(roleDTO.roleParent().id()).ifPresent(entity::setRole);
@@ -225,7 +225,10 @@ public class RoleService {
         entity.setDescription(roleDTO.description());
         entity.setLabel(roleDTO.label());
         entity.setIcon(roleDTO.icon());
-        return roleMapper.toDto(roleRepository.save(entity));
+        var saved = roleRepository.save(entity);
+
+        validateDescendantLevels(saved);
+        return roleMapper.toDto(saved);
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -239,4 +242,13 @@ public class RoleService {
         roleRepository.softDelete(id);
     }
 
+    private void validateDescendantLevels(RoleEntity parentRole) {
+        Long parentLevelId = parentRole.getLevel() != null ? parentRole.getLevel().getId() : null;
+        Long clientId = parentRole.getClient() != null ? parentRole.getClient().getId() : null;
+        var descendants = roleRepository.findDescendantRoles(parentRole.getId(), clientId);
+        for (RoleEntity child : descendants) {
+            Long childLevelId = child.getLevel() != null ? child.getLevel().getId() : null;
+            roleLevelPolicyService.validateChildLevelAssignment(parentLevelId, childLevelId);
+        }
+    }
 }

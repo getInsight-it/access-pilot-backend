@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import static it.getinsight.message.MessageProperty.LEVEL_HIERARCHY_INVALID_ERROR;
+import static it.getinsight.message.MessageProperty.LEVEL_WITH_ID_NOT_FOUND_ERROR;
 
 
 @Service
@@ -17,16 +18,29 @@ public class RoleLevelPolicyService {
 
 
     public void validateChildLevelAssignment(Long parentLevelId, Long selfLevelId) {
-        if (parentLevelId == null || selfLevelId == null) {
+        if (selfLevelId == null) {
             return;
         }
 
-        var ancestors = levelRepository.findAncestorLevels(selfLevelId);
-        boolean parentIsAncestor = ancestors.stream().anyMatch(l -> l.getId().equals(parentLevelId));
-
-        if (!parentIsAncestor) {
+        if (parentLevelId == null) {
             throw LEVEL_HIERARCHY_INVALID_ERROR.businessException();
         }
+
+        var childLevel = levelRepository.findById(selfLevelId)
+            .orElseThrow(() -> LEVEL_WITH_ID_NOT_FOUND_ERROR.bind("id", String.valueOf(selfLevelId)).resourceNotFoundException());
+
+        if (parentLevelId.equals(selfLevelId)) {
+            return;
+        }
+
+        var immediateParent = childLevel.getParent();
+        Long immediateParentId = immediateParent != null ? immediateParent.getId() : null;
+
+        if (parentLevelId.equals(immediateParentId)) {
+            return;
+        }
+
+        throw LEVEL_HIERARCHY_INVALID_ERROR.businessException();
     }
 
 }
