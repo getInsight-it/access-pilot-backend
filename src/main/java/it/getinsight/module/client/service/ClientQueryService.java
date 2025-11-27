@@ -19,8 +19,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.jpa.domain.Specification;
+import it.getinsight.module.client.repository.specification.ClientSpecification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -73,14 +73,13 @@ public class ClientQueryService {
             .map(clientMapper::toEntity)
             .orElse(new ClientEntity());
 
-        final var matcher = ExampleMatcher
-            .matchingAny()
-            .withIgnoreNullValues()
-            .withMatcher("clientId", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains);
+        final var spec = Specification.anyOf(
+            ClientSpecification.nameContains(model.getName()),
+            ClientSpecification.clientIdContains(model.getClientId()),
+            ClientSpecification.descriptionContains(model.getDescription())
+        );
 
-        final var example = Example.of(model, matcher);
-        final var page = clientRepository.findAll(example, PaginationHelper.toPageable(configPage));
+        final var page = clientRepository.findAll(spec, PaginationHelper.toPageable(configPage));
 
         final var clientsNotSynchronized = page.getContent()
             .stream()

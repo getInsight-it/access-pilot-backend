@@ -77,7 +77,8 @@ public class RoleService {
             .matchingAny()
             .withIgnoreNullValues()
             .withMatcher(PropertyPathConstants.Role.NAME, ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher(PropertyPathConstants.Role.CLIENT_ID, ExampleMatcher.GenericPropertyMatcher::exact);
+            .withMatcher(PropertyPathConstants.Role.DESCRIPTION, ExampleMatcher.GenericPropertyMatcher::contains)
+            .withMatcher(PropertyPathConstants.Role.CLIENT_ID, ExampleMatcher.GenericPropertyMatcher::contains);
 
         final var example = Example.of(model, matcher);
 

@@ -33,7 +33,7 @@ public class RoleValidationService {
             throw CLIENT_NOT_FOUND_ERROR.resourceNotFoundException();
         }
 
-        if (StringValidationUtils.isUpperSnakeCase(roleDTO.name())) {
+        if (!StringValidationUtils.isUpperSnakeCase(roleDTO.name())) {
             log.error("Invalid role name pattern: {}", roleDTO.name());
             throw ERROR_VALIDATION_PATTERN_ROLE_NAME.businessException();
         }

@@ -8,6 +8,7 @@ import java.io.Serializable;
 public record ClientFilterDTO(
 
     String clientId,
+    String name,
     String description
 
 ) implements Serializable {}

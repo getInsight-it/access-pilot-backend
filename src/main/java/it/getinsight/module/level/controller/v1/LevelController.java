@@ -9,6 +9,7 @@ import it.getinsight.module.level.dto.*;
 import it.getinsight.module.level.service.ItemService;
 import it.getinsight.module.level.service.LevelService;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,7 +60,7 @@ public class LevelController {
     @Operation(summary = "Create a new level", description = "Create a new level")
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize(value = "hasRole('ADMIN')")
-    public ResponseEntity<LevelDTO> create(@RequestBody LevelDTO levelDTO) {
+    public ResponseEntity<LevelDTO> create(@RequestBody @Valid LevelDTO levelDTO) {
         return ResponseEntity.ok(levelService.create(levelDTO));
     }
 
