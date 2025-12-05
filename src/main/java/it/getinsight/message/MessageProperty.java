@@ -95,7 +95,7 @@ public enum MessageProperty implements IMessageProperty {
     APPROVER_HIERARCHY_INVALID_ERROR("approver.hierarchy.invalid"),
     LEVEL_CANNOT_DELETE_WITH_CHILDREN("level.cannot.delete.with.children"),
 
-    ;
+    CLIENT_ROLE_MANAGEMENT_NOT_ENABLED_ERROR("client.role.management.not.enabled.error");
 
     private final String key;
 

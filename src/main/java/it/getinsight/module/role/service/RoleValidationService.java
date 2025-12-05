@@ -7,6 +7,7 @@ import it.getinsight.module.role.dto.RoleDTO;
 import it.getinsight.utilitario.StringValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.stereotype.Service;
 
 import static it.getinsight.message.MessageProperty.*;
@@ -31,6 +32,11 @@ public class RoleValidationService {
         if (roleDTO.client() == null) {
             log.error("Client is null for role: {}", roleDTO.name());
             throw CLIENT_NOT_FOUND_ERROR.resourceNotFoundException();
+        }
+
+        if (BooleanUtils.isFalse(roleDTO.client().managed())) {
+            log.error("Client is not managed for role: {}", roleDTO.name());
+            throw CLIENT_ROLE_MANAGEMENT_NOT_ENABLED_ERROR.businessException();
         }
 
         if (!StringValidationUtils.isUpperSnakeCase(roleDTO.name())) {
