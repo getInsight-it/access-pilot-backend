@@ -1,5 +1,6 @@
 package it.getinsight.module.client.repository.specification;
 
+import it.getinsight.module.client.entity.ClientStatus;
 import org.springframework.data.jpa.domain.Specification;
 import it.getinsight.module.client.entity.ClientEntity;
 
@@ -35,4 +36,12 @@ public class ClientSpecification  {
             "%" + value.toLowerCase() + "%"
         );
     }
+
+    public static Specification<ClientEntity> statusContains(ClientStatus status) {
+        if (status == null) return null;
+        return (root, query,    cb) -> cb.equal(root.get("status"), status);
+    }
+
+
+
 }

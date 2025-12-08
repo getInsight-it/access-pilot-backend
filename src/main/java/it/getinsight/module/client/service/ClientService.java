@@ -34,8 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Optional;
 
-import static it.getinsight.message.MessageProperty.CLIENT_NOT_FOUND_ERROR;
-import static it.getinsight.message.MessageProperty.ERROR_CONFIGURATION_NOT_FOUND;
+import static it.getinsight.message.MessageProperty.*;
 
 
 @Service
@@ -132,18 +131,38 @@ public class ClientService {
 
     @CacheEvict(value = "clients", allEntries = true)
     public void updateManaged(Long id, ClientDTO clientUpdatedDTO) {
-        var entityUpdated = clientRepository.findById(id).orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException);
-        if (BooleanUtils.isTrue(clientUpdatedDTO.managed()) && StringUtils.isBlank(entityUpdated.getClientUUID())) {
-            handleManagedClient(entityUpdated);
-            return;
-        }
-        var client = identityProviderService.getClientsByClientId(entityUpdated.getClientId()).getFirst();
+        var entityUpdated = clientRepository.findById(id)
+            .orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException);
+
         clientMapper.fromDtoWithoutImmutableFields(clientUpdatedDTO, entityUpdated);
-        entityUpdated.setClientUUID(client.getId());
-        clientRepresentationMapper.toDto(entityUpdated, client);
-        Optional.of(entityUpdated).map(clientMapper::toDto).ifPresent(o -> clientRepresentationMapper.fromDtoRepresentation(o, client));
-        identityProviderService.updateClient(client.getId(), client);
-        handleManagedClient(entityUpdated);
+
+        if (BooleanUtils.isTrue(clientUpdatedDTO.managed())) {
+            if (StringUtils.isBlank(entityUpdated.getClientUUID())) {
+                handleManagedClient(entityUpdated);
+            } else {
+                var clients = identityProviderService.getClientsByClientId(entityUpdated.getClientId());
+                if (clients.isEmpty()) {
+                    log.error("Managed client not found in IDP: {}", entityUpdated.getClientId());
+                    throw CLIENT_NOT_FOUND_IN_IDP.businessException();
+                }
+                var client = clients.getFirst();
+                log.debug("Updating managed client in IDP: {}", client.getId());
+
+
+                if (!client.getId().equals(entityUpdated.getClientUUID())) {
+                    log.warn("Updating clientUUID for client {} from '{}' to '{}'", entityUpdated.getClientId(), entityUpdated.getClientUUID(), client.getId());
+                    entityUpdated.setClientUUID(client.getId());
+                }
+
+                clientRepresentationMapper.toDto(entityUpdated, client);
+                Optional.of(entityUpdated)
+                    .map(clientMapper::toDto)
+                    .ifPresent(o -> clientRepresentationMapper.fromDtoRepresentation(o, client));
+                identityProviderService.updateClient(client.getId(), client);
+                handleManagedClient(entityUpdated);
+            }
+        }
+
         processAttachmentConfigurations(clientUpdatedDTO.configurations(), entityUpdated);
     }
 

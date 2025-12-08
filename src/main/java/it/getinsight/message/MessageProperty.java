@@ -19,6 +19,7 @@ public enum MessageProperty implements IMessageProperty {
     APPROVE_NOT_AUTHORIZED("requester.approve.not.authorized"),
     USER_NOT_AUTHORIZED("user.not.authorized"),
     CLIENT_NOT_FOUND_ERROR("client.not.found"),
+    CLIENT_NOT_FOUND_IN_IDP("client.not.found.in.idp"),
     CLIENT_ALREADY_EXISTS_ERROR("client.already.exists"),
     APPROVERS_NOT_FOUND_ERROR("approvers.not.found"),
     ROLE_NOT_FOUND_PARENT_ERROR("role.not.found.parent"),

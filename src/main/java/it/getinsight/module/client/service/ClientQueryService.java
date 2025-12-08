@@ -76,7 +76,8 @@ public class ClientQueryService {
         final var spec = Specification.anyOf(
             ClientSpecification.nameContains(model.getName()),
             ClientSpecification.clientIdContains(model.getClientId()),
-            ClientSpecification.descriptionContains(model.getDescription())
+            ClientSpecification.descriptionContains(model.getDescription()),
+            ClientSpecification.statusContains(model.getStatus())
         );
 
         final var page = clientRepository.findAll(spec, PaginationHelper.toPageable(configPage));
