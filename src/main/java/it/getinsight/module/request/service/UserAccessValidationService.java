@@ -1,6 +1,5 @@
 package it.getinsight.module.request.service;
 
-import it.getinsight.module.level.service.ItemResolverService;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.user.service.AuthenticationContextService;
@@ -21,37 +20,34 @@ public class UserAccessValidationService {
     private final RoleRepository roleRepository;
     private final AuthenticationContextService authenticationContextService;
     private final SecurityScopes securityScopes;
-    private final ItemResolverService itemResolverService;
 
 
     public void validateUserAccessToRequest(Long requestId, RequestEntity requestEntity) {
-        if (hasNoValidScopeWithHierarchy(requestEntity)) {
+        if (hasNoValidScopeWithHierarchyForRequest(requestEntity)) {
             log.warn("Unauthorized access attempt to request {} by user {}", requestId, authenticationContextService.getCurrentUserId());
             throw APPROVE_NOT_AUTHORIZED.accessForbiddenException();
         }
     }
-    public boolean hasNoValidScopeWithHierarchy(RequestEntity requestEntity) {
-        return securityScopes.all().stream().noneMatch(s -> {
-            Long clientId = requestEntity.getRole().getClient().getId();
-            var level = requestEntity.getLevel();
-            Long levelId = level != null ? level.getId() : null;
-            String itemKey = requestEntity.getCodeItem() != null && level != null ?
-                itemResolverService.resolveCodeItem(level, requestEntity.getCodeItem()) : null;
+    public boolean hasNoValidScopeWithHierarchyForRequest(RequestEntity requestEntity) {
+        return securityScopes.all()
+            .stream()
+            .filter(s -> s.clientId().equals(requestEntity.getRole().getClient().getId()))
+            .filter(s -> s.roleId().equals(requestEntity.getRole().getId()))
+            .noneMatch(s -> {
+                final var level = requestEntity.getLevel();
+                final var levelId = level != null ? level.getId() : null;
+                final var codeItem = requestEntity.getCodeItem();
+                final var exactMatch = s.levelId().equals(levelId) && s.codeItem().equals(codeItem);
 
-            boolean exactMatch = s.clientId().equals(clientId)
-                && s.levelId().equals(levelId)
-                && s.codeItem().equals(itemKey);
-
-            if (!exactMatch && levelId != null) {
-                return roleRepository.findDescendantRoles(s.roleId(), s.clientId())
-                    .stream()
+                if (!exactMatch && levelId != null) {
+                    return roleRepository.findDescendantRoles(s.roleId(), s.clientId())
+                        .stream()
                     .anyMatch(roleEntity ->
-                        roleEntity != null
+                               roleEntity != null
                             && roleEntity.getRole() != null
                             && roleEntity.getLevel() != null
                             && roleEntity.getRole().getLevel() != null
                             && !roleEntity.getRole().getLevel().equals(roleEntity.getLevel())
-                            && s.clientId().equals(clientId)
                             && roleEntity.getLevel().getId().equals(levelId)
                     );
             }
@@ -59,8 +55,8 @@ public class UserAccessValidationService {
         });
     }
 
-    public void validateUserPermissionToUpdateRequest(RequestEntity requestEntity) {
-        if (hasNoValidScopeWithHierarchy(requestEntity)) {
+    public void validateUserPermissionToUpdateToAllowOrDenyRequest(RequestEntity requestEntity) {
+        if (hasNoValidScopeWithHierarchyForRequest(requestEntity)) {
             throw USER_NOT_AUTHORIZED.accessForbiddenException();
         }
     }

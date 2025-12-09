@@ -23,4 +23,13 @@ public enum RequestStatus {
         return CoreMessageSource.get().message(this.key) ;
     }
 
+
+    public boolean isHierarchicalApprovalStatus(RequestStatus status) {
+        return status == RequestStatus.PENDING || status == RequestStatus.REJECTED || status == RequestStatus.APPROVED;
+    }
+
+    public boolean isNotHierarchicalApprovalStatus(RequestStatus status) {
+        return status == RequestStatus.CREATED || status == RequestStatus.CANCELED || status == RequestStatus.REVOKED;
+    }
+
 }

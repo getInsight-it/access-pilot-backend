@@ -137,7 +137,7 @@ public class RequestController {
 
     @GetMapping("/{id}/my-available-actions")
     public ResponseEntity<List<RequestAction>> getActionsForRequest(@PathVariable Long id) {
-        return ResponseEntity.ok(requestService.getActionsForRequest(id));
+        return ResponseEntity.ok(requestService.getAllowedActionsForRequest(id));
     }
 
 }

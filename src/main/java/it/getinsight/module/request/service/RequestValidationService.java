@@ -25,8 +25,8 @@ public class RequestValidationService {
         userAccessValidationService.validateUserAccessToRequest(requestId, requestEntity);
     }
 
-    public void validateUserPermissionToUpdateRequest(RequestEntity requestEntity) {
-        userAccessValidationService.validateUserPermissionToUpdateRequest(requestEntity);
+    public void validateUserPermissionToUpdateToAllowOrDenyRequest(RequestEntity requestEntity) {
+        userAccessValidationService.validateUserPermissionToUpdateToAllowOrDenyRequest(requestEntity);
     }
 
     public void validateClientStatus(RequestEntity requestEntity) {

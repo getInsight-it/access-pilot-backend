@@ -48,7 +48,6 @@ public class RequestService {
     private final RequestMapper requestMapper;
     private final RequestFilterMapper requestFilterMapper;
     private final AuthenticationContextService authenticationContextService;
-    private final UserAccessValidationService userAccessValidationService;
 
     private final RequestCreationService requestCreationService;
     private final RequestManagementService requestManagementService;
@@ -175,22 +174,13 @@ public class RequestService {
         return requestMapper.toDto(requestEntity);
     }
 
-    public List<RequestAction> getActionsForRequest(Long requestId) {
-        var requestEntity = requestRepository.findById(requestId).orElseThrow(REQUEST_NOT_FOUND_ERROR::resourceNotFoundException);
-        var isOwnerRequester = authenticationContextService.getCurrentUserId().equals(requestEntity.getRequestingUser().getExternalId());
-        var canApproveOrReject = !userAccessValidationService.hasNoValidScopeWithHierarchy(requestEntity);
-        List<RequestAction> actions = new ArrayList<>();
-        if (isOwnerRequester){
-            actions.add(RequestAction.CANCEL);
-        }
-        if (canApproveOrReject) {
-            actions.add(RequestAction.APPROVE);
-            actions.add(RequestAction.REJECT);
-        }
-        if (RequestStatus.APPROVED.equals(requestEntity.getStatus())) {
-            actions.add(RequestAction.REVOKE);
-        }
-        return actions;
+    public List<RequestAction> getAllowedActionsForRequest(Long requestId) {
+        return requestManagementService.getAllowedActionsForRequest(requestId);
+    }
+
+
+    public List<RequestAction> getAllowedActionsForRequest(RequestEntity requestEntity) {
+        return requestManagementService.getAllowedActionsForRequest(requestEntity);
     }
 
 }
