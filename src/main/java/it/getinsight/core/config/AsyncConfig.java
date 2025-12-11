@@ -1,4 +1,4 @@
-package it.getinsight.config;
+package it.getinsight.core.config;
 
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Bean;

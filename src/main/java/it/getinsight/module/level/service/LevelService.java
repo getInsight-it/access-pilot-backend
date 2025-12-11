@@ -174,12 +174,10 @@ public class LevelService {
         }
         levelMapper.fromDto(levelDTO, levelEntity);
         var levelParent = levelDTO.parentId() != null ? levelRepository.findById(levelDTO.parentId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException) : null;
+        levelEntity.setParent(levelParent);
 
 
-
-        if(levelParent != null && Objects.equals(levelParent.getId(), levelEntity.getId())){
-            throw LEVEL_HIERARCHY_INVALID_ERROR.businessException();
-        }
+        checkIfNewParentAttachedIsDescendantOfCurrent(levelParent, levelEntity);
 
         if (Boolean.TRUE.equals(itemRepository.existsItemEntityByActiveTrueAndLevel(levelEntity)) && Boolean.TRUE.equals(itemRepository.existsItemEntityByActiveTrueAndLevel(levelParent))) {
             throw ERROR_UPDATE_LEVEL_PARENT_WITH_ITEMS.businessException();
@@ -187,9 +185,24 @@ public class LevelService {
         if (StringUtils.isNotBlank(levelDTO.apiKey()) && !levelDTO.apiKey().equals(levelEntity.getApiKey())) {
             levelEntity.setApiKey(levelDTO.apiKey());
         }
-        levelEntity.setParent(levelParent);
         levelRepository.save(levelEntity);
 
+    }
+
+    private static void checkIfNewParentAttachedIsDescendantOfCurrent(LevelEntity levelParent, LevelEntity levelEntity) {
+        if (levelParent != null) {
+            if (Objects.equals(levelParent.getId(), levelEntity.getId())) {
+                throw LEVEL_HIERARCHY_INVALID_ERROR.businessException();
+            }
+
+            LevelEntity currentParent = levelParent.getParent();
+            while (currentParent != null) {
+                if (Objects.equals(currentParent.getId(), levelEntity.getId())) {
+                    throw LEVEL_HIERARCHY_INVALID_ERROR.businessException();
+                }
+                currentParent = currentParent.getParent();
+            }
+        }
     }
 
     @Transactional(propagation = Propagation.REQUIRED)

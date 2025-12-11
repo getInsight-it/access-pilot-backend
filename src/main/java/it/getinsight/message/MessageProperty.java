@@ -77,6 +77,7 @@ public enum MessageProperty implements IMessageProperty {
     FILE_INFO_FAILED_ERROR("file.info.failed"),
     FILE_NOT_FOUND_ERROR("file.not.found"),
     FILE_SAVE_ERROR("file.save.error"),
+    FILE_UPLOAD_SIZE_EXCEEDED("file.upload.size.exceeded"),
     OWNER_ID_REQUIRED_ERROR("owner.id.required"),
     STORAGE_BUCKET_CREATION_ERROR("storage.bucket.creation.error"),
 

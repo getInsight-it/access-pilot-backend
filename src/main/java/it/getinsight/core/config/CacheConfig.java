@@ -1,6 +1,6 @@
-package it.getinsight.config;
+package it.getinsight.core.config;
 
-import it.getinsight.config.properties.CacheConfigurationProperties;
+import it.getinsight.core.config.properties.CacheConfigurationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;

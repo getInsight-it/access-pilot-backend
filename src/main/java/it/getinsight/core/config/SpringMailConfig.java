@@ -1,4 +1,4 @@
-package it.getinsight.config;
+package it.getinsight.core.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -66,9 +66,9 @@ public class SpringMailConfig {
     }
 
     @Bean
-    TemplateEngine emailTemplateEngine(ITemplateResolver textTemplateResolver, 
-                                     ITemplateResolver htmlTemplateResolver, 
-                                     ITemplateResolver stringTemplateResolver, 
+    TemplateEngine emailTemplateEngine(ITemplateResolver textTemplateResolver,
+                                     ITemplateResolver htmlTemplateResolver,
+                                     ITemplateResolver stringTemplateResolver,
                                      ResourceBundleMessageSource emailMessageSource) {
         final SpringTemplateEngine templateEngine = new SpringTemplateEngine();
         templateEngine.addTemplateResolver(textTemplateResolver);

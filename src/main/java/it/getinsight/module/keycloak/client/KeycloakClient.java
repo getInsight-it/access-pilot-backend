@@ -2,7 +2,7 @@ package it.getinsight.module.keycloak.client;
 
 
 import io.github.resilience4j.retry.annotation.Retry;
-import it.getinsight.config.FeignConfiguration;
+import it.getinsight.core.config.FeignConfiguration;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
 import it.getinsight.module.keycloak.dto.UserRepresentationDTO;

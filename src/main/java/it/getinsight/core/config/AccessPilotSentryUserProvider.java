@@ -1,4 +1,4 @@
-package it.getinsight.config;
+package it.getinsight.core.config;
 
 import io.sentry.protocol.User;
 import io.sentry.spring.jakarta.SentryUserProvider;

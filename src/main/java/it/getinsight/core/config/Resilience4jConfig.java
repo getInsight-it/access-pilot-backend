@@ -1,4 +1,4 @@
-package it.getinsight.config;
+package it.getinsight.core.config;
 
 import feign.FeignException;
 import io.github.resilience4j.retry.RetryConfig;

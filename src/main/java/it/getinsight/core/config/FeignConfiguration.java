@@ -1,4 +1,4 @@
-package it.getinsight.config;
+package it.getinsight.core.config;
 
 import org.springframework.cloud.openfeign.security.OAuth2AccessTokenInterceptor;
 import org.springframework.context.annotation.Bean;
