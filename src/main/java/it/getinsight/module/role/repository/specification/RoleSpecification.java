@@ -1,6 +1,7 @@
 package it.getinsight.module.role.repository.specification;
 
 import it.getinsight.module.role.entity.RoleEntity;
+import it.getinsight.utilitario.SpecificationUtils;
 import jakarta.persistence.criteria.Predicate;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.jpa.domain.Specification;
@@ -58,4 +59,27 @@ public class RoleSpecification {
             : (root, query, cb) -> cb.isNull(root.get("role"));
     }
 
+    public static Specification<RoleEntity> nameContains(String value) {
+        if (value == null) return null;
+        return (root, query, cb) -> cb.like(
+            SpecificationUtils.unaccentLower(cb, root.get("name")),
+            SpecificationUtils.containsPatternUnaccentLower(cb, value)
+        );
+    }
+
+    public static Specification<RoleEntity> labelContains(String value) {
+        if (value == null) return null;
+        return (root, query, cb) -> cb.like(
+            SpecificationUtils.unaccentLower(cb, root.get("label")),
+            SpecificationUtils.containsPatternUnaccentLower(cb, value)
+        );
+    }
+
+    public static Specification<RoleEntity> descriptionContains(String value) {
+        if (value == null) return null;
+        return (root, query, cb) -> cb.like(
+            SpecificationUtils.unaccentLower(cb, root.get("description")),
+            SpecificationUtils.containsPatternUnaccentLower(cb, value)
+        );
+    }
 }

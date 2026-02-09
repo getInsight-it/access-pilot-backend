@@ -16,15 +16,14 @@ import it.getinsight.module.level.mapper.LevelMapper;
 import it.getinsight.module.level.mapper.LevelResponseMapper;
 import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.level.repository.LevelRepository;
+import it.getinsight.module.level.specification.LevelSpecification;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.request.repository.RequestRepository;
-import it.getinsight.module.role.service.RoleLevelPolicyService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,16 +63,12 @@ public class LevelService {
             .map(levelMapper::toEntity)
             .orElse(new LevelEntity());
 
-        final var matcher = ExampleMatcher
-            .matchingAny()
-            .withIgnoreNullValues()
-            .withMatcher("name", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("description", ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher("externalUrl", ExampleMatcher.GenericPropertyMatcher::contains);
-
-        final var example = Example.of(model, matcher);
-
-        final var page = levelRepository.findAll(example, PaginationHelper.toPageable(configPage));
+        final var spec = Specification.anyOf(
+            LevelSpecification.nameContains(model.getName()),
+            LevelSpecification.descriptionContains(model.getDescription()),
+            LevelSpecification.externalUrlContains(model.getExternalUrl())
+        );
+        final var page = levelRepository.findAll(spec, PaginationHelper.toPageable(configPage));
         return PaginationHelper.toPageResponse(levelResponseMapper.toDto(page.getContent()), page.getTotalElements());
     }
 
@@ -227,4 +222,3 @@ public class LevelService {
     }
 
 }
-

@@ -4,6 +4,7 @@ import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.user.entity.UserEntity;
+import it.getinsight.utilitario.SpecificationUtils;
 import jakarta.persistence.criteria.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -238,46 +239,46 @@ public class RequestSpecification {
         return p;
     }
 
-    private static String normalizeSearchTerm(String term) {
-        if (term == null) {
-            return "";
-        }
-        return java.text.Normalizer.normalize(term, java.text.Normalizer.Form.NFD)
-            .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-    }
-
     private static Predicate addClientFiltersByClientIdWithLike(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, String clientId) {
         if (StringUtils.isNotBlank(clientId)) {
-            Expression<String> field = cb.function("unaccent", String.class,
-                cb.lower(root.get("role").get("client").get("clientId")));
-            p = cb.or(p, cb.like(field, "%" + normalizeSearchTerm(clientId).toLowerCase() + "%"));
+            Expression<String> field = SpecificationUtils.unaccentLower(
+                cb,
+                root.get("role").get("client").get("clientId")
+            );
+            p = cb.or(p, cb.like(field, SpecificationUtils.containsPatternUnaccentLower(cb, clientId)));
         }
         return p;
     }
 
     private static Predicate addClientFiltersByClientNameWithLike(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, String clientName) {
         if (StringUtils.isNotBlank(clientName)) {
-            Expression<String> field = cb.function("unaccent", String.class,
-                cb.lower(root.get("role").get("client").get("name")));
-            p = cb.or(p, cb.like(field, "%" + normalizeSearchTerm(clientName).toLowerCase() + "%"));
+            Expression<String> field = SpecificationUtils.unaccentLower(
+                cb,
+                root.get("role").get("client").get("name")
+            );
+            p = cb.or(p, cb.like(field, SpecificationUtils.containsPatternUnaccentLower(cb, clientName)));
         }
         return p;
     }
 
     private static Predicate addRoleFiltersByNameWithLike(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, String role) {
         if (StringUtils.isNotBlank(role)) {
-            Expression<String> field = cb.function("unaccent", String.class,
-                cb.lower(root.get("role").get("name")));
-            p = cb.or(p, cb.like(field, "%" + normalizeSearchTerm(role).toLowerCase() + "%"));
+            Expression<String> field = SpecificationUtils.unaccentLower(
+                cb,
+                root.get("role").get("name")
+            );
+            p = cb.or(p, cb.like(field, SpecificationUtils.containsPatternUnaccentLower(cb, role)));
         }
         return p;
     }
 
     private static Predicate addRoleFiltersByLabelWithLike(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, String role) {
         if (StringUtils.isNotBlank(role)) {
-            Expression<String> field = cb.function("unaccent", String.class,
-                cb.lower(root.get("role").get("label")));
-            p = cb.or(p, cb.like(field, "%" + normalizeSearchTerm(role).toLowerCase() + "%"));
+            Expression<String> field = SpecificationUtils.unaccentLower(
+                cb,
+                root.get("role").get("label")
+            );
+            p = cb.or(p, cb.like(field, SpecificationUtils.containsPatternUnaccentLower(cb, role)));
         }
         return p;
     }
@@ -311,9 +312,11 @@ public class RequestSpecification {
         }
 
         if (StringUtils.isNotBlank(requestingUser.getExternalId())) {
-            Expression<String> field = cb.function("unaccent", String.class,
-                cb.lower(root.get("requestingUser").get("externalId")));
-            parts.add(cb.like(field, "%" + normalizeSearchTerm(requestingUser.getExternalId()).toLowerCase() + "%"));
+            Expression<String> field = SpecificationUtils.unaccentLower(
+                cb,
+                root.get("requestingUser").get("externalId")
+            );
+            parts.add(cb.like(field, SpecificationUtils.containsPatternUnaccentLower(cb, requestingUser.getExternalId())));
         }
 
         if (parts.isEmpty()) {
@@ -336,18 +339,22 @@ public class RequestSpecification {
 
     private static Predicate addDescriptionFilter(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, String description) {
         if (description != null) {
-            Expression<String> field = cb.function("unaccent", String.class,
-                cb.lower(root.get("description")));
-            p = cb.or(p, cb.like(field, "%" + normalizeSearchTerm(description).toLowerCase() + "%"));
+            Expression<String> field = SpecificationUtils.unaccentLower(
+                cb,
+                root.get("description")
+            );
+            p = cb.or(p, cb.like(field, SpecificationUtils.containsPatternUnaccentLower(cb, description)));
         }
         return p;
     }
 
     private static Predicate addProtocolCodeFilter(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, String protocolCode) {
         if (protocolCode != null) {
-            Expression<String> field = cb.function("unaccent", String.class,
-                cb.lower(root.get("protocolCode")));
-            p = cb.or(p, cb.like(field, "%" + normalizeSearchTerm(protocolCode).toLowerCase() + "%"));
+            Expression<String> field = SpecificationUtils.unaccentLower(
+                cb,
+                root.get("protocolCode")
+            );
+            p = cb.or(p, cb.like(field, SpecificationUtils.containsPatternUnaccentLower(cb, protocolCode)));
         }
         return p;
     }

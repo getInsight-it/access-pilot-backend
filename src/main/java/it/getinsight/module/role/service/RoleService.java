@@ -1,6 +1,5 @@
 package it.getinsight.module.role.service;
 
-
 import it.getinsight.core.exception.InfraException;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
@@ -23,12 +22,10 @@ import it.getinsight.module.role.mapper.RoleResponseMapper;
 import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.user.dto.UserDTO;
 import it.getinsight.module.user.service.UserService;
-import it.getinsight.utilitario.PropertyPathConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,9 +34,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static it.getinsight.message.MessageProperty.*;
-import static it.getinsight.module.role.repository.specification.RoleSpecification.hasClientId;
-import static it.getinsight.module.role.repository.specification.RoleSpecification.hasParent;
-
+import static it.getinsight.module.role.repository.specification.RoleSpecification.*;
 
 @Service
 @RequiredArgsConstructor
@@ -73,16 +68,16 @@ public class RoleService {
             .map(roleFilterMapper::toDto)
             .map(roleMapper::toEntity).orElse(new RoleEntity());
 
-        final var matcher = ExampleMatcher
-            .matchingAny()
-            .withIgnoreNullValues()
-            .withMatcher(PropertyPathConstants.Role.NAME, ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher(PropertyPathConstants.Role.DESCRIPTION, ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher(PropertyPathConstants.Role.CLIENT_ID, ExampleMatcher.GenericPropertyMatcher::contains);
+        final var clientId = model.getClient() != null ? model.getClient().getClientId() : null;
 
-        final var example = Example.of(model, matcher);
+        final var spec = hasClientId(clientId)
+            .and(Specification.anyOf(
+                nameContains(model.getName()),
+                labelContains(model.getLabel()),
+                descriptionContains(model.getDescription())
+            ));
 
-        final var page = roleRepository.findAll(example, PaginationHelper.toPageable(configPage));
+        final var page = roleRepository.findAll(spec, PaginationHelper.toPageable(configPage));
         return PaginationHelper.toPageResponse(roleResponseMapper.toDto(page.getContent()), page.getTotalElements());
     }
 
@@ -90,15 +85,9 @@ public class RoleService {
         final var model = new RoleEntity();
         configPage.getFilter().ifPresent(model::setName);
 
-        final var matcher = ExampleMatcher
-            .matching()
-            .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING)
-            .withIgnoreNullValues()
-            .withIgnoreCase();
+        final var spec = nameContains(model.getName());
 
-        final var example = Example.of(model, matcher);
-
-        final var page = roleRepository.findAll(example, PaginationHelper.toPageable(configPage));
+        final var page = roleRepository.findAll(spec, PaginationHelper.toPageable(configPage));
         return PaginationHelper.toPageResponse(roleResponseMapper.toDto(page.getContent()), page.getTotalElements());
     }
 

@@ -8,6 +8,7 @@ import java.io.Serializable;
 public record RoleFilterDTO(
 
     String name,
+    String label,
 
     String description,
 

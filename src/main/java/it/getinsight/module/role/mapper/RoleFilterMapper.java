@@ -15,6 +15,10 @@ public interface RoleFilterMapper extends BaseMapper<RoleFilterDTO, RoleDTO>, Ba
         target = "client.name",
         source = "clientName"
     )
+    @Mapping(
+        target = "client.clientId",
+        source = "clientId"
+    )
     RoleDTO toDto(RoleFilterDTO entity);
 
 }

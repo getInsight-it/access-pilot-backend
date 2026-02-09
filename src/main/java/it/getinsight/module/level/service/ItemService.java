@@ -20,8 +20,8 @@ import it.getinsight.module.level.mapper.ItemMapper;
 import it.getinsight.module.level.mapper.LevelHierarchyResumedMapper;
 import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.level.repository.LevelRepository;
+import it.getinsight.module.level.specification.ItemSpecification;
 import it.getinsight.utilitario.PropertyPathConstants;
-import jakarta.persistence.criteria.Predicate;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,9 +30,6 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.csv.QuoteMode;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
-import org.springframework.data.jpa.convert.QueryByExamplePredicateBuilder;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -82,26 +79,14 @@ public class ItemService {
             .map(itemMapper::toEntity)
             .orElse(new ItemEntity());
 
-        final var matcher = ExampleMatcher
-            .matchingAny()
-            .withIgnoreNullValues()
-            .withIgnoreCase()
-            .withMatcher(PropertyPathConstants.Item.NAME, ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher(PropertyPathConstants.Item.DESCRIPTION, ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher(PropertyPathConstants.Item.EXTERNAL_CODE, ExampleMatcher.GenericPropertyMatcher::contains);
-
-        final var example = Example.of(model, matcher);
-
-        Specification<ItemEntity> spec = (root, query, cb) -> {
-            Predicate examplePredicate = QueryByExamplePredicateBuilder.getPredicate(root, cb, example);
-            Predicate levelPredicate = cb.equal(root.get("level").get("id"), levelId);
-
-            if (examplePredicate != null) {
-                return cb.and(levelPredicate, examplePredicate);
-            } else {
-                return levelPredicate;
-            }
-        };
+        final var spec = Specification.allOf(
+            ItemSpecification.levelEquals(levelId),
+            Specification.anyOf(
+                ItemSpecification.nameContains(model.getName()),
+                ItemSpecification.descriptionContains(model.getDescription()),
+                ItemSpecification.externalCodeContains(model.getExternalCode())
+            )
+        );
 
         final var page = itemRepository.findAll(spec, PaginationHelper.toPageable(configPage));
         return PaginationHelper.toPageResponse(itemHierarchyResumedMapper.toDto(page.getContent()), page.getTotalElements());
@@ -132,28 +117,15 @@ public class ItemService {
             .map(itemMapper::toEntity)
             .orElse(new ItemEntity());
 
-
-        final var matcher = ExampleMatcher
-            .matchingAny()
-            .withIgnoreNullValues()
-            .withIgnoreCase()
-            .withMatcher(PropertyPathConstants.Item.NAME, ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher(PropertyPathConstants.Item.DESCRIPTION, ExampleMatcher.GenericPropertyMatcher::contains)
-            .withMatcher(PropertyPathConstants.Item.EXTERNAL_CODE, ExampleMatcher.GenericPropertyMatcher::contains);
-
-        final var example = Example.of(model, matcher);
-
-        Specification<ItemEntity> spec = (root, query, cb) -> {
-            Predicate examplePredicate = QueryByExamplePredicateBuilder.getPredicate(root, cb, example);
-            Predicate levelPredicate = cb.equal(root.get("level").get("id"), levelId);
-            Predicate itemParentPredicate = cb.equal(root.get("parent").get("id"), itemId);
-
-            if (examplePredicate != null) {
-                return cb.and(levelPredicate, itemParentPredicate, examplePredicate);
-            } else {
-                return cb.and(levelPredicate, itemParentPredicate);
-            }
-        };
+        final var spec = Specification.allOf(
+            ItemSpecification.levelEquals(levelId),
+            ItemSpecification.parentEquals(itemId),
+            Specification.anyOf(
+                ItemSpecification.nameContains(model.getName()),
+                ItemSpecification.descriptionContains(model.getDescription()),
+                ItemSpecification.externalCodeContains(model.getExternalCode())
+            )
+        );
         final var page = itemRepository.findAll(spec, PaginationHelper.toPageable(configPage));
         return PaginationHelper.toPageResponse(itemHierarchyResumedMapper.toDto(page.getContent()), page.getTotalElements());
     }
@@ -419,4 +391,3 @@ public class ItemService {
     }
 
 }
-
