@@ -45,7 +45,7 @@ items:
 
     SENTRY_ENVIRONMENT: ${CI_ENVIRONMENT_NAME}
 
-    PIPELINE_ID: ${CI_PIPELINE_ID}
+    PIPELINE_ID: "${CI_PIPELINE_ID}"
   kind: ConfigMap
   metadata:
     name: ${CI_PROJECT_NAME}
