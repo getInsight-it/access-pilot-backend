@@ -32,6 +32,10 @@ provider:
       - account
       - admin-cli
       - account-console
+      - accesspilot-frontend
+      - chat-device-client
+    ignore-roles:
+      - uma_protection
 
 identity:
   provider: keycloak

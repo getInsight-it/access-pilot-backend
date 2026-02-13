@@ -5,6 +5,7 @@ import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.dto.ClientDTO;
 import it.getinsight.module.client.dto.ClientFilterDTO;
 import it.getinsight.module.client.dto.ClientFullResponseDTO;
+import it.getinsight.module.client.dto.ClientSyncSummaryDTO;
 import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.client.entity.ClientStatus;
 import it.getinsight.module.client.mapper.ClientFullResponseMapper;
@@ -85,6 +86,12 @@ public class ClientService {
     @CacheEvict(value = "clients", allEntries = true)
     public void synchronizationClients(List<String> clientIds) {
         clientSynchronizationService.synchronizeClients(clientIds);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    @CacheEvict(value = {"clients", "getTotalClients"}, allEntries = true)
+    public ClientSyncSummaryDTO synchronizeAllClients(boolean syncRoles) {
+        return clientSynchronizationService.synchronizeAllClients(syncRoles);
     }
 
     @CacheEvict(value = "clients", allEntries = true)

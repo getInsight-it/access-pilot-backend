@@ -119,9 +119,12 @@ public class ClientQueryService {
     private List<ClientDTO> fetchUpdatedClientFromIDP(List<ClientEntity> page) {
         return page.stream()
             .filter(o -> o.getClientUUID() != null)
-            .map(this::fetchClientFromIDPSafely)
-            .flatMap(Optional::stream)
-            .map(idpClient -> mapToClientDTO(page, idpClient))
+            .map(client -> {
+                Optional<ClientRepresentationDTO> idpClient = fetchClientFromIDPSafely(client);
+                return idpClient
+                    .map(idp -> mapToClientDTO(page, idp))
+                    .orElse(clientMapper.toDto(client));
+            })
             .toList();
     }
 
@@ -169,4 +172,3 @@ public class ClientQueryService {
         return BooleanUtils.isTrue(attached) == hasAccess;
     }
 }
-

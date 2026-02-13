@@ -8,6 +8,7 @@ import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.dto.ClientDTO;
 import it.getinsight.module.client.dto.ClientFilterDTO;
 import it.getinsight.module.client.dto.ClientFullResponseDTO;
+import it.getinsight.module.client.dto.ClientSyncSummaryDTO;
 import it.getinsight.module.client.dto.ClientStatusUpdateDTO;
 import it.getinsight.module.client.service.ClientService;
 import it.getinsight.module.configuration.dto.AttachmentConfigurationDTO;
@@ -98,6 +99,16 @@ public class ClientController {
     public ResponseEntity<ClientDTO> synchronous(@RequestBody List<String> clientIds) {
         clientService.synchronizationClients(clientIds);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+        summary = "Synchronize all clients",
+        description = "Discover and synchronize all clients from identity provider"
+    )
+    @PostMapping(value = "/synchronous/all", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize(value = "hasRole('ADMIN')")
+    public ResponseEntity<ClientSyncSummaryDTO> synchronizeAll(@RequestParam(defaultValue = "false") boolean syncRoles) {
+        return ResponseEntity.ok(clientService.synchronizeAllClients(syncRoles));
     }
 
 

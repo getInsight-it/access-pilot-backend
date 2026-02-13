@@ -16,4 +16,5 @@ public class KeycloakProperties {
     private String clientId;
     private String clientSecret;
     private List<String> ignoreClients;
+    private List<String> ignoreRoles;
 }
