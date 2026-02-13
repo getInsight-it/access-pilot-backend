@@ -46,7 +46,8 @@ public class UserAccessValidationService {
             .anyMatch(scope -> matchesScope(scope, clientId, roleId, levelId, codeItem));
 
         boolean matchesRoleWithoutLevel = levelId == null
-            && rolesWithoutLevel.contains(String.valueOf(roleId));
+            && rolesWithoutLevel.stream()
+                .anyMatch(scope -> matchesRoleWithoutLevelScope(scope, clientId, roleId));
 
         return !(matchesDirect || matchesHierarchical || matchesRoleWithoutLevel);
     }
@@ -68,6 +69,30 @@ public class UserAccessValidationService {
         } catch (NumberFormatException e) {
             log.warn("Invalid scope format: {}", scope);
             return false;
+        }
+    }
+
+    private boolean matchesRoleWithoutLevelScope(String scope, Long clientId, Long roleId) {
+        if (scope == null || scope.isBlank()) {
+            return false;
+        }
+        String[] parts = scope.split(":");
+        if (parts.length == 4) {
+            Long scopeClientId = tryParseLong(parts[0]);
+            Long scopeRoleId = tryParseLong(parts[1]);
+            return scopeRoleId != null
+                && scopeRoleId.equals(roleId)
+                && (scopeClientId == null || scopeClientId.equals(clientId));
+        }
+        Long scopeRoleId = tryParseLong(scope);
+        return scopeRoleId != null && scopeRoleId.equals(roleId);
+    }
+
+    private Long tryParseLong(String raw) {
+        try {
+            return raw == null ? null : Long.valueOf(raw);
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 

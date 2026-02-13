@@ -359,15 +359,57 @@ public class RequestSpecification {
         return p;
     }
 
-    public static Specification<RequestEntity> rolesWithLevelIsNull(List<String> roleIds) {
+    public static Specification<RequestEntity> rolesWithLevelIsNull(List<String> roleRefs) {
         return (root, query, cb) -> {
-            if (roleIds == null || roleIds.isEmpty()) {
+            if (roleRefs == null || roleRefs.isEmpty()) {
+                // When no roles are provided, do not match any request to avoid leaking all results
                 return cb.conjunction();
             }
-            return cb.and(
-                root.get("role").get("level").isNull(),
-                root.get("role").get("id").in(roleIds)
-            );
+
+            record RoleRef(Long clientId, Long roleId) {}
+            List<RoleRef> parsed = new ArrayList<>();
+            for (String raw : roleRefs) {
+                if (StringUtils.isBlank(raw)) {
+                    continue;
+                }
+                String[] parts = raw.split(":");
+                if (parts.length == 4) {
+                    Long clientId = tryParseLong(parts[0]);
+                    Long roleId = tryParseLong(parts[1]);
+                    if (roleId != null) {
+                        parsed.add(new RoleRef(clientId, roleId));
+                    }
+                } else {
+                    Long roleId = tryParseLong(raw);
+                    if (roleId != null) {
+                        parsed.add(new RoleRef(null, roleId));
+                    }
+                }
+            }
+
+            if (parsed.isEmpty()) {
+                return cb.disjunction();
+            }
+
+            Predicate roleLevelNull = root.get("role").get("level").isNull();
+            List<Predicate> orParts = new ArrayList<>();
+            for (RoleRef ref : parsed) {
+                Predicate rolePredicate = cb.equal(root.get("role").get("id"), ref.roleId());
+                if (ref.clientId() != null) {
+                    rolePredicate = cb.and(rolePredicate, cb.equal(root.get("role").get("client").get("id"), ref.clientId()));
+                }
+                orParts.add(rolePredicate);
+            }
+
+            return cb.and(roleLevelNull, cb.or(orParts.toArray(new Predicate[0])));
         };
+    }
+
+    private static Long tryParseLong(String raw) {
+        try {
+            return raw == null ? null : Long.valueOf(raw);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

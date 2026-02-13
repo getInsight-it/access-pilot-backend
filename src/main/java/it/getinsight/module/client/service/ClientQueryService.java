@@ -166,7 +166,7 @@ public class ClientQueryService {
         boolean hasAccess = resourceAccess.entrySet().stream()
             .anyMatch(e -> Objects.equals(e.getKey(), client.getClientId()));
 
-        return BooleanUtils.isTrue(attached) ? hasAccess : !hasAccess;
+        return BooleanUtils.isTrue(attached) == hasAccess;
     }
 }
 

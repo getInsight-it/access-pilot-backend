@@ -3,6 +3,7 @@ package it.getinsight.module.user.service;
 import it.getinsight.module.level.entity.LevelType;
 import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.level.service.ItemService;
+import it.getinsight.module.client.repository.ClientRepository;
 import it.getinsight.module.role.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
@@ -17,6 +19,7 @@ import java.util.*;
 public class SecurityScopesBuilderService {
 
     private final LevelAttributesExtractor extractor;
+    private final ClientRepository clientRepository;
     private final RoleRepository roleRepository;
     private final ItemService itemService;
     private final ItemRepository itemRepository;
@@ -27,16 +30,12 @@ public class SecurityScopesBuilderService {
         List.of(),
         List.of()
     );
+    private static final String WILDCARD = "*";
 
     public SecurityScopes.CachedScopes buildScopes(Jwt jwt) {
         log.debug("Building scopes for new token...");
         List<ScopeRef> scopes = extractor.extract(jwt);
         log.debug("Extracted scopes: {}", scopes);
-
-        if (scopes.isEmpty()) {
-            log.debug("No scopes extracted, returning empty cached scopes");
-            return EMPTY;
-        }
 
         List<String> sameLevels = scopes.stream()
             .flatMap(s ->
@@ -94,36 +93,37 @@ public class SecurityScopesBuilderService {
 
         log.debug("hierarchyLevels (hierarchical role access): {}", hierarchyLevels);
 
-        Set<String> roleIdsWithAccess = new HashSet<>();
+        Set<String> roleIdsWithLevelAccess = new HashSet<>(
+            Stream.of(
+                    scopes.stream()
+                        .map(scope -> scope.clientId() + ":" + scope.roleId() + ":" + WILDCARD + ":" + WILDCARD),
+                    sameLevels.stream().map(SecurityScopesBuilderService::toRoleWildcard),
+                    hierarchyLevels.stream().map(SecurityScopesBuilderService::toRoleWildcard)
+                )
+                .flatMap(stream -> stream)
+                .filter(Objects::nonNull)
+                .toList()
+        );
 
-        sameLevels.forEach(s -> {
-            String[] parts = s.split(":");
-            if (parts.length > 1) {
-                roleIdsWithAccess.add(parts[1]);
-            }
-        });
-
-        hierarchyLevels.forEach(h -> {
-            String[] parts = h.split(":");
-            if (parts.length > 1) {
-                roleIdsWithAccess.add(parts[1]);
-            }
-        });
-
-        List<String> rolesWithoutDirect = scopes.stream()
-            .map(ScopeRef::roleId)
-            .map(String::valueOf)
-            .filter(roleId -> !roleIdsWithAccess.contains(roleId))
+        List<String> rolesWithoutLevelFromResource = resolveRolesWithoutLevelFromResourceAccess(jwt);
+        List<String> rolesWithDirectDirectAccess = rolesWithoutLevelFromResource.stream()
+            .filter(triple -> {
+                String[] parts = triple.split(":");
+                if (parts.length != 4) {
+                    return false;
+                }
+                return !roleIdsWithLevelAccess.contains(triple);
+            })
             .distinct()
             .toList();
 
-        log.debug("rolesWithoutDirectAccess: {}", rolesWithoutDirect);
+        log.debug("rolesWithoutDirectAccess (from resource_access, filtered): {}", rolesWithDirectDirectAccess);
 
         SecurityScopes.CachedScopes cachedScopes = new SecurityScopes.CachedScopes(
             List.copyOf(scopes),
             List.copyOf(sameLevels),
             List.copyOf(hierarchyLevels),
-            List.copyOf(rolesWithoutDirect)
+            List.copyOf(rolesWithDirectDirectAccess)
         );
         log.debug("Built cached scopes successfully with {} scopes, {} direct, {} hierarchical, {} roles without access",
             cachedScopes.scopes().size(),
@@ -132,5 +132,61 @@ public class SecurityScopesBuilderService {
             cachedScopes.rolesWithoutDirectAccess().size());
         return cachedScopes;
     }
-}
 
+    /**
+     * Derive roles without level from resource_access, excluding those already present in levelAttributes.
+     */
+    private List<String> resolveRolesWithoutLevelFromResourceAccess(Jwt jwt) {
+        Object claim = jwt.getClaims().get("resource_access");
+        if (!(claim instanceof Map<?, ?> resourceAccess)) {
+            return List.of();
+        }
+
+        List<String> roleTriples = new ArrayList<>();
+        for (Map.Entry<?, ?> entry : resourceAccess.entrySet()) {
+            if (!(entry.getKey() instanceof String clientId)) {
+                continue;
+            }
+
+            var clientOpt = clientRepository.findByClientId(clientId);
+            if (clientOpt.isEmpty()) {
+                continue;
+            }
+
+            Object rolesObj = entry.getValue();
+            if (!(rolesObj instanceof Map<?, ?> rolesMap)) {
+                continue;
+            }
+
+            Object rolesListObj = rolesMap.get("roles");
+            if (!(rolesListObj instanceof Collection<?> rolesList)) {
+                continue;
+            }
+
+            rolesList.stream()
+                .map(Object::toString)
+                .forEach(roleName ->
+                    roleRepository.findByNameAndClient(roleName, clientOpt.get())
+                        .filter(roleEntity -> roleEntity.getLevel() == null)
+                        .map(roleEntity -> roleEntity.getClient().getId()
+                            + ":" + roleEntity.getId()
+                            + ":" + WILDCARD
+                            + ":" + WILDCARD)
+                        .ifPresent(roleTriples::add)
+                );
+        }
+
+        return roleTriples.stream().distinct().toList();
+    }
+
+    private static String toRoleWildcard(String triple) {
+        if (triple == null || triple.isBlank()) {
+            return null;
+        }
+        String[] parts = triple.split(":");
+        if (parts.length != 4 || parts[0].isBlank() || parts[1].isBlank()) {
+            return null;
+        }
+        return parts[0] + ":" + parts[1] + ":" + WILDCARD + ":" + WILDCARD;
+    }
+}
