@@ -40,9 +40,6 @@ import java.util.stream.Stream;
 
 import static it.getinsight.message.MessageProperty.*;
 
-/**
- * Service for managing levels.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j

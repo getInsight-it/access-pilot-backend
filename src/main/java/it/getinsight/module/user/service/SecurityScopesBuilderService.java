@@ -133,9 +133,6 @@ public class SecurityScopesBuilderService {
         return cachedScopes;
     }
 
-    /**
-     * Derive roles without level from resource_access, excluding those already present in levelAttributes.
-     */
     private List<String> resolveRolesWithoutLevelFromResourceAccess(Jwt jwt) {
         Object claim = jwt.getClaims().get("resource_access");
         if (!(claim instanceof Map<?, ?> resourceAccess)) {
@@ -168,11 +165,21 @@ public class SecurityScopesBuilderService {
                 .forEach(roleName ->
                     roleRepository.findByNameAndClient(roleName, clientOpt.get())
                         .filter(roleEntity -> roleEntity.getLevel() == null)
-                        .map(roleEntity -> roleEntity.getClient().getId()
-                            + ":" + roleEntity.getId()
-                            + ":" + WILDCARD
-                            + ":" + WILDCARD)
-                        .ifPresent(roleTriples::add)
+                        .ifPresent(roleEntity -> {
+                            roleTriples.add(roleEntity.getClient().getId()
+                                + ":" + roleEntity.getId()
+                                + ":" + WILDCARD
+                                + ":" + WILDCARD);
+
+                            roleRepository.findDescendantRoles(roleEntity.getId(), roleEntity.getClient().getId())
+                                .stream()
+                                .filter(descendant -> descendant.getLevel() == null)
+                                .map(descendant -> descendant.getClient().getId()
+                                    + ":" + descendant.getId()
+                                    + ":" + WILDCARD
+                                    + ":" + WILDCARD)
+                                .forEach(roleTriples::add);
+                        })
                 );
         }
 
