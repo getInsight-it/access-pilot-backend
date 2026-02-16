@@ -5,11 +5,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
+import it.getinsight.module.client.dto.ClientExportDTO;
+import it.getinsight.module.client.dto.ClientImportRequestDTO;
+import it.getinsight.module.client.dto.ClientImportSummaryDTO;
 import it.getinsight.module.client.dto.ClientDTO;
 import it.getinsight.module.client.dto.ClientFilterDTO;
 import it.getinsight.module.client.dto.ClientFullResponseDTO;
 import it.getinsight.module.client.dto.ClientSyncSummaryDTO;
 import it.getinsight.module.client.dto.ClientStatusUpdateDTO;
+import it.getinsight.module.client.service.ClientExportService;
 import it.getinsight.module.client.service.ClientService;
 import it.getinsight.module.configuration.dto.AttachmentConfigurationDTO;
 import jakarta.validation.Valid;
@@ -34,6 +38,7 @@ import java.util.List;
 public class ClientController {
 
     private final ClientService clientService;
+    private final ClientExportService clientExportService;
 
     @GetMapping(path = "/publishes", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
@@ -154,6 +159,55 @@ public class ClientController {
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=attachments_configurations.csv")
             .body(csv);
+    }
+
+    @Operation(
+        summary = "Export client",
+        description = "Exports a client with configurations and roles in JSON format."
+    )
+    @GetMapping(value = "{id}/export", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ClientExportDTO> exportClient(
+        @PathVariable Long id,
+        @RequestParam(defaultValue = "true") boolean includeRoles,
+        @RequestParam(defaultValue = "true") boolean includeConfigurations
+    ) {
+        ClientExportDTO export = clientExportService.exportClient(id, includeRoles, includeConfigurations);
+        String filename = "client_export_" + export.client().clientId() + ".json";
+
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+            .body(export);
+    }
+
+    @Operation(
+        summary = "Export clients page",
+        description = "Exports a page of clients with configurations and roles in JSON format."
+    )
+    @GetMapping(value = "/export", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<ClientExportDTO>> exportClientsPage(
+        @Min(value = 1, message = "O índice da página deve ser no mínimo 1")
+        @RequestParam(defaultValue = "1") Integer pageIndex,
+        @RequestParam(defaultValue = "10") Integer pageSize,
+        @RequestParam(defaultValue = "id") String sortField,
+        @RequestParam(defaultValue = "ASC") String sortType,
+        @ParameterObject ClientFilterDTO filter,
+        @RequestParam(defaultValue = "true") boolean includeRoles,
+        @RequestParam(defaultValue = "true") boolean includeConfigurations
+    ) {
+        final var pageRequest = PageableRequestModel.of(pageIndex - 1, pageSize, sortType, sortField, filter);
+        return ResponseEntity.ok(clientExportService.exportClientsPage(pageRequest, includeRoles, includeConfigurations));
+    }
+
+    @Operation(
+        summary = "Import clients",
+        description = "Imports clients in JSON format with optional force behavior."
+    )
+    @PostMapping(value = "/import", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ClientImportSummaryDTO> importClients(@RequestBody ClientImportRequestDTO request) {
+        return ResponseEntity.ok(clientExportService.importClients(request));
     }
 
     @Operation(

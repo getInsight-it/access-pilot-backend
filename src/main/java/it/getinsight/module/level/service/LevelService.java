@@ -89,7 +89,7 @@ public class LevelService {
         if (LevelType.BUILT_IN.equals(levelDTO.type())) {
             throw CREATE_BUILT_IN_LEVEL.businessException();
         }
-        if (levelRepository.existsByName(levelDTO.name())) {
+        if (levelRepository.existsByNameIgnoreCaseAndActiveTrue(levelDTO.name())) {
             throw LEVEL_ALREADY_EXISTS_ERROR.businessException();
         }
         var entity = levelMapper.toEntity(levelDTO);
@@ -164,6 +164,11 @@ public class LevelService {
         if (!levelEntity.getType().equals(levelDTO.type())) {
             throw ERROR_UPDATE_LEVEL_TYPE.businessException();
         }
+        if (!levelEntity.getName().equalsIgnoreCase(levelDTO.name())
+            && levelRepository.existsByNameIgnoreCaseAndActiveTrue(levelDTO.name())) {
+            throw LEVEL_ALREADY_EXISTS_ERROR.businessException();
+        }
+
         levelMapper.fromDto(levelDTO, levelEntity);
         var levelParent = levelDTO.parentId() != null ? levelRepository.findById(levelDTO.parentId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException) : null;
         levelEntity.setParent(levelParent);

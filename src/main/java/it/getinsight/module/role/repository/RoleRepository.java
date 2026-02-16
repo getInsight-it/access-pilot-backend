@@ -21,6 +21,17 @@ public interface RoleRepository extends JpaRepository<RoleEntity, Long>, Dynamic
 
     Optional<RoleEntity> findByRoleExternalId(String roleExternalId);
 
+    List<RoleEntity> findAllByClient(ClientEntity client);
+
+    @Query(value = """
+        SELECT *
+        FROM TB_ROLE r
+        WHERE r.ID_CLIENTE = :clientId
+          AND LOWER(r.NOME) = LOWER(:name)
+          AND r.ATIVO = true
+        """, nativeQuery = true)
+    List<RoleEntity> findByClientIdAndNameIgnoreCase(@Param("clientId") Long clientId, @Param("name") String name);
+
     List<RoleEntity> findAllByRoleIn(List<RoleEntity> roles);
 
     @Modifying
