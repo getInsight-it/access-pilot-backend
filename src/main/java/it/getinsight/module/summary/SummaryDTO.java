@@ -4,11 +4,11 @@ import lombok.Builder;
 
 @Builder
 public record SummaryDTO(
-    Long totalActiveUsers,
+    Long totalApprovedRequests,
+    Long totalPendingRequests,
+    Long totalApprovedUsers,
     Long totalPendingUsers,
-    Long totalRegisteredUsers,
     Long totalClients,
-    Long totalRoles,
-    Long totalInactiveUsers
+    Long totalRoles
 ) {
 }

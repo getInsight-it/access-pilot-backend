@@ -159,6 +159,18 @@ public class RequestService {
         return requestRepository.countRequestingUserDistinct(RequestSpecification.matchCustom(filter));
     }
 
+    public Long getTotalAssignedRequests(RequestStatus status) {
+        var model = RequestEntity.builder().status(status).build();
+        Specification<RequestEntity> spec = requestQueryBuilderService.buildAssignedRequestsSpecification(model);
+        return requestRepository.count(spec);
+    }
+
+    public Long getTotalAssignedUsers(RequestStatus status) {
+        var model = RequestEntity.builder().status(status).build();
+        Specification<RequestEntity> spec = requestQueryBuilderService.buildAssignedRequestsSpecification(model);
+        return requestRepository.countRequestingUserDistinct(spec);
+    }
+
     public Long getTotalUsers(RequestStatus status) {
         var filter = RequestEntitySpecificationFilter.builder().status(status).build();
         return requestRepository.countRequestingUserDistinct(RequestSpecification.matchCustom(filter));

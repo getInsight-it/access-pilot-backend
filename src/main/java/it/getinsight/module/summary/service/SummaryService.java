@@ -35,11 +35,10 @@ public class SummaryService {
         var principal = (Jwt) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Map<String, List<String>> resourceAccess = principal.getClaim("resource_access");
         var roles = roleRepository.findAll(RoleSpecification.byResourceAccess(resourceAccess)).stream().toList();
-        var rolesChildren = roleRepository.findAllByRoleIn(roles);
 
         Map<Boolean, Function<List<RoleEntity>, SummaryDTO>> summaryStrategies = Map.of(
             true, ignored -> getAdminSummary(),
-            false, r -> getNonAdminSummary(roles, rolesChildren)
+            false, r -> getNonAdminSummary(roles)
         );
 
         return summaryStrategies.get(userService.isUserLoggedAdmin()).apply(roles);
@@ -48,23 +47,23 @@ public class SummaryService {
 
     private SummaryDTO getAdminSummary() {
         return SummaryDTO.builder()
-            .totalRegisteredUsers(requestService.getTotalRequestsByStatus(RequestStatus.APPROVED))
-            .totalPendingUsers(requestService.getTotalRequestsByStatus(RequestStatus.PENDING))
+            .totalApprovedRequests(requestService.getTotalRequestsByStatus(RequestStatus.APPROVED))
+            .totalPendingRequests(requestService.getTotalRequestsByStatus(RequestStatus.PENDING))
             .totalClients(clientService.getTotalClients())
             .totalRoles(roleService.getTotalRoles())
-            .totalActiveUsers(requestService.getTotalUsers(RequestStatus.APPROVED))
-            .totalInactiveUsers(requestService.getTotalUsers(RequestStatus.PENDING))
+            .totalApprovedUsers(requestService.getTotalUsers(RequestStatus.APPROVED))
+            .totalPendingUsers(requestService.getTotalUsers(RequestStatus.PENDING))
             .build();
     }
 
-    private SummaryDTO getNonAdminSummary(List<RoleEntity> roles, List<RoleEntity> rolesChildren) {
+    private SummaryDTO getNonAdminSummary(List<RoleEntity> roles) {
         return SummaryDTO.builder()
-            .totalRegisteredUsers(requestService.getTotalRequests(RequestStatus.APPROVED, rolesChildren))
-            .totalPendingUsers(requestService.getTotalRequests(RequestStatus.PENDING, rolesChildren))
+            .totalApprovedRequests(requestService.getTotalAssignedRequests(RequestStatus.APPROVED))
+            .totalPendingRequests(requestService.getTotalAssignedRequests(RequestStatus.PENDING))
             .totalClients(clientService.getTotalClients(roles))
             .totalRoles(roleService.getTotalRoles(roles))
-            .totalActiveUsers(requestService.getTotalUsers(RequestStatus.APPROVED, rolesChildren))
-            .totalInactiveUsers(requestService.getTotalUsers(RequestStatus.PENDING, rolesChildren))
+            .totalApprovedUsers(requestService.getTotalAssignedUsers(RequestStatus.APPROVED))
+            .totalPendingUsers(requestService.getTotalAssignedUsers(RequestStatus.PENDING))
             .build();
     }
 
