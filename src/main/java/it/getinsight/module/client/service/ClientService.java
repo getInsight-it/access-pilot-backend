@@ -229,4 +229,8 @@ public class ClientService {
         var client = clientRepository.findById(clientId).orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException);
         return attachmentConfigurationService.toCsv(client.getConfigurations());
     }
+
+    public byte[] exportAttachmentConfigurations(List<AttachmentConfigurationDTO> configurations) {
+        return attachmentConfigurationService.toCsvFromDto(configurations);
+    }
 }

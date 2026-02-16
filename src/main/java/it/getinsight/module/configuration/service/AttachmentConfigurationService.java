@@ -50,6 +50,10 @@ public class AttachmentConfigurationService {
         return Optional.of(attachmentConfigurationCsvParser.toCsv(configs)).orElseThrow(ERROR_EXPORT_CSV::businessException);
     }
 
+    public byte[] toCsvFromDto(List<AttachmentConfigurationDTO> configs) {
+        return Optional.of(attachmentConfigurationCsvParser.toCsvFromDto(configs)).orElseThrow(ERROR_EXPORT_CSV::businessException);
+    }
+
 
     public void validate(List<AttachmentConfigurationEntity> config, MultiValueMap<String, MultipartFile> attachments) {
         if(CollectionUtils.isNotEmpty(config)) {

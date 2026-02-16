@@ -129,6 +129,20 @@ public class ClientController {
     }
 
     @Operation(
+        summary = "Export attachments configurations preview",
+        description = "Exports attachment configurations in CSV format from a JSON payload without saving."
+    )
+    @PostMapping(value = "/attachments-configurations-export-preview", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<byte[]> exportConfigurationsPreview(@RequestBody List<AttachmentConfigurationDTO> configurations) {
+        byte[] csv = clientService.exportAttachmentConfigurations(configurations);
+
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=attachments_configurations.csv")
+            .body(csv);
+    }
+
+    @Operation(
         summary = "Export attachments configurations",
         description = "Exports attachment configurations in CSV format for a given client."
     )

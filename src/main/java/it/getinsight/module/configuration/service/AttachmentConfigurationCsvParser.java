@@ -51,16 +51,17 @@ public class AttachmentConfigurationCsvParser {
 
     private Optional<AttachmentConfigurationDTO> convertToEntity(CSVRecord csvRecord) {
         try {
-            if (csvRecord.get(AttachmentConfigurationCSV.NAME).isBlank()) {
+            String name = csvRecord.get(AttachmentConfigurationCSV.NAME).trim();
+            if (name.isBlank()) {
                 throw ERROR_IMPORT_CSV.businessException();
             }
 
-            String key = csvRecord.get(AttachmentConfigurationCSV.NAME);
-            String description = csvRecord.isSet( AttachmentConfigurationCSV.DESCRIPTION) ? csvRecord.get(AttachmentConfigurationCSV.DESCRIPTION) : null;
+            String description = csvRecord.isSet(AttachmentConfigurationCSV.DESCRIPTION) ? csvRecord.get(AttachmentConfigurationCSV.DESCRIPTION) : null;
             String icon = csvRecord.isSet(AttachmentConfigurationCSV.ICON) ? csvRecord.get(AttachmentConfigurationCSV.ICON) : null;
             Boolean required = Boolean.parseBoolean(csvRecord.get(AttachmentConfigurationCSV.REQUIRED));
+            String allowedExtensionsRaw = csvRecord.get(AttachmentConfigurationCSV.ALLOWED_EXTENSIONS);
 
-            Set<FileExtensionType> allowedExtensions = Arrays.stream(csvRecord.get(AttachmentConfigurationCSV.ALLOWED_EXTENSIONS).split(","))
+            Set<FileExtensionType> allowedExtensions = Arrays.stream(allowedExtensionsRaw.split(","))
                 .map(String::trim)
                 .filter(ext -> !ext.isEmpty())
                 .map(FileExtensionType::valueOf)
@@ -68,7 +69,7 @@ public class AttachmentConfigurationCsvParser {
 
             return Optional.of(
                 AttachmentConfigurationDTO.builder()
-                    .name(key)
+                    .name(name)
                     .description(description)
                     .icon(icon)
                     .required(required)
@@ -86,7 +87,7 @@ public class AttachmentConfigurationCsvParser {
              OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
              CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT
                  .builder()
-                 .setHeader(AttachmentConfigurationCSV.KEY, AttachmentConfigurationCSV.DESCRIPTION, AttachmentConfigurationCSV.REQUIRED, AttachmentConfigurationCSV.ALLOWED_EXTENSIONS, AttachmentConfigurationCSV.ICON)
+                 .setHeader(AttachmentConfigurationCSV.NAME, AttachmentConfigurationCSV.DESCRIPTION, AttachmentConfigurationCSV.REQUIRED, AttachmentConfigurationCSV.ALLOWED_EXTENSIONS, AttachmentConfigurationCSV.ICON)
                  .setDelimiter(',')
                  .setQuote('\"')
                  .setQuoteMode(QuoteMode.ALL)
@@ -95,14 +96,47 @@ public class AttachmentConfigurationCsvParser {
         ) {
             for (AttachmentConfigurationEntity config : configs) {
                 csvPrinter.printRecord(
-                    config.getKey(),
+                    config.getName(),
                     config.getDescription(),
                     config.getRequired(),
                     config.getAllowedExtensions() != null
                         ? config.getAllowedExtensions().stream()
                         .map(Enum::name)
                         .collect(Collectors.joining(","))
-                        : ""
+                        : "",
+                    config.getIcon()
+                );
+            }
+            csvPrinter.flush();
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw ERROR_EXPORT_CSV.businessException();
+        }
+    }
+
+    public byte[] toCsvFromDto(List<AttachmentConfigurationDTO> configs) {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+             OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
+             CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT
+                 .builder()
+                 .setHeader(AttachmentConfigurationCSV.NAME, AttachmentConfigurationCSV.DESCRIPTION, AttachmentConfigurationCSV.REQUIRED, AttachmentConfigurationCSV.ALLOWED_EXTENSIONS, AttachmentConfigurationCSV.ICON)
+                 .setDelimiter(',')
+                 .setQuote('\"')
+                 .setQuoteMode(QuoteMode.ALL)
+                 .setRecordSeparator("\n")
+                 .get())
+        ) {
+            for (AttachmentConfigurationDTO config : configs) {
+                csvPrinter.printRecord(
+                    config.name(),
+                    config.description(),
+                    config.required() != null ? config.required() : "",
+                    config.allowedExtensions() != null
+                        ? config.allowedExtensions().stream()
+                        .map(Enum::name)
+                        .collect(Collectors.joining(","))
+                        : "",
+                    config.icon()
                 );
             }
             csvPrinter.flush();
