@@ -7,6 +7,7 @@ import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.level.dto.*;
 import it.getinsight.module.level.service.ItemService;
+import it.getinsight.module.level.service.LevelExportService;
 import it.getinsight.module.level.service.LevelService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -31,6 +32,7 @@ public class LevelController {
 
     private final LevelService levelService;
     private final ItemService itemService;
+    private final LevelExportService levelExportService;
 
     @Operation(summary = "Retrieve the list of levels", description = "Retrieve all levels")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -106,6 +108,23 @@ public class LevelController {
         response.setContentType("text/csv");
         response.setHeader("Content-Disposition", "attachment; filename=levels.csv");
         levelService.exportLevels(filter,response);
+    }
+
+    @Operation(summary = "Export levels", description = "Export levels in JSON format")
+    @GetMapping(value = "/export", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize(value = "hasRole('ADMIN')")
+    public ResponseEntity<List<LevelExportDTO>> exportLevelsJson(
+        @RequestParam(defaultValue = "false") boolean includeItems,
+        @RequestParam(defaultValue = "true") boolean includeBuiltIn
+    ) {
+        return ResponseEntity.ok(levelExportService.exportLevels(includeItems, includeBuiltIn));
+    }
+
+    @Operation(summary = "Import levels", description = "Import levels in JSON format")
+    @PostMapping(value = "/import", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize(value = "hasRole('ADMIN')")
+    public ResponseEntity<LevelImportSummaryDTO> importLevelsJson(@RequestBody LevelImportRequestDTO request) {
+        return ResponseEntity.ok(levelExportService.importLevels(request));
     }
 
     @Operation(summary = "Retrieve items of a level", description = "Retrieve items related to a level")
