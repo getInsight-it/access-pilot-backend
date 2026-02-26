@@ -1,0 +1,790 @@
+[
+  {
+    "client": {
+      "clientId": "diario-oficial-eletronico",
+      "name": "Diario Oficial Eletronico",
+      "label": "Diário Oficial Eletrônico",
+      "description": "Publicações oficiais e consulta de atos",
+      "baseUrl": "https://diario-oficial.exemplo.local",
+      "managed": true,
+      "status": "PUBLISHED"
+    },
+    "configurations": [
+      {
+        "name": "Documento Oficial",
+        "key": "documento_oficial",
+        "description": "Documento oficial",
+        "required": true,
+        "allowedExtensions": [
+          "PDF",
+          "JPG",
+          "PNG"
+        ],
+        "active": true
+      },
+      {
+        "name": "Comprovante de Vinculo",
+        "key": "comprovante_vinculo",
+        "description": "Comprovante de vínculo",
+        "required": false,
+        "allowedExtensions": [
+          "PDF",
+          "JPG",
+          "PNG"
+        ],
+        "active": true
+      }
+    ],
+    "roles": [
+      {
+        "name": "DIRETOR_PUBLICACAO",
+        "label": "Diretor de Publicação",
+        "description": "Gestão do diário oficial",
+        "levelName": "Federal",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "EDITOR_OFICIAL",
+        "label": "Editor Oficial",
+        "description": "Edição de atos e normas",
+        "parentName": "DIRETOR_PUBLICACAO",
+        "levelName": "Federal",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "REVISOR_OFICIAL",
+        "label": "Revisor Oficial",
+        "description": "Revisão e conformidade",
+        "parentName": "EDITOR_OFICIAL",
+        "levelName": "Federal",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "PUBLICADOR_OFICIAL",
+        "label": "Publicador Oficial",
+        "description": "Publicação final",
+        "parentName": "EDITOR_OFICIAL",
+        "levelName": "Federal",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "AUDITOR_PUBLICACAO",
+        "label": "Auditor de Publicação",
+        "description": "Auditoria e rastreio",
+        "parentName": "DIRETOR_PUBLICACAO",
+        "levelName": "Federal",
+        "levelType": "BUILT_IN"
+      }
+    ]
+  },
+  {
+    "client": {
+      "clientId": "secretaria-estadual-saude",
+      "name": "Secretaria Estadual de Saude",
+      "label": "Secretaria Estadual de Saúde",
+      "description": "Gestão estadual de saúde e regulação",
+      "baseUrl": "https://saude-estadual.exemplo.local",
+      "managed": true,
+      "status": "PUBLISHED"
+    },
+    "configurations": [
+      {
+        "name": "Registro Profissional",
+        "key": "registro_profissional",
+        "description": "Registro no conselho",
+        "required": true,
+        "allowedExtensions": [
+          "PDF"
+        ],
+        "active": true
+      },
+      {
+        "name": "Termo de Responsabilidade",
+        "key": "termo_responsabilidade",
+        "description": "Termo assinado",
+        "required": false,
+        "allowedExtensions": [
+          "PDF"
+        ],
+        "active": true
+      }
+    ],
+    "roles": [
+      {
+        "name": "SECRETARIO_SAUDE",
+        "label": "Secretário de Saúde",
+        "description": "Gestão da secretaria",
+        "levelName": "Estadual",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "SUPERINTENDENTE_SAUDE",
+        "label": "Superintendente de Saúde",
+        "description": "Supervisão estadual",
+        "parentName": "SECRETARIO_SAUDE",
+        "levelName": "Estadual",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "DIRETOR_REGULACAO",
+        "label": "Diretor de Regulação",
+        "description": "Direção de regulação",
+        "parentName": "SUPERINTENDENTE_SAUDE",
+        "levelName": "Estadual",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "COORDENADOR_ASSISTENCIA",
+        "label": "Coordenador de Assistência",
+        "description": "Coordenação de assistência",
+        "parentName": "SUPERINTENDENTE_SAUDE",
+        "levelName": "Estadual",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "MEDICO_REGULADOR",
+        "label": "Médico Regulador",
+        "description": "Regulação e autorizações",
+        "parentName": "DIRETOR_REGULACAO",
+        "levelName": "Estadual",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "ANALISTA_SAUDE",
+        "label": "Analista de Saúde",
+        "description": "Análise de demandas",
+        "parentName": "COORDENADOR_ASSISTENCIA",
+        "levelName": "Estadual",
+        "levelType": "BUILT_IN"
+      }
+    ]
+  },
+  {
+    "client": {
+      "clientId": "cadastro-unico-municipal",
+      "name": "Cadastro Unico Municipal",
+      "label": "Cadastro Único Municipal",
+      "description": "Cadastro e atualização de programas sociais",
+      "baseUrl": "https://cadastro-unico.exemplo.local",
+      "managed": true,
+      "status": "PUBLISHED"
+    },
+    "configurations": [
+      {
+        "name": "Comprovante de Residencia",
+        "key": "comprovante_residencia",
+        "description": "Comprovante válido",
+        "required": true,
+        "allowedExtensions": [
+          "PDF",
+          "JPG",
+          "PNG"
+        ],
+        "active": true
+      },
+      {
+        "name": "Documento de Identidade",
+        "key": "documento_identidade",
+        "description": "Documento oficial",
+        "required": false,
+        "allowedExtensions": [
+          "PDF",
+          "JPG",
+          "PNG"
+        ],
+        "active": true
+      }
+    ],
+    "roles": [
+      {
+        "name": "SECRETARIO_ASSISTENCIA",
+        "label": "Secretário de Assistência Social",
+        "description": "Gestão municipal de assistência",
+        "levelName": "Municipal",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "COORDENADOR_CADASTRO",
+        "label": "Coordenador do Cadastro",
+        "description": "Coordenação do cadastro único",
+        "parentName": "SECRETARIO_ASSISTENCIA",
+        "levelName": "Municipal",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "ENTREVISTADOR_SOCIAL",
+        "label": "Entrevistador Social",
+        "description": "Coleta e atualização de dados",
+        "parentName": "COORDENADOR_CADASTRO",
+        "levelName": "Municipal",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "ANALISTA_BENEFICIOS",
+        "label": "Analista de Benefícios",
+        "description": "Análise de elegibilidade",
+        "parentName": "COORDENADOR_CADASTRO",
+        "levelName": "Municipal",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "ATENDENTE_CADASTRO",
+        "label": "Atendente de Cadastro",
+        "description": "Atendimento ao cidadão",
+        "parentName": "COORDENADOR_CADASTRO",
+        "levelName": "Municipal",
+        "levelType": "BUILT_IN"
+      }
+    ]
+  },
+  {
+    "client": {
+      "clientId": "integracao-federativa-dados",
+      "name": "Integracao Federativa de Dados",
+      "label": "Integração Federativa de Dados",
+      "description": "Compartilhamento de dados entre esferas",
+      "baseUrl": "https://integracao-federativa.exemplo.local",
+      "managed": true,
+      "status": "PUBLISHED"
+    },
+    "configurations": [
+      {
+        "name": "Oficio Digital",
+        "key": "oficio_digital",
+        "description": "Documento oficial",
+        "required": true,
+        "allowedExtensions": [
+          "PDF",
+          "DOC",
+          "DOCX"
+        ],
+        "active": true
+      }
+    ],
+    "roles": [
+      {
+        "name": "COMITE_FEDERAL_DADOS",
+        "label": "Comitê Federal de Dados",
+        "description": "Governança federal de dados",
+        "levelName": "Federal",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "PONTO_FOCAL_ESTADUAL",
+        "label": "Ponto Focal Estadual",
+        "description": "Articulação estadual",
+        "parentName": "COMITE_FEDERAL_DADOS",
+        "levelName": "Estadual",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "ANALISTA_ESTADUAL_DADOS",
+        "label": "Analista Estadual de Dados",
+        "description": "Análise e qualidade de dados",
+        "parentName": "PONTO_FOCAL_ESTADUAL",
+        "levelName": "Estadual",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "PONTO_FOCAL_MUNICIPAL",
+        "label": "Ponto Focal Municipal",
+        "description": "Articulação municipal",
+        "parentName": "PONTO_FOCAL_ESTADUAL",
+        "levelName": "Municipal",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "ANALISTA_MUNICIPAL_DADOS",
+        "label": "Analista Municipal de Dados",
+        "description": "Consolidação municipal",
+        "parentName": "PONTO_FOCAL_MUNICIPAL",
+        "levelName": "Municipal",
+        "levelType": "BUILT_IN"
+      },
+      {
+        "name": "COORDENADOR_REGIONAL",
+        "label": "Coordenador Regional",
+        "description": "Coordenação regional",
+        "parentName": "COMITE_FEDERAL_DADOS",
+        "levelName": "Regional",
+        "levelType": "BUILT_IN"
+      }
+    ]
+  },
+  {
+    "client": {
+      "clientId": "protocolo-eletronico-interno",
+      "name": "Protocolo Eletronico Interno",
+      "label": "Protocolo Eletrônico Interno",
+      "description": "Tramitação e protocolo interno",
+      "baseUrl": "https://protocolo-interno.exemplo.local",
+      "managed": true,
+      "status": "PUBLISHED"
+    },
+    "configurations": [
+      {
+        "name": "Termo de Confidencialidade",
+        "key": "termo_confidencialidade",
+        "description": "Termo assinado",
+        "required": true,
+        "allowedExtensions": [
+          "PDF"
+        ],
+        "active": true
+      }
+    ],
+    "roles": [
+      {
+        "name": "ADMIN_PROTOCOLO",
+        "label": "Admin de Protocolo",
+        "description": "Administração do protocolo"
+      },
+      {
+        "name": "ANALISTA_PROTOCOLO",
+        "label": "Analista de Protocolo",
+        "description": "Análise e distribuição",
+        "parentName": "ADMIN_PROTOCOLO"
+      },
+      {
+        "name": "TRAMITADOR",
+        "label": "Tramitador",
+        "description": "Tramitação interna",
+        "parentName": "ANALISTA_PROTOCOLO"
+      },
+      {
+        "name": "CONSULTA_INTERNA",
+        "label": "Consulta Interna",
+        "description": "Consulta de processos",
+        "parentName": "ANALISTA_PROTOCOLO"
+      }
+    ]
+  },
+  {
+    "client": {
+      "clientId": "cultura-patrimonio",
+      "name": "Sistema de Cultura e Patrimonio",
+      "label": "Sistema de Cultura e Patrimônio",
+      "description": "Gestão de cultura e patrimônio",
+      "baseUrl": "https://cultura.exemplo.local",
+      "managed": true,
+      "status": "PUBLISHED"
+    },
+    "configurations": [
+      {
+        "name": "Plano de Projeto",
+        "key": "plano_projeto",
+        "description": "Plano do projeto cultural",
+        "required": true,
+        "allowedExtensions": [
+          "PDF",
+          "DOC",
+          "DOCX"
+        ],
+        "active": true
+      }
+    ],
+    "roles": [
+      {
+        "name": "DIRETOR_CULTURA",
+        "label": "Diretor de Cultura",
+        "description": "Direção cultural",
+        "levelName": "Rede Cultural",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "GESTOR_UNIDADE_CULTURAL",
+        "label": "Gestor de Unidade Cultural",
+        "description": "Gestão das unidades",
+        "parentName": "DIRETOR_CULTURA",
+        "levelName": "Unidade Cultural",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "TECNICO_PATRIMONIO",
+        "label": "Técnico de Patrimônio",
+        "description": "Técnica de preservação",
+        "parentName": "GESTOR_UNIDADE_CULTURAL",
+        "levelName": "Unidade Cultural",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "ATENDENTE_CULTURAL",
+        "label": "Atendente Cultural",
+        "description": "Atendimento ao público",
+        "parentName": "GESTOR_UNIDADE_CULTURAL",
+        "levelName": "Unidade Cultural",
+        "levelType": "BUSINESS"
+      }
+    ]
+  },
+  {
+    "client": {
+      "clientId": "sistema-hospitalar-municipal",
+      "name": "Sistema Hospitalar Municipal",
+      "label": "Sistema Hospitalar Municipal",
+      "description": "Gestão da rede hospitalar municipal",
+      "baseUrl": "https://hospital-municipal.exemplo.local",
+      "managed": true,
+      "status": "PUBLISHED"
+    },
+    "configurations": [
+      {
+        "name": "Prontuario Resumido",
+        "key": "prontuario_resumido",
+        "description": "Prontuário do paciente",
+        "required": true,
+        "allowedExtensions": [
+          "PDF"
+        ],
+        "active": true
+      }
+    ],
+    "roles": [
+      {
+        "name": "DIRETOR_REDE_HOSPITALAR",
+        "label": "Diretor da Rede Hospitalar",
+        "description": "Direção da rede",
+        "levelName": "Rede Hospitalar",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "COORDENADOR_UNIDADE_HOSPITALAR",
+        "label": "Coordenador de Unidade Hospitalar",
+        "description": "Coordenação da unidade",
+        "parentName": "DIRETOR_REDE_HOSPITALAR",
+        "levelName": "Unidade Hospitalar",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "MEDICO_ASSISTENCIAL",
+        "label": "Médico Assistencial",
+        "description": "Atendimento assistencial",
+        "parentName": "COORDENADOR_UNIDADE_HOSPITALAR",
+        "levelName": "Unidade Hospitalar",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "ENFERMEIRO_ASSISTENCIAL",
+        "label": "Enfermeiro Assistencial",
+        "description": "Apoio clínico",
+        "parentName": "COORDENADOR_UNIDADE_HOSPITALAR",
+        "levelName": "Unidade Hospitalar",
+        "levelType": "BUSINESS"
+      }
+    ]
+  },
+  {
+    "client": {
+      "clientId": "consorcio-intermunicipal",
+      "name": "Consórcio Intermunicipal",
+      "label": "Consórcio Intermunicipal",
+      "description": "Gestão de consórcio entre municípios",
+      "baseUrl": "https://consorcio.exemplo.local",
+      "managed": true,
+      "status": "PUBLISHED"
+    },
+    "configurations": [
+      {
+        "name": "Ata de Deliberacao",
+        "key": "ata_deliberacao",
+        "description": "Ata oficial",
+        "required": true,
+        "allowedExtensions": [
+          "PDF"
+        ],
+        "active": true
+      }
+    ],
+    "roles": [
+      {
+        "name": "PRESIDENTE_CONSORCIO",
+        "label": "Presidente do Consórcio",
+        "description": "Direção do consórcio",
+        "levelName": "Consórcio Intermunicipal",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "GERENTE_UNIDADE_CONSORCIO",
+        "label": "Gerente de Unidade Consorciada",
+        "description": "Gestão da unidade",
+        "parentName": "PRESIDENTE_CONSORCIO",
+        "levelName": "Unidade Consorciada",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "ANALISTA_CONSORCIO",
+        "label": "Analista do Consórcio",
+        "description": "Análise técnica",
+        "parentName": "GERENTE_UNIDADE_CONSORCIO",
+        "levelName": "Unidade Consorciada",
+        "levelType": "BUSINESS"
+      }
+    ]
+  },
+  {
+    "client": {
+      "clientId": "autarquia-federal",
+      "name": "Autarquia Federal",
+      "label": "Autarquia Federal",
+      "description": "Gestão de autarquia federal",
+      "baseUrl": "https://autarquia.exemplo.local",
+      "managed": true,
+      "status": "PUBLISHED"
+    },
+    "configurations": [
+      {
+        "name": "Relatorio Institucional",
+        "key": "relatorio_institucional",
+        "description": "Relatório anual",
+        "required": false,
+        "allowedExtensions": [
+          "PDF"
+        ],
+        "active": true
+      }
+    ],
+    "roles": [
+      {
+        "name": "PRESIDENTE_AUTARQUIA",
+        "label": "Presidente da Autarquia",
+        "description": "Direção da autarquia",
+        "levelName": "Autarquia Federal",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "SUPERINTENDENTE_REGIONAL",
+        "label": "Superintendente Regional",
+        "description": "Superintendência regional",
+        "parentName": "PRESIDENTE_AUTARQUIA",
+        "levelName": "Superintendência Federal",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "ANALISTA_AUTARQUIA",
+        "label": "Analista da Autarquia",
+        "description": "Análise e suporte",
+        "parentName": "SUPERINTENDENTE_REGIONAL",
+        "levelName": "Superintendência Federal",
+        "levelType": "BUSINESS"
+      }
+    ]
+  },
+  {
+    "client": {
+      "clientId": "gestao-museus",
+      "name": "Gestao de Museus",
+      "label": "Gestão de Museus",
+      "description": "Administração de museus e acervos",
+      "baseUrl": "https://museus.exemplo.local",
+      "managed": true,
+      "status": "PUBLISHED"
+    },
+    "configurations": [
+      {
+        "name": "Plano Museologico",
+        "key": "plano_museologico",
+        "description": "Plano museológico",
+        "required": true,
+        "allowedExtensions": [
+          "PDF",
+          "DOC",
+          "DOCX"
+        ],
+        "active": true
+      }
+    ],
+    "roles": [
+      {
+        "name": "DIRETOR_MUSEUS",
+        "label": "Diretor de Museus",
+        "description": "Direção de museus",
+        "levelName": "Rede Cultural",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "CURADOR_MUSEU",
+        "label": "Curador de Museu",
+        "description": "Curadoria e acervo",
+        "parentName": "DIRETOR_MUSEUS",
+        "levelName": "Unidade Cultural",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "TECNICO_ACERVO",
+        "label": "Técnico de Acervo",
+        "description": "Gestão do acervo",
+        "parentName": "CURADOR_MUSEU",
+        "levelName": "Unidade Cultural",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "ATENDENTE_MUSEU",
+        "label": "Atendente de Museu",
+        "description": "Atendimento ao público",
+        "parentName": "CURADOR_MUSEU",
+        "levelName": "Unidade Cultural",
+        "levelType": "BUSINESS"
+      }
+    ]
+  },
+  {
+    "client": {
+      "clientId": "regulacao-hospitalar-municipal",
+      "name": "Regulacao Hospitalar Municipal",
+      "label": "Regulação Hospitalar Municipal",
+      "description": "Regulação de leitos e atendimentos",
+      "baseUrl": "https://regulacao-hospitalar.exemplo.local",
+      "managed": true,
+      "status": "PUBLISHED"
+    },
+    "configurations": [
+      {
+        "name": "Relatorio de Ocupacao",
+        "key": "relatorio_ocupacao",
+        "description": "Relatório de ocupação",
+        "required": true,
+        "allowedExtensions": [
+          "PDF"
+        ],
+        "active": true
+      }
+    ],
+    "roles": [
+      {
+        "name": "COORDENADOR_REGULACAO",
+        "label": "Coordenador de Regulação",
+        "description": "Coordenação da regulação",
+        "levelName": "Rede Hospitalar",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "GESTOR_LEITOS",
+        "label": "Gestor de Leitos",
+        "description": "Gestão de leitos",
+        "parentName": "COORDENADOR_REGULACAO",
+        "levelName": "Unidade Hospitalar",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "ANALISTA_LEITOS",
+        "label": "Analista de Leitos",
+        "description": "Análise de disponibilidade",
+        "parentName": "GESTOR_LEITOS",
+        "levelName": "Unidade Hospitalar",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "AUDITOR_HOSPITALAR",
+        "label": "Auditor Hospitalar",
+        "description": "Auditoria de processos",
+        "parentName": "COORDENADOR_REGULACAO",
+        "levelName": "Unidade Hospitalar",
+        "levelType": "BUSINESS"
+      }
+    ]
+  },
+  {
+    "client": {
+      "clientId": "consorcio-transporte",
+      "name": "Consórcio de Transporte Regional",
+      "label": "Consórcio de Transporte Regional",
+      "description": "Gestão consorciada de transporte",
+      "baseUrl": "https://consorcio-transporte.exemplo.local",
+      "managed": true,
+      "status": "PUBLISHED"
+    },
+    "configurations": [
+      {
+        "name": "Plano Operacional",
+        "key": "plano_operacional",
+        "description": "Plano operacional",
+        "required": true,
+        "allowedExtensions": [
+          "PDF"
+        ],
+        "active": true
+      }
+    ],
+    "roles": [
+      {
+        "name": "DIRETOR_CONSORCIO_TRANSPORTE",
+        "label": "Diretor do Consórcio de Transporte",
+        "description": "Direção do consórcio",
+        "levelName": "Consórcio Intermunicipal",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "GERENTE_OPERACOES",
+        "label": "Gerente de Operações",
+        "description": "Gestão das operações",
+        "parentName": "DIRETOR_CONSORCIO_TRANSPORTE",
+        "levelName": "Unidade Consorciada",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "FISCAL_OPERACOES",
+        "label": "Fiscal de Operações",
+        "description": "Fiscalização de operações",
+        "parentName": "GERENTE_OPERACOES",
+        "levelName": "Unidade Consorciada",
+        "levelType": "BUSINESS"
+      }
+    ]
+  },
+  {
+    "client": {
+      "clientId": "agencia-federal-transportes",
+      "name": "Agência Federal de Transportes",
+      "label": "Agência Federal de Transportes",
+      "description": "Gestão federal de transportes",
+      "baseUrl": "https://agencia-transportes.exemplo.local",
+      "managed": true,
+      "status": "PUBLISHED"
+    },
+    "configurations": [
+      {
+        "name": "Relatorio de Fiscalizacao",
+        "key": "relatorio_fiscalizacao",
+        "description": "Relatório de fiscalização",
+        "required": false,
+        "allowedExtensions": [
+          "PDF"
+        ],
+        "active": true
+      }
+    ],
+    "roles": [
+      {
+        "name": "DIRETOR_GERAL",
+        "label": "Diretor Geral",
+        "description": "Direção geral",
+        "levelName": "Autarquia Federal",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "SUPERINTENDENTE_TRANSPORTES",
+        "label": "Superintendente de Transportes",
+        "description": "Superintendência de transportes",
+        "parentName": "DIRETOR_GERAL",
+        "levelName": "Superintendência Federal",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "COORDENADOR_FISCALIZACAO",
+        "label": "Coordenador de Fiscalização",
+        "description": "Coordenação de fiscalização",
+        "parentName": "SUPERINTENDENTE_TRANSPORTES",
+        "levelName": "Superintendência Federal",
+        "levelType": "BUSINESS"
+      },
+      {
+        "name": "ANALISTA_TRANSPORTE",
+        "label": "Analista de Transporte",
+        "description": "Análise técnica",
+        "parentName": "COORDENADOR_FISCALIZACAO",
+        "levelName": "Superintendência Federal",
+        "levelType": "BUSINESS"
+      }
+    ]
+  }
+]

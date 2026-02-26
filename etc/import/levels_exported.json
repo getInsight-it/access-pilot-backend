@@ -1,0 +1,237 @@
+[
+  {
+    "name": "Rede Cultural",
+    "sigla": "RC",
+    "description": "Rede de cultura e patrimônio",
+    "type": "BUSINESS",
+    "items": [
+      {
+        "name": "Rede Cultural Norte",
+        "description": "Abrangência norte",
+        "externalCode": "RC-N"
+      },
+      {
+        "name": "Rede Cultural Sul",
+        "description": "Abrangência sul",
+        "externalCode": "RC-S"
+      }
+    ]
+  },
+  {
+    "name": "Unidade Cultural",
+    "sigla": "UC",
+    "description": "Unidades culturais",
+    "type": "BUSINESS",
+    "parentName": "Rede Cultural",
+    "items": [
+      {
+        "name": "Museu Central",
+        "description": "Unidade principal",
+        "externalCode": "MUS-CEN",
+        "parentName": "Rede Cultural Norte",
+        "parentExternalCode": "RC-N"
+      },
+      {
+        "name": "Museu Anexo",
+        "description": "Unidade anexa",
+        "externalCode": "MUS-ANX",
+        "parentName": "Rede Cultural Norte",
+        "parentExternalCode": "RC-N"
+      },
+      {
+        "name": "Casa de Cultura Sul",
+        "description": "Unidade cultural sul",
+        "externalCode": "CC-SUL",
+        "parentName": "Rede Cultural Sul",
+        "parentExternalCode": "RC-S"
+      }
+    ]
+  },
+  {
+    "name": "Rede Hospitalar",
+    "sigla": "RH",
+    "description": "Rede hospitalar municipal",
+    "type": "BUSINESS",
+    "parentName": "Municipal",
+    "items": [
+      {
+        "name": "Rede Municipal Norte",
+        "description": "Rede municipal norte",
+        "externalCode": "RM-N",
+        "parentName": "Almas",
+        "parentExternalCode": "1700400"
+      },
+      {
+        "name": "Rede Municipal Sul",
+        "description": "Rede municipal sul",
+        "externalCode": "RM-S",
+        "parentName": "Palmas",
+        "parentExternalCode": "1721000"
+      }
+    ]
+  },
+  {
+    "name": "Unidade Hospitalar",
+    "sigla": "UH",
+    "description": "Unidades hospitalares",
+    "type": "BUSINESS",
+    "parentName": "Rede Hospitalar",
+    "items": [
+      {
+        "name": "Hospital Central",
+        "description": "Unidade principal",
+        "externalCode": "HOSP-CEN",
+        "parentName": "Rede Municipal Norte",
+        "parentExternalCode": "RM-N"
+      },
+      {
+        "name": "Pronto Atendimento Norte",
+        "description": "Atendimento 24h",
+        "externalCode": "PA-N",
+        "parentName": "Rede Municipal Norte",
+        "parentExternalCode": "RM-N"
+      },
+      {
+        "name": "Hospital Municipal Sul",
+        "description": "Unidade municipal sul",
+        "externalCode": "HOSP-SUL",
+        "parentName": "Rede Municipal Sul",
+        "parentExternalCode": "RM-S"
+      },
+      {
+        "name": "Pronto Atendimento Sul",
+        "description": "Atendimento 24h",
+        "externalCode": "PA-S",
+        "parentName": "Rede Municipal Sul",
+        "parentExternalCode": "RM-S"
+      }
+    ]
+  },
+  {
+    "name": "Consórcio Intermunicipal",
+    "sigla": "CI",
+    "description": "Consórcio entre municípios",
+    "type": "BUSINESS",
+    "parentName": "Estadual",
+    "items": [
+      {
+        "name": "Consórcio Vale do Rio",
+        "description": "Consórcio regional",
+        "externalCode": "CI-VR",
+        "parentName": "TOCANTINS",
+        "parentExternalCode": "17"
+      },
+      {
+        "name": "Consórcio Serra",
+        "description": "Consórcio regional",
+        "externalCode": "CI-SER",
+        "parentName": "PARÁ",
+        "parentExternalCode": "15"
+      }
+    ]
+  },
+  {
+    "name": "Unidade Consorciada",
+    "sigla": "UCN",
+    "description": "Unidades consorciadas",
+    "type": "BUSINESS",
+    "parentName": "Consórcio Intermunicipal",
+    "items": [
+      {
+        "name": "Unidade Consorciada A",
+        "description": "Unidade principal",
+        "externalCode": "UC-A",
+        "parentName": "Consórcio Vale do Rio",
+        "parentExternalCode": "CI-VR"
+      },
+      {
+        "name": "Unidade Consorciada A - Polo 1",
+        "description": "Polo 1",
+        "externalCode": "UC-A1",
+        "parentName": "Consórcio Vale do Rio",
+        "parentExternalCode": "CI-VR"
+      },
+      {
+        "name": "Unidade Consorciada S",
+        "description": "Unidade principal",
+        "externalCode": "UC-S",
+        "parentName": "Consórcio Serra",
+        "parentExternalCode": "CI-SER"
+      },
+      {
+        "name": "Unidade Consorciada S - Polo 1",
+        "description": "Polo 1",
+        "externalCode": "UC-S1",
+        "parentName": "Consórcio Serra",
+        "parentExternalCode": "CI-SER"
+      }
+    ]
+  },
+  {
+    "name": "Autarquia Federal",
+    "sigla": "AF",
+    "description": "Autarquia federal",
+    "type": "BUSINESS",
+    "parentName": "Federal",
+    "items": [
+      {
+        "name": "Autarquia Nacional",
+        "description": "Sede nacional",
+        "externalCode": "AF-NAC",
+        "parentName": "Brasil",
+        "parentExternalCode": "76"
+      },
+      {
+        "name": "Autarquia Regional",
+        "description": "Sede regional",
+        "externalCode": "AF-REG",
+        "parentName": "Brasil",
+        "parentExternalCode": "76"
+      }
+    ]
+  },
+  {
+    "name": "Superintendência Federal",
+    "sigla": "SF",
+    "description": "Superintendências federais",
+    "type": "BUSINESS",
+    "parentName": "Autarquia Federal",
+    "items": [
+      {
+        "name": "Superintendência Norte",
+        "description": "Região norte",
+        "externalCode": "SF-N",
+        "parentName": "Autarquia Nacional",
+        "parentExternalCode": "AF-NAC"
+      },
+      {
+        "name": "Superintendência Sul",
+        "description": "Região sul",
+        "externalCode": "SF-S",
+        "parentName": "Autarquia Nacional",
+        "parentExternalCode": "AF-NAC"
+      },
+      {
+        "name": "Superintendência Norte - Polo 1",
+        "description": "Polo 1",
+        "externalCode": "SF-N1",
+        "parentName": "Autarquia Nacional",
+        "parentExternalCode": "AF-NAC"
+      },
+      {
+        "name": "Superintendência Regional",
+        "description": "Região regional",
+        "externalCode": "SF-REG",
+        "parentName": "Autarquia Regional",
+        "parentExternalCode": "AF-REG"
+      },
+      {
+        "name": "Superintendência Regional - Polo 1",
+        "description": "Polo 1",
+        "externalCode": "SF-REG1",
+        "parentName": "Autarquia Regional",
+        "parentExternalCode": "AF-REG"
+      }
+    ]
+  }
+]

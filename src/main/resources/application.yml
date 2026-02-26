@@ -1,6 +1,15 @@
 app:
   name: @project.artifactId@
   version: @project.version@
+  bootstrap:
+    import:
+      enabled: ${APP_BOOTSTRAP_IMPORT_ENABLED:false}
+      path: ./etc/import
+      levels-file: levels_exported.json
+      clients-file: clients_exported.json
+      force: true
+      import-roles: true
+      import-configurations: true
 
 server:
   port: 8080

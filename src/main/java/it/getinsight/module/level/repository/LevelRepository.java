@@ -21,6 +21,9 @@ public interface LevelRepository extends JpaRepository<LevelEntity, Long>, JpaSp
 
     List<LevelEntity> findByNameIn(List<String> names);
 
+    @Query("SELECT l FROM LevelEntity l WHERE lower(l.name) IN :names")
+    List<LevelEntity> findByNameIgnoreCaseIn(@Param("names") List<String> names);
+
     Optional<LevelEntity> findByNameIgnoreCaseAndTypeAndActiveTrue(String name, LevelType type);
 
     @Modifying

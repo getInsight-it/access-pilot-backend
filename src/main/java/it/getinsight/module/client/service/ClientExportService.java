@@ -107,20 +107,20 @@ public class ClientExportService {
     }
 
     private ClientExportDTO exportClient(ClientEntity client, boolean includeRoles, boolean includeConfigurations) {
-        ClientExportClientDTO clientExport = clientExportMapper.toExportClient(client);
+        var clientExport = clientExportMapper.toExportClient(client);
 
-        List<AttachmentConfigurationDTO> configurations = includeConfigurations
+        var configurations = includeConfigurations
             ? Optional.ofNullable(client.getConfigurations()).orElse(List.of()).stream()
                 .map(attachmentConfigurationMapper::toDto)
                 .toList()
-            : List.of();
+            : List.<AttachmentConfigurationDTO>of();
 
-        List<ClientExportRoleDTO> roles = includeRoles
+        var roles = includeRoles
             ? roleRepository.findAllByClient(client).stream()
                 .filter(role -> !isIgnoredRoleName(role.getName()))
                 .map(clientExportMapper::toExportRole)
                 .toList()
-            : List.of();
+            : List.<ClientExportRoleDTO>of();
 
         return ClientExportDTO.builder()
             .client(clientExport)
@@ -131,34 +131,160 @@ public class ClientExportService {
 
     @CacheEvict(value = {"clients", "getTotalClients"}, allEntries = true)
     public ClientImportSummaryDTO importClients(ClientImportRequestDTO request) {
-        long start = System.nanoTime();
+        var start = System.nanoTime();
+        var results = new ArrayList<ClientImportResultDTO>();
+
+        boolean force = isForce(request);
+        boolean importRoles = shouldImportRoles(request);
+        boolean importConfigurations = shouldImportConfigurations(request);
+
+        var exports = resolveExports(request);
+        for (var export : exports) {
+            results.add(importClient(export, force, importRoles, importConfigurations));
+        }
+
+        return buildImportSummary(results, start);
+    }
+
+    private ClientImportResultDTO importClient(
+        ClientExportDTO export,
+        boolean force,
+        boolean importRoles,
+        boolean importConfigurations
+    ) {
+        var validationError = validateClientExport(export);
+        if (validationError != null) {
+            return validationError;
+        }
+
+        var clientId = normalizeClientId(export.client().clientId());
+        var ignored = buildIgnoredClientResult(clientId);
+        if (ignored != null) {
+            return ignored;
+        }
+
+        try {
+            return processClientImport(export, clientId, force, importRoles, importConfigurations);
+        } catch (Exception ex) {
+            log.error("Falha ao importar client '{}'", clientId, ex);
+            return buildErrorClientResult(clientId, ex);
+        }
+    }
+
+    private boolean isForce(ClientImportRequestDTO request) {
+        return request != null && Boolean.TRUE.equals(request.force());
+    }
+
+    private boolean shouldImportRoles(ClientImportRequestDTO request) {
+        return request == null || request.importRoles() == null || request.importRoles();
+    }
+
+    private boolean shouldImportConfigurations(ClientImportRequestDTO request) {
+        return request == null || request.importConfigurations() == null || request.importConfigurations();
+    }
+
+    private List<ClientExportDTO> resolveExports(ClientImportRequestDTO request) {
+        return request != null && CollectionUtils.isNotEmpty(request.exports())
+            ? request.exports()
+            : List.of();
+    }
+
+    private ClientImportResultDTO buildIgnoredClientResult(String clientId) {
+        if (!isIgnoredClientId(clientId)) {
+            return null;
+        }
+        return ClientImportResultDTO.builder()
+            .clientId(clientId)
+            .status(STATUS_IGNORED)
+            .message(CLIENT_IMPORT_IGNORED.message())
+            .build();
+    }
+
+    private ClientImportResultDTO validateClientExport(ClientExportDTO export) {
+        if (export == null || export.client() == null || StringUtils.isBlank(export.client().clientId())) {
+            return ClientImportResultDTO.builder()
+                .status(STATUS_ERROR)
+                .message(CLIENT_IMPORT_CLIENT_ID_REQUIRED.message())
+                .build();
+        }
+        return null;
+    }
+
+    private ClientImportResultDTO processClientImport(ClientExportDTO export,
+                                                      String clientId,
+                                                      boolean force,
+                                                      boolean importRoles,
+                                                      boolean importConfigurations) {
+        var existingEntity = clientRepository.findByClientId(clientId);
+        if (existingEntity.isPresent() && !force) {
+            return ClientImportResultDTO.builder()
+                .clientId(clientId)
+                .status(STATUS_IGNORED)
+                .message(CLIENT_IMPORT_ALREADY_EXISTS_NOT_FORCED.message())
+                .build();
+        }
+
+        var entity = existingEntity.orElse(new ClientEntity());
+        var isNew = existingEntity.isEmpty();
+        applyClientFromExport(entity, export.client());
+        entity = clientRepository.save(entity);
+
+        if (Boolean.TRUE.equals(entity.getManaged())) {
+            entity = ensureManagedClientInIdp(entity);
+        }
+
+        var roleCounters = new ClientImportCountersDTO();
+        var configurationCounters = new ClientImportCountersDTO();
+
+        if (importConfigurations) {
+            configurationCounters = importConfigurations(entity, export.configurations(), force);
+        }
+
+        if (importRoles) {
+            roleCounters = importRoles(entity, export.roles(), force);
+        }
+
+        return ClientImportResultDTO.builder()
+            .clientId(clientId)
+            .status(isNew ? STATUS_CREATED : STATUS_UPDATED)
+            .rolesCreated(roleCounters.getCreated())
+            .rolesUpdated(roleCounters.getUpdated())
+            .rolesDeleted(roleCounters.getDeleted())
+            .configurationsCreated(configurationCounters.getCreated())
+            .configurationsUpdated(configurationCounters.getUpdated())
+            .configurationsDeleted(configurationCounters.getDeleted())
+            .build();
+    }
+
+    private ClientImportResultDTO buildErrorClientResult(String clientId, Exception ex) {
+        return ClientImportResultDTO.builder()
+            .clientId(clientId)
+            .status(STATUS_ERROR)
+            .message(ex.getMessage())
+            .build();
+    }
+
+    private ClientImportSummaryDTO buildImportSummary(List<ClientImportResultDTO> results, long start) {
         long created = 0;
         long updated = 0;
         long ignored = 0;
         long errors = 0;
-        List<ClientImportResultDTO> results = new ArrayList<>();
 
-        boolean force = request != null && Boolean.TRUE.equals(request.force());
-        boolean importRoles = request == null || request.importRoles() == null || request.importRoles();
-        boolean importConfigurations = request == null || request.importConfigurations() == null || request.importConfigurations();
-
-        List<ClientExportDTO> exports = request != null && CollectionUtils.isNotEmpty(request.exports())
-            ? request.exports()
-            : List.of();
-
-        for (ClientExportDTO export : exports) {
-            ClientImportResultDTO result = importClient(export, force, importRoles, importConfigurations);
-            results.add(result);
-            switch (result.status()) {
-                case STATUS_CREATED -> created++;
-                case STATUS_UPDATED -> updated++;
-                case STATUS_IGNORED -> ignored++;
-                case STATUS_ERROR -> errors++;
-                default -> ignored++;
+        for (var result : results) {
+            if (STATUS_CREATED.equals(result.status())) {
+                created++;
+            } else if (STATUS_UPDATED.equals(result.status())) {
+                updated++;
+            } else if (STATUS_IGNORED.equals(result.status())) {
+                ignored++;
+            } else if (STATUS_ERROR.equals(result.status())) {
+                errors++;
+            } else {
+                ignored++;
             }
         }
 
-        long duration = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+        var duration = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         return ClientImportSummaryDTO.builder()
             .created(created)
             .updated(updated)
@@ -169,88 +295,16 @@ public class ClientExportService {
             .build();
     }
 
-    private ClientImportResultDTO importClient(
-        ClientExportDTO export,
-        boolean force,
-        boolean importRoles,
-        boolean importConfigurations
-    ) {
-        if (export == null || export.client() == null || StringUtils.isBlank(export.client().clientId())) {
-            return ClientImportResultDTO.builder()
-                .status(STATUS_ERROR)
-                .message("ClientId ausente no export.")
-                .build();
-        }
-
-        String clientId = normalizeClientId(export.client().clientId());
-        if (isIgnoredClientId(clientId)) {
-            return ClientImportResultDTO.builder()
-                .clientId(clientId)
-                .status(STATUS_IGNORED)
-                .message("Cliente ignorado por configuracao.")
-                .build();
-        }
-
-        try {
-            var existingEntity = clientRepository.findByClientId(clientId);
-            if (existingEntity.isPresent() && !force) {
-                return ClientImportResultDTO.builder()
-                    .clientId(clientId)
-                    .status(STATUS_IGNORED)
-                    .message("Cliente ja existe e importacao nao forçada.")
-                    .build();
-            }
-
-            ClientEntity entity = existingEntity.orElse(new ClientEntity());
-            boolean isNew = existingEntity.isEmpty();
-            applyClientFromExport(entity, export.client());
-            entity = clientRepository.save(entity);
-
-            if (Boolean.TRUE.equals(entity.getManaged())) {
-                entity = ensureManagedClientInIdp(entity);
-            }
-
-            ClientImportCountersDTO roleCounters = new ClientImportCountersDTO();
-            ClientImportCountersDTO configurationCounters = new ClientImportCountersDTO();
-
-            if (importConfigurations) {
-                configurationCounters = importConfigurations(entity, export.configurations(), force);
-            }
-
-            if (importRoles) {
-                roleCounters = importRoles(entity, export.roles(), force);
-            }
-
-            return ClientImportResultDTO.builder()
-                .clientId(clientId)
-                .status(isNew ? STATUS_CREATED : STATUS_UPDATED)
-                .rolesCreated(roleCounters.getCreated())
-                .rolesUpdated(roleCounters.getUpdated())
-                .rolesDeleted(roleCounters.getDeleted())
-                .configurationsCreated(configurationCounters.getCreated())
-                .configurationsUpdated(configurationCounters.getUpdated())
-                .configurationsDeleted(configurationCounters.getDeleted())
-                .build();
-        } catch (Exception ex) {
-            log.error("Falha ao importar client '{}'", clientId, ex);
-            return ClientImportResultDTO.builder()
-                .clientId(clientId)
-                .status(STATUS_ERROR)
-                .message(ex.getMessage())
-                .build();
-        }
-    }
-
     private void applyClientFromExport(ClientEntity entity, ClientExportClientDTO exportClient) {
-        String clientId = normalizeClientId(exportClient.clientId());
+        var clientId = normalizeClientId(exportClient.clientId());
         entity.setClientId(clientId);
-        String name = StringUtils.trimToNull(exportClient.name());
+        var name = StringUtils.trimToNull(exportClient.name());
         if (name == null) {
             name = clientId;
         }
         entity.setName(name);
 
-        String label = StringUtils.trimToNull(exportClient.label());
+        var label = StringUtils.trimToNull(exportClient.label());
         if (label == null) {
             label = name;
         }
@@ -263,8 +317,7 @@ public class ClientExportService {
     }
 
     private ClientEntity ensureManagedClientInIdp(ClientEntity entity) {
-        List<ClientRepresentationDTO> clients = identityProviderService.getClientsByClientId(entity.getClientId());
-        ClientRepresentationDTO representation;
+        var clients = identityProviderService.getClientsByClientId(entity.getClientId());
         if (CollectionUtils.isEmpty(clients)) {
             var defaultClient = ClientRepresentationDTO.createDefault(entity.getClientId(), entity.getDescription(), entity.getBaseUrl());
             identityProviderService.createClient(defaultClient);
@@ -274,12 +327,12 @@ public class ClientExportService {
             }
         }
 
-        representation = clients.getFirst();
+        var representation = clients.getFirst();
         if (!Objects.equals(entity.getClientUUID(), representation.getId())) {
             entity.setClientUUID(representation.getId());
         }
 
-        ClientDTO dto = ClientDTO.builder()
+        var dto = ClientDTO.builder()
             .id(entity.getId())
             .name(entity.getName())
             .label(entity.getLabel())
@@ -299,21 +352,54 @@ public class ClientExportService {
     }
 
     private ClientImportCountersDTO importConfigurations(ClientEntity client, List<AttachmentConfigurationDTO> configurations, boolean force) {
-        ClientImportCountersDTO counters = new ClientImportCountersDTO();
-        List<AttachmentConfigurationDTO> configurationList = configurations != null ? configurations : List.of();
+        var counters = new ClientImportCountersDTO();
+        var configurationList = normalizeConfigurationList(configurations);
+        var providedNames = collectConfigurationNames(configurationList);
 
-        Set<String> providedNames = configurationList.stream()
+        upsertConfigurations(client, configurationList, counters);
+        if (force) {
+            deleteMissingConfigurations(client, providedNames, counters);
+        }
+
+        clientValidationService.validateAttachmentConfigurations(attachmentConfigurationRepository.findAllByClient(client));
+        return counters;
+    }
+
+    private ClientImportCountersDTO importRoles(ClientEntity client, List<ClientExportRoleDTO> roles, boolean force) {
+        var counters = new ClientImportCountersDTO();
+        var roleList = normalizeRoleList(roles);
+        var providedNames = collectRoleNames(roleList);
+
+        var upserted = upsertRoles(client, roleList, counters);
+        applyRoleParents(client, roleList, upserted);
+        if (force) {
+            deleteMissingRoles(client, providedNames, counters);
+        }
+
+        return counters;
+    }
+
+    private List<AttachmentConfigurationDTO> normalizeConfigurationList(List<AttachmentConfigurationDTO> configurations) {
+        return configurations != null ? configurations : List.of();
+    }
+
+    private Set<String> collectConfigurationNames(List<AttachmentConfigurationDTO> configurationList) {
+        return configurationList.stream()
             .map(AttachmentConfigurationDTO::name)
             .filter(StringUtils::isNotBlank)
             .map(name -> name.trim().toLowerCase())
             .collect(Collectors.toSet());
+    }
 
-        for (AttachmentConfigurationDTO dto : configurationList) {
+    private void upsertConfigurations(ClientEntity client,
+                                      List<AttachmentConfigurationDTO> configurationList,
+                                      ClientImportCountersDTO counters) {
+        for (var dto : configurationList) {
             if (dto == null || StringUtils.isBlank(dto.name())) {
                 continue;
             }
-            String name = dto.name().trim();
-            AttachmentConfigurationEntity entity = findConfigurationByName(client.getId(), name);
+            var name = dto.name().trim();
+            var entity = findConfigurationByName(client.getId(), name);
             boolean created = false;
             if (entity == null) {
                 entity = AttachmentConfigurationEntity.builder().build();
@@ -335,46 +421,50 @@ public class ClientExportService {
                 counters.setUpdated(counters.getUpdated() + 1);
             }
         }
-
-        if (force) {
-            for (AttachmentConfigurationEntity existing : attachmentConfigurationRepository.findAllByClient(client)) {
-                String name = existing.getName();
-                if (StringUtils.isBlank(name)) {
-                    continue;
-                }
-                if (!providedNames.contains(name.trim().toLowerCase())) {
-                    attachmentConfigurationRepository.softDelete(existing.getId());
-                    counters.setDeleted(counters.getDeleted() + 1);
-                }
-            }
-        }
-
-        clientValidationService.validateAttachmentConfigurations(attachmentConfigurationRepository.findAllByClient(client));
-        return counters;
     }
 
-    private ClientImportCountersDTO importRoles(ClientEntity client, List<ClientExportRoleDTO> roles, boolean force) {
-        ClientImportCountersDTO counters = new ClientImportCountersDTO();
-        List<ClientExportRoleDTO> roleList = roles != null ? roles : List.of();
+    private void deleteMissingConfigurations(ClientEntity client,
+                                             Set<String> providedNames,
+                                             ClientImportCountersDTO counters) {
+        for (var existing : attachmentConfigurationRepository.findAllByClient(client)) {
+            var name = existing.getName();
+            if (StringUtils.isBlank(name)) {
+                continue;
+            }
+            if (!providedNames.contains(name.trim().toLowerCase())) {
+                attachmentConfigurationRepository.softDelete(existing.getId());
+                counters.setDeleted(counters.getDeleted() + 1);
+            }
+        }
+    }
 
-        Set<String> providedNames = roleList.stream()
+    private List<ClientExportRoleDTO> normalizeRoleList(List<ClientExportRoleDTO> roles) {
+        return roles != null ? roles : List.of();
+    }
+
+    private Set<String> collectRoleNames(List<ClientExportRoleDTO> roleList) {
+        return roleList.stream()
             .map(ClientExportRoleDTO::name)
             .filter(StringUtils::isNotBlank)
             .map(name -> name.trim().toLowerCase())
             .filter(name -> !isIgnoredRoleName(name))
             .collect(Collectors.toSet());
+    }
 
-        Map<String, RoleEntity> upserted = new HashMap<>();
-        for (ClientExportRoleDTO dto : roleList) {
+    private Map<String, RoleEntity> upsertRoles(ClientEntity client,
+                                                List<ClientExportRoleDTO> roleList,
+                                                ClientImportCountersDTO counters) {
+        var upserted = new HashMap<String, RoleEntity>();
+        for (var dto : roleList) {
             if (dto == null || StringUtils.isBlank(dto.name())) {
                 continue;
             }
-            String name = dto.name().trim();
+            var name = dto.name().trim();
             if (isIgnoredRoleName(name)) {
                 continue;
             }
 
-            RoleEntity entity = findRoleByName(client.getId(), name);
+            var entity = findRoleByName(client.getId(), name);
             boolean created = false;
             if (entity == null) {
                 entity = RoleEntity.builder().build();
@@ -384,7 +474,7 @@ public class ClientExportService {
             }
 
             entity.setClient(client);
-            String label = StringUtils.trimToNull(dto.label());
+            var label = StringUtils.trimToNull(dto.label());
             entity.setLabel(label != null ? label : name);
             entity.setDescription(dto.description());
             entity.setIcon(dto.icon());
@@ -392,7 +482,16 @@ public class ClientExportService {
             entity.setLevel(resolveRoleLevel(dto));
             entity.setRole(null);
 
-            roleRepository.save(entity);
+            boolean managedClient = Boolean.TRUE.equals(client.getManaged())
+                && StringUtils.isNotBlank(client.getClientUUID());
+            if (created && managedClient) {
+                synchronizeRoleInIdp(client, entity);
+            } else {
+                roleRepository.save(entity);
+                if (managedClient) {
+                    synchronizeRoleInIdp(client, entity);
+                }
+            }
             upserted.put(name.toLowerCase(), entity);
             if (created) {
                 counters.setCreated(counters.getCreated() + 1);
@@ -402,24 +501,23 @@ public class ClientExportService {
 
             synchronizeRoleInIdp(client, entity);
         }
+        return upserted;
+    }
 
-        applyRoleParents(client, roleList, upserted);
-
-        if (force) {
-            for (RoleEntity existing : roleRepository.findAllByClient(client)) {
-                String name = existing.getName();
-                if (StringUtils.isBlank(name) || isIgnoredRoleName(name)) {
-                    continue;
-                }
-                if (!providedNames.contains(name.trim().toLowerCase())) {
-                    roleRepository.softDelete(existing.getId());
-                    counters.setDeleted(counters.getDeleted() + 1);
-                    deleteRoleFromIdp(client, name);
-                }
+    private void deleteMissingRoles(ClientEntity client,
+                                    Set<String> providedNames,
+                                    ClientImportCountersDTO counters) {
+        for (var existing : roleRepository.findAllByClient(client)) {
+            var name = existing.getName();
+            if (StringUtils.isBlank(name) || isIgnoredRoleName(name)) {
+                continue;
+            }
+            if (!providedNames.contains(name.trim().toLowerCase())) {
+                roleRepository.softDelete(existing.getId());
+                counters.setDeleted(counters.getDeleted() + 1);
+                deleteRoleFromIdp(client, name);
             }
         }
-
-        return counters;
     }
 
     private LevelEntity resolveRoleLevel(ClientExportRoleDTO dto) {
@@ -447,24 +545,24 @@ public class ClientExportService {
     }
 
     private void applyRoleParents(ClientEntity client, List<ClientExportRoleDTO> roles, Map<String, RoleEntity> upserted) {
-        for (ClientExportRoleDTO dto : roles) {
+        for (var dto : roles) {
             if (dto == null || StringUtils.isBlank(dto.name()) || StringUtils.isBlank(dto.parentName())) {
                 continue;
             }
-            String roleName = dto.name().trim().toLowerCase();
-            String parentName = dto.parentName().trim().toLowerCase();
+            var roleName = dto.name().trim().toLowerCase();
+            var parentName = dto.parentName().trim().toLowerCase();
             if (isIgnoredRoleName(roleName) || isIgnoredRoleName(parentName)) {
                 continue;
             }
 
-            RoleEntity role = upserted.get(roleName);
-            RoleEntity parent = upserted.get(parentName);
+            var role = upserted.get(roleName);
+            var parent = upserted.get(parentName);
             if (role == null || parent == null) {
                 continue;
             }
 
-            Long parentLevelId = parent.getLevel() != null ? parent.getLevel().getId() : null;
-            Long roleLevelId = role.getLevel() != null ? role.getLevel().getId() : null;
+            var parentLevelId = parent.getLevel() != null ? parent.getLevel().getId() : null;
+            var roleLevelId = role.getLevel() != null ? role.getLevel().getId() : null;
             roleLevelPolicyService.validateChildLevelAssignment(parentLevelId, roleLevelId);
 
             role.setRole(parent);

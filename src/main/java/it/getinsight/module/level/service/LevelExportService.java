@@ -1,5 +1,6 @@
 package it.getinsight.module.level.service;
 
+import it.getinsight.core.exception.BusinessException;
 import it.getinsight.module.level.dto.LevelDTO;
 import it.getinsight.module.level.dto.LevelExportDTO;
 import it.getinsight.module.level.dto.LevelImportRequestDTO;
@@ -30,6 +31,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static it.getinsight.message.MessageProperty.*;
 
 @Service
 @RequiredArgsConstructor
@@ -56,58 +61,77 @@ public class LevelExportService {
     }
 
     public LevelImportSummaryDTO importLevels(LevelImportRequestDTO request) {
-        long start = System.nanoTime();
-        long created = 0;
-        long updated = 0;
-        long ignored = 0;
-        long errors = 0;
-        List<LevelImportResultDTO> results = new ArrayList<>();
+        var start = System.nanoTime();
+        var results = new ArrayList<LevelImportResultDTO>();
 
-        List<LevelExportDTO> exports = request != null && CollectionUtils.isNotEmpty(request.exports())
+        var exports = resolveExports(request);
+        var existingByName = loadExistingLevelsByName(exports);
+        var preExistingNames = new HashSet<>(existingByName.keySet());
+        var availableByName = new HashMap<>(existingByName);
+
+        var pending = collectPendingLevels(exports, results);
+        processPendingLevels(pending, preExistingNames, availableByName, results);
+
+        return buildSummary(results, start);
+    }
+
+    private List<LevelExportDTO> resolveExports(LevelImportRequestDTO request) {
+        return request != null && CollectionUtils.isNotEmpty(request.exports())
             ? request.exports()
             : List.of();
+    }
 
-        Map<String, LevelEntity> existingByName = new HashMap<>();
-        levelRepository.findAll().forEach(level -> {
-            String key = normalizeName(level.getName());
-            if (key != null && !existingByName.containsKey(key)) {
-                existingByName.put(key, level);
-            }
-        });
+    private Map<String, LevelEntity> loadExistingLevelsByName(List<LevelExportDTO> exports) {
+        var existingByName = new HashMap<String, LevelEntity>();
+        var namesToLoad = exports.stream()
+            .filter(Objects::nonNull)
+            .flatMap(export -> Stream.of(export.name(), export.parentName()))
+            .filter(StringUtils::isNotBlank)
+            .map(LevelExportService::normalizeName)
+            .collect(Collectors.toSet());
 
-        Set<String> preExistingNames = new HashSet<>(existingByName.keySet());
-        Map<String, LevelEntity> availableByName = new HashMap<>(existingByName);
-        Set<String> seenNames = new HashSet<>();
-        List<LevelExportDTO> pending = new ArrayList<>();
+        if (!namesToLoad.isEmpty()) {
+            levelRepository.findByNameIgnoreCaseIn(new ArrayList<>(namesToLoad)).forEach(level -> {
+                var key = normalizeName(level.getName());
+                if (key != null && !existingByName.containsKey(key)) {
+                    existingByName.put(key, level);
+                }
+            });
+        }
 
-        for (LevelExportDTO export : exports) {
+        return existingByName;
+    }
+
+    private List<LevelExportDTO> collectPendingLevels(List<LevelExportDTO> exports,
+                                                      List<LevelImportResultDTO> results) {
+        var seenNames = new HashSet<String>();
+        var pending = new ArrayList<LevelExportDTO>();
+
+        for (var export : exports) {
             if (export == null) {
                 results.add(LevelImportResultDTO.builder()
                     .status(STATUS_ERROR)
-                    .message("Export vazio.")
+                    .message(LEVEL_IMPORT_EMPTY.message())
                     .build());
-                errors++;
                 continue;
             }
 
-            String name = StringUtils.trimToNull(export.name());
+            var name = StringUtils.trimToNull(export.name());
             if (name == null) {
                 results.add(LevelImportResultDTO.builder()
                     .status(STATUS_ERROR)
-                    .message("Nome da esfera ausente.")
+                    .message(LEVEL_IMPORT_NAME_REQUIRED.message())
                     .build());
-                errors++;
                 continue;
             }
 
-            String nameKey = normalizeName(name);
+            var nameKey = normalizeName(name);
             if (!seenNames.add(nameKey)) {
                 results.add(LevelImportResultDTO.builder()
                     .name(name)
                     .status(STATUS_ERROR)
-                    .message("Nome duplicado no arquivo de importacao.")
+                    .message(LEVEL_IMPORT_NAME_DUPLICATE.message())
                     .build());
-                errors++;
                 continue;
             }
 
@@ -115,9 +139,8 @@ public class LevelExportService {
                 results.add(LevelImportResultDTO.builder()
                     .name(name)
                     .status(STATUS_ERROR)
-                    .message("Tipo da esfera ausente.")
+                    .message(LEVEL_IMPORT_TYPE_REQUIRED.message())
                     .build());
-                errors++;
                 continue;
             }
 
@@ -125,103 +148,118 @@ public class LevelExportService {
                 results.add(LevelImportResultDTO.builder()
                     .name(name)
                     .status(STATUS_IGNORED)
-                    .message("Esfera BUILT_IN nao pode ser importada.")
+                    .message(LEVEL_IMPORT_BUILT_IN_NOT_ALLOWED.message())
                     .build());
-                ignored++;
                 continue;
             }
 
             pending.add(export);
         }
 
-        List<LevelExportDTO> remaining = new ArrayList<>(pending);
+        return pending;
+    }
+
+    private void processPendingLevels(List<LevelExportDTO> pending,
+                                      Set<String> preExistingNames,
+                                      Map<String, LevelEntity> availableByName,
+                                      List<LevelImportResultDTO> results) {
+        var remaining = new ArrayList<>(pending);
         boolean progress;
         while (!remaining.isEmpty()) {
             progress = false;
-            Iterator<LevelExportDTO> iterator = remaining.iterator();
+            var iterator = remaining.iterator();
             while (iterator.hasNext()) {
-                LevelExportDTO export = iterator.next();
-                String name = StringUtils.trimToNull(export.name());
-                String nameKey = normalizeName(name);
-                String parentName = StringUtils.trimToNull(export.parentName());
-                String parentKey = normalizeName(parentName);
-
-                if (parentName != null && Objects.equals(nameKey, parentKey)) {
-                    results.add(LevelImportResultDTO.builder()
-                        .name(name)
-                        .status(STATUS_ERROR)
-                        .message("Esfera nao pode ser pai dela mesma.")
-                        .build());
-                    errors++;
+                var export = iterator.next();
+                if (tryProcessLevel(export, preExistingNames, availableByName, results)) {
                     iterator.remove();
                     progress = true;
-                    continue;
                 }
-
-                LevelEntity parent = parentKey != null ? availableByName.get(parentKey) : null;
-                if (parentKey != null && parent == null) {
-                    continue;
-                }
-
-                LevelEntity existing = availableByName.get(nameKey);
-                boolean wasExisting = preExistingNames.contains(nameKey);
-                try {
-                    LevelDTO dto = toLevelDTO(export, parent, existing);
-                    if (wasExisting && existing != null) {
-                        levelService.update(existing.getId(), dto);
-                    } else {
-                        levelService.create(dto);
-                    }
-
-                    var saved = levelRepository.findByNameIgnoreCaseAndTypeAndActiveTrue(dto.name(), dto.type()).orElse(null);
-                    if (saved != null) {
-                        availableByName.put(nameKey, saved);
-                    }
-
-                    if (saved != null) {
-                        importItems(saved, export.items());
-                    }
-
-                    if (wasExisting) {
-                        updated++;
-                    } else {
-                        created++;
-                    }
-
-                    results.add(LevelImportResultDTO.builder()
-                        .name(name)
-                        .status(wasExisting ? STATUS_UPDATED : STATUS_CREATED)
-                        .build());
-                } catch (Exception ex) {
-                    log.error("Falha ao importar esfera '{}'", name, ex);
-                    results.add(LevelImportResultDTO.builder()
-                        .name(name)
-                        .status(STATUS_ERROR)
-                        .message(ex.getMessage())
-                        .build());
-                    errors++;
-                }
-
-                iterator.remove();
-                progress = true;
             }
 
             if (!progress) {
-                for (LevelExportDTO export : remaining) {
-                    String name = StringUtils.trimToNull(export.name());
-                    String parentName = StringUtils.trimToNull(export.parentName());
-                    results.add(LevelImportResultDTO.builder()
-                        .name(name)
-                        .status(STATUS_ERROR)
-                        .message("Esfera pai nao encontrada: " + parentName)
-                        .build());
-                    errors++;
-                }
+                addMissingParentErrors(remaining, results);
                 break;
             }
         }
+    }
 
-        long duration = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+    private boolean tryProcessLevel(LevelExportDTO export,
+                                    Set<String> preExistingNames,
+                                    Map<String, LevelEntity> availableByName,
+                                    List<LevelImportResultDTO> results) {
+        var name = StringUtils.trimToNull(export.name());
+        var nameKey = normalizeName(name);
+        var parentName = StringUtils.trimToNull(export.parentName());
+        var parentKey = normalizeName(parentName);
+
+        if (parentName != null && Objects.equals(nameKey, parentKey)) {
+            results.add(LevelImportResultDTO.builder()
+                .name(name)
+                .status(STATUS_ERROR)
+                .message(LEVEL_IMPORT_SELF_PARENT.message())
+                .build());
+            return true;
+        }
+
+        var parent = parentKey != null ? availableByName.get(parentKey) : null;
+        if (parentKey != null && parent == null) {
+            return false;
+        }
+
+        var existing = availableByName.get(nameKey);
+        var wasExisting = preExistingNames.contains(nameKey);
+        try {
+            var dto = toLevelDTO(export, parent, existing);
+            if (wasExisting && existing != null) {
+                levelService.update(existing.getId(), dto);
+            } else {
+                levelService.create(dto);
+            }
+
+            var saved = levelRepository.findByNameIgnoreCaseAndTypeAndActiveTrue(dto.name(), dto.type()).orElse(null);
+            if (saved != null) {
+                availableByName.put(nameKey, saved);
+            }
+
+            if (saved != null) {
+                importItems(saved, export.items());
+            }
+
+            results.add(LevelImportResultDTO.builder()
+                .name(name)
+                .status(wasExisting ? STATUS_UPDATED : STATUS_CREATED)
+                .build());
+        } catch (Exception ex) {
+            log.error("Falha ao importar esfera '{}'", name, ex);
+            results.add(LevelImportResultDTO.builder()
+                .name(name)
+                .status(STATUS_ERROR)
+                .message(ex.getMessage())
+                .build());
+        }
+
+        return true;
+    }
+
+    private void addMissingParentErrors(List<LevelExportDTO> remaining, List<LevelImportResultDTO> results) {
+        for (var export : remaining) {
+            var name = StringUtils.trimToNull(export.name());
+            var parentName = StringUtils.trimToNull(export.parentName());
+            results.add(LevelImportResultDTO.builder()
+                .name(name)
+                .status(STATUS_ERROR)
+                .message(LEVEL_IMPORT_PARENT_NOT_FOUND.bind(parentName).message())
+                .build());
+        }
+    }
+
+    private LevelImportSummaryDTO buildSummary(List<LevelImportResultDTO> results, long start) {
+        var created = countByStatus(results, STATUS_CREATED);
+        var updated = countByStatus(results, STATUS_UPDATED);
+        var ignored = countByStatus(results, STATUS_IGNORED);
+        var errors = countByStatus(results, STATUS_ERROR);
+
+        var duration = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         return LevelImportSummaryDTO.builder()
             .created(created)
             .updated(updated)
@@ -232,9 +270,15 @@ public class LevelExportService {
             .build();
     }
 
+    private long countByStatus(List<LevelImportResultDTO> results, String status) {
+        return results.stream()
+            .filter(result -> Objects.equals(status, result.status()))
+            .count();
+    }
+
     private LevelExportDTO toExport(LevelEntity level, boolean includeItems) {
-        LevelExportDTO base = levelExportMapper.toExport(level);
-        List<LevelItemExportDTO> items = includeItems ? exportItems(level) : List.of();
+        var base = levelExportMapper.toExport(level);
+        var items = includeItems ? exportItems(level) : List.<LevelItemExportDTO>of();
 
         return LevelExportDTO.builder()
             .name(base.name())
@@ -258,8 +302,8 @@ public class LevelExportService {
                 .description(item.getDescription())
                 .externalCode(item.getExternalCode())
                 .parentName(item.getParent() != null ? item.getParent().getName() : null)
-                .parentCode(resolveParentCode(level, item.getParent()))
-                .parentExternalCode(resolveParentExternalCode(level, item.getParent()))
+                .parentCode(resolveParentCode(item.getParent()))
+                .parentExternalCode(resolveParentExternalCode(item.getParent()))
                 .build())
             .toList();
     }
@@ -270,103 +314,106 @@ public class LevelExportService {
         }
 
         if (LevelType.BUILT_IN.equals(level.getType())) {
-            throw new IllegalStateException("Itens nao podem ser importados para esferas BUILT_IN.");
+            throw ITEM_IMPORT_BUILT_IN_NOT_ALLOWED.businessException();
         }
 
-        Map<String, ItemEntity> existingByName = new HashMap<>();
-        Map<String, ItemEntity> existingByCode = new HashMap<>();
-        itemRepository.findAllByLevelId(level.getId())
-            .forEach(item -> {
-                String nameKey = normalizeName(item.getName());
-                if (nameKey != null && !existingByName.containsKey(nameKey)) {
-                    existingByName.put(nameKey, item);
-                }
-                String codeKey = normalizeCode(item.getExternalCode());
-                if (codeKey != null && !existingByCode.containsKey(codeKey)) {
-                    existingByCode.put(codeKey, item);
-                }
-            });
+        var existingItems = itemRepository.findAllByLevelId(level.getId());
+        var existingByName = indexItemsByName(existingItems);
+        var existingByCode = indexItemsByCode(existingItems);
+        var pending = validateItems(items);
 
-        Set<String> seenNames = new HashSet<>();
-        List<LevelItemExportDTO> pending = new ArrayList<>();
+        var availableByName = new HashMap<>(existingByName);
+        var availableByCode = new HashMap<>(existingByCode);
+        resolveAndPersistItems(level, pending, availableByName, availableByCode);
+    }
 
-        for (LevelItemExportDTO item : items) {
+    private Map<String, ItemEntity> indexItemsByName(List<ItemEntity> items) {
+        var existingByName = new HashMap<String, ItemEntity>();
+        for (var item : items) {
+            var nameKey = normalizeName(item.getName());
+            if (nameKey != null && !existingByName.containsKey(nameKey)) {
+                existingByName.put(nameKey, item);
+            }
+        }
+        return existingByName;
+    }
+
+    private Map<String, ItemEntity> indexItemsByCode(List<ItemEntity> items) {
+        var existingByCode = new HashMap<String, ItemEntity>();
+        for (var item : items) {
+            var codeKey = normalizeCode(item.getExternalCode());
+            if (codeKey != null && !existingByCode.containsKey(codeKey)) {
+                existingByCode.put(codeKey, item);
+            }
+        }
+        return existingByCode;
+    }
+
+    private List<LevelItemExportDTO> validateItems(List<LevelItemExportDTO> items) {
+        var seenNames = new HashSet<String>();
+        var pending = new ArrayList<LevelItemExportDTO>();
+
+        for (var item : items) {
             if (item == null) {
-                throw new IllegalStateException("Item vazio na importacao.");
+                throw ITEM_IMPORT_EMPTY.businessException();
             }
 
-            String name = StringUtils.trimToNull(item.name());
+            var name = StringUtils.trimToNull(item.name());
             if (name == null) {
-                throw new IllegalStateException("Nome do item ausente.");
+                throw ITEM_IMPORT_NAME_REQUIRED.businessException();
             }
 
-            String nameKey = normalizeName(name);
-            String externalCodeKey = normalizeCode(item.externalCode());
+            var nameKey = normalizeName(name);
+            var externalCodeKey = normalizeCode(item.externalCode());
             if (!seenNames.add(nameKey)) {
-                throw new IllegalStateException("Nome de item duplicado na importacao: " + name);
+                throw ITEM_IMPORT_NAME_DUPLICATE.bind(name).businessException();
             }
 
-            String parentName = StringUtils.trimToNull(item.parentName());
-            String parentCodeKey = normalizeCode(item.parentCode());
-            String parentExternalCodeKey = normalizeCode(item.parentExternalCode());
+            var parentName = StringUtils.trimToNull(item.parentName());
+            var parentCodeKey = normalizeCode(item.parentCode());
+            var parentExternalCodeKey = normalizeCode(item.parentExternalCode());
             if (parentName != null && Objects.equals(nameKey, normalizeName(parentName))) {
-                throw new IllegalStateException("Item nao pode ser pai dele mesmo: " + name);
+                throw ITEM_IMPORT_SELF_PARENT.bind(name).businessException();
             }
             if (parentExternalCodeKey == null && (parentName != null || parentCodeKey != null)) {
-                throw new IllegalStateException("parentExternalCode obrigatorio para item com pai: " + name);
+                throw ITEM_IMPORT_PARENT_EXTERNAL_REQUIRED.bind(name).businessException();
             }
             if (externalCodeKey != null && Objects.equals(externalCodeKey, parentExternalCodeKey)) {
-                throw new IllegalStateException("Item nao pode ser pai dele mesmo: " + name);
+                throw ITEM_IMPORT_SELF_PARENT.bind(name).businessException();
             }
 
             pending.add(item);
         }
 
-        Map<String, ItemEntity> availableByName = new HashMap<>(existingByName);
-        Map<String, ItemEntity> availableByCode = new HashMap<>(existingByCode);
-        List<LevelItemExportDTO> remaining = new ArrayList<>(pending);
+        return pending;
+    }
+
+    private void resolveAndPersistItems(LevelEntity level,
+                                        List<LevelItemExportDTO> pending,
+                                        Map<String, ItemEntity> availableByName,
+                                        Map<String, ItemEntity> availableByCode) {
+        var remaining = new ArrayList<>(pending);
+        var parentByCode = new HashMap<String, ItemEntity>();
         boolean progress;
         while (!remaining.isEmpty()) {
             progress = false;
-            Iterator<LevelItemExportDTO> iterator = remaining.iterator();
+            var iterator = remaining.iterator();
             while (iterator.hasNext()) {
-                LevelItemExportDTO itemExport = iterator.next();
-                String name = StringUtils.trimToNull(itemExport.name());
-                String nameKey = normalizeName(name);
-                String parentExternalCodeKey = normalizeCode(itemExport.parentExternalCode());
-                ItemEntity parent = null;
-                if (parentExternalCodeKey != null) {
-                    parent = availableByCode.get(parentExternalCodeKey);
-                }
+                var itemExport = iterator.next();
+                var name = StringUtils.trimToNull(itemExport.name());
+                var nameKey = normalizeName(name);
+                var parentExternalCodeKey = normalizeCode(itemExport.parentExternalCode());
+                var parent = resolveParent(level, parentExternalCodeKey, parentByCode);
                 if (parentExternalCodeKey != null && parent == null) {
                     continue;
                 }
 
-                ItemEntity existing = availableByName.get(nameKey);
-                if (existing != null) {
-                    existing.setDescription(itemExport.description());
-                    existing.setExternalCode(itemExport.externalCode());
-                    existing.setParent(parent);
-                    ItemEntity saved = itemRepository.save(existing);
-                    availableByName.put(nameKey, saved);
-                    String codeKey = normalizeCode(saved.getExternalCode());
-                    if (codeKey != null) {
-                        availableByCode.put(codeKey, saved);
-                    }
-                } else {
-                    var entity = ItemEntity.builder()
-                        .name(name)
-                        .description(itemExport.description())
-                        .externalCode(itemExport.externalCode())
-                        .level(level)
-                        .parent(parent)
-                        .build();
-                    var saved = itemRepository.save(entity);
-                    availableByName.put(nameKey, saved);
-                    String codeKey = normalizeCode(saved.getExternalCode());
-                    if (codeKey != null) {
-                        availableByCode.put(codeKey, saved);
-                    }
+                var existing = availableByName.get(nameKey);
+                var saved = saveItem(level, itemExport, name, existing, parent);
+                availableByName.put(nameKey, saved);
+                var codeKey = normalizeCode(saved.getExternalCode());
+                if (codeKey != null) {
+                    availableByCode.put(codeKey, saved);
                 }
 
                 iterator.remove();
@@ -374,22 +421,64 @@ public class LevelExportService {
             }
 
             if (!progress) {
-                LevelItemExportDTO pendingItem = remaining.get(0);
-                String pendingName = StringUtils.trimToNull(pendingItem.name());
-                String pendingParentExternalCode = StringUtils.trimToNull(pendingItem.parentExternalCode());
-                throw new IllegalStateException("Item pai nao encontrado: " + pendingParentExternalCode + " para item " + pendingName);
+                throw buildMissingParentException(remaining.getFirst());
             }
         }
     }
 
-    private static String resolveParentCode(LevelEntity level, ItemEntity parent) {
+    private ItemEntity resolveParent(LevelEntity level,
+                                     String parentExternalCodeKey,
+                                     Map<String, ItemEntity> parentByCode) {
+        if (parentExternalCodeKey == null) {
+            return null;
+        }
+
+        var parentLevel = level.getParent();
+        if (parentLevel == null) {
+            return null;
+        }
+
+        return parentByCode.computeIfAbsent(parentExternalCodeKey, code ->
+            itemRepository.findByLevelIdAndExternalCode(parentLevel.getId(), code).orElse(null)
+        );
+    }
+
+    private ItemEntity saveItem(LevelEntity level,
+                                LevelItemExportDTO itemExport,
+                                String name,
+                                ItemEntity existing,
+                                ItemEntity parent) {
+        if (existing != null) {
+            existing.setDescription(itemExport.description());
+            existing.setExternalCode(itemExport.externalCode());
+            existing.setParent(parent);
+            return itemRepository.save(existing);
+        }
+
+        var entity = ItemEntity.builder()
+            .name(name)
+            .description(itemExport.description())
+            .externalCode(itemExport.externalCode())
+            .level(level)
+            .parent(parent)
+            .build();
+        return itemRepository.save(entity);
+    }
+
+    private BusinessException buildMissingParentException(LevelItemExportDTO pendingItem) {
+        var pendingName = StringUtils.trimToNull(pendingItem.name());
+        var pendingParentExternalCode = StringUtils.trimToNull(pendingItem.parentExternalCode());
+        return ITEM_IMPORT_PARENT_NOT_FOUND.bind(pendingParentExternalCode, pendingName).businessException();
+    }
+
+    private static String resolveParentCode(ItemEntity parent) {
         if (parent == null) {
             return null;
         }
         return parent.getExternalCode();
     }
 
-    private static String resolveParentExternalCode(LevelEntity level, ItemEntity parent) {
+    private static String resolveParentExternalCode(ItemEntity parent) {
         if (parent == null) {
             return null;
         }
