@@ -33,6 +33,7 @@ import it.getinsight.module.level.entity.LevelType;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.role.service.RoleLevelPolicyService;
+import it.getinsight.module.role.service.RoleValidationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -71,6 +72,7 @@ public class ClientExportService {
     private final IdentityProviderService identityProviderService;
     private final RoleLevelPolicyService roleLevelPolicyService;
     private final ClientValidationService clientValidationService;
+    private final RoleValidationService roleValidationService;
     private final KeycloakProperties keycloakProperties;
 
     @Transactional(readOnly = true)
@@ -117,7 +119,7 @@ public class ClientExportService {
 
         var roles = includeRoles
             ? roleRepository.findAllByClient(client).stream()
-                .filter(role -> !isIgnoredRoleName(role.getName()))
+                .filter(role -> !roleValidationService.isIgnoredRoleName(role.getName()))
                 .map(clientExportMapper::toExportRole)
                 .toList()
             : List.<ClientExportRoleDTO>of();
@@ -447,7 +449,7 @@ public class ClientExportService {
             .map(ClientExportRoleDTO::name)
             .filter(StringUtils::isNotBlank)
             .map(name -> name.trim().toLowerCase())
-            .filter(name -> !isIgnoredRoleName(name))
+            .filter(name -> !roleValidationService.isIgnoredRoleName(name))
             .collect(Collectors.toSet());
     }
 
@@ -460,7 +462,7 @@ public class ClientExportService {
                 continue;
             }
             var name = dto.name().trim();
-            if (isIgnoredRoleName(name)) {
+            if (roleValidationService.isIgnoredRoleName(name)) {
                 continue;
             }
 
@@ -509,7 +511,7 @@ public class ClientExportService {
                                     ClientImportCountersDTO counters) {
         for (var existing : roleRepository.findAllByClient(client)) {
             var name = existing.getName();
-            if (StringUtils.isBlank(name) || isIgnoredRoleName(name)) {
+            if (StringUtils.isBlank(name) || roleValidationService.isIgnoredRoleName(name)) {
                 continue;
             }
             if (!providedNames.contains(name.trim().toLowerCase())) {
@@ -551,7 +553,7 @@ public class ClientExportService {
             }
             var roleName = dto.name().trim().toLowerCase();
             var parentName = dto.parentName().trim().toLowerCase();
-            if (isIgnoredRoleName(roleName) || isIgnoredRoleName(parentName)) {
+            if (roleValidationService.isIgnoredRoleName(roleName) || roleValidationService.isIgnoredRoleName(parentName)) {
                 continue;
             }
 
@@ -626,7 +628,7 @@ public class ClientExportService {
             return ClientStatus.UNPUBLISHED;
         }
         return Arrays.stream(ClientStatus.values())
-            .filter(s -> StringUtils.equalsIgnoreCase(s.name(), status))
+            .filter(s -> s.name().equalsIgnoreCase(status))
             .findFirst()
             .orElseThrow(() -> CLIENT_INVALID_STATUS.bind(status).businessException());
     }
@@ -644,18 +646,6 @@ public class ClientExportService {
             return false;
         }
         return ignoreClients.contains(clientId.trim().toLowerCase());
-    }
-
-    private boolean isIgnoredRoleName(String roleName) {
-        if (roleName == null) {
-            return false;
-        }
-        var ignoreRoles = keycloakProperties.getIgnoreRoles();
-        if (CollectionUtils.isEmpty(ignoreRoles)) {
-            return false;
-        }
-        String normalized = roleName.trim().toLowerCase();
-        return ignoreRoles.stream().anyMatch(r -> r != null && normalized.equals(r.trim().toLowerCase()));
     }
 
 }

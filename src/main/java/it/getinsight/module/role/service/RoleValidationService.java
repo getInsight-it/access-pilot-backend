@@ -2,11 +2,13 @@ package it.getinsight.module.role.service;
 
 import it.getinsight.core.exception.InfraException;
 import it.getinsight.core.exception.ResourceNotFoundException;
+import it.getinsight.module.keycloak.config.KeycloakProperties;
 import it.getinsight.module.keycloak.service.IdentityProviderService;
 import it.getinsight.module.role.dto.RoleDTO;
 import it.getinsight.utilitario.StringValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,7 @@ import static it.getinsight.message.MessageProperty.*;
 public class RoleValidationService {
 
     private final IdentityProviderService identityProviderService;
+    private final KeycloakProperties keycloakProperties;
 
 
     public void validateRoleInput(RoleDTO roleDTO) {
@@ -61,12 +64,16 @@ public class RoleValidationService {
     }
 
 
-    public boolean isValidRoleName(String roleName) {
-        if (roleName == null || roleName.trim().isEmpty()) {
+    public boolean isIgnoredRoleName(String roleName) {
+        if (roleName == null) {
             return false;
         }
-
-        return !StringValidationUtils.isUpperSnakeCase(roleName);
+        var ignoreRoles = keycloakProperties.getIgnoreRoles();
+        if (CollectionUtils.isEmpty(ignoreRoles)) {
+            return false;
+        }
+        String normalized = roleName.trim().toLowerCase();
+        return ignoreRoles.stream().anyMatch(r -> r != null && normalized.equals(r.trim().toLowerCase()));
     }
 }
 

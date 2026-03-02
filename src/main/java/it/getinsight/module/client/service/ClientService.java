@@ -20,6 +20,7 @@ import it.getinsight.module.configuration.service.AttachmentConfigurationService
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.service.IdentityProviderService;
 import it.getinsight.module.role.entity.RoleEntity;
+import it.getinsight.module.role.service.RoleSynchronizationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -48,6 +49,7 @@ public class ClientService {
     private final ClientRepresentationMapper clientRepresentationMapper;
     private final IdentityProviderService identityProviderService;
     private final ClientSynchronizationService clientSynchronizationService;
+    private final RoleSynchronizationService roleSynchronizationService;
     private final ClientFullResponseMapper clientFullResponseMapper;
     private final AttachmentConfigurationRepository attachmentConfigurationRepository;
     private final AttachmentConfigurationMapper attachmentConfigurationMapper;
@@ -55,11 +57,6 @@ public class ClientService {
 
     private final ClientValidationService clientValidationService;
     private final ClientQueryService clientQueryService;
-
-
-    public List<ClientDTO> getAllClientsDynamicQuery() {
-        return clientQueryService.getAllClientsDynamicQuery();
-    }
 
     public List<ClientDTO> getAllClientsPublished() {
         return clientQueryService.getAllClientsPublished();
@@ -142,6 +139,7 @@ public class ClientService {
             .orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException);
 
         clientMapper.fromDtoWithoutImmutableFields(clientUpdatedDTO, entityUpdated);
+        ClientEntity syncedEntity = entityUpdated;
 
         if (BooleanUtils.isTrue(clientUpdatedDTO.managed())) {
             if (StringUtils.isBlank(entityUpdated.getClientUUID())) {
@@ -168,9 +166,14 @@ public class ClientService {
                 identityProviderService.updateClient(client.getId(), client);
                 handleManagedClient(entityUpdated);
             }
+            syncedEntity = clientRepository.findById(id).orElse(entityUpdated);
         }
 
         processAttachmentConfigurations(clientUpdatedDTO.configurations(), entityUpdated);
+
+        if (BooleanUtils.isTrue(clientUpdatedDTO.managed())) {
+            roleSynchronizationService.synchronizeRolesToIdp(syncedEntity);
+        }
     }
 
     private void processAttachmentConfigurations(List<AttachmentConfigurationDTO> configurations, ClientEntity entityUpdated) {

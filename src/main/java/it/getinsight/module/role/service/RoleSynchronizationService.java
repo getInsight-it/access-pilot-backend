@@ -2,7 +2,6 @@ package it.getinsight.module.role.service;
 
 import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.client.repository.ClientRepository;
-import it.getinsight.module.keycloak.config.KeycloakProperties;
 import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
 import it.getinsight.module.keycloak.service.IdentityProviderService;
@@ -11,7 +10,8 @@ import it.getinsight.module.level.repository.LevelRepository;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.collections4.CollectionUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,13 +22,14 @@ import static it.getinsight.message.MessageProperty.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RoleSynchronizationService {
 
     private final RoleRepository roleRepository;
     private final ClientRepository clientRepository;
     private final LevelRepository levelRepository;
     private final IdentityProviderService identityProviderService;
-    private final KeycloakProperties keycloakProperties;
+    private final RoleValidationService roleValidationService;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void synchronizeRoles(List<String> clientIds) {
@@ -41,6 +42,18 @@ public class RoleSynchronizationService {
         for (ClientRepresentationDTO client : clients) {
             synchronizeClientRoles(client);
         }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void synchronizeRolesToIdp(ClientEntity clientEntity) {
+        if (!shouldSyncClientToIdp(clientEntity)) {
+            return;
+        }
+
+        roleRepository.findAllByClient(clientEntity).stream()
+            .filter(this::isValidLocalRole)
+            .filter(role -> !roleValidationService.isIgnoredRoleName(role.getName()))
+            .forEach(role -> synchronizeRoleInIdp(clientEntity, role));
     }
 
     private List<ClientRepresentationDTO> fetchClientsFromIDP(List<String> clientIds, boolean force) {
@@ -73,12 +86,50 @@ public class RoleSynchronizationService {
     }
 
     private boolean isIgnoredRole(RoleRepresentationDTO role) {
-        var ignoreRoles = keycloakProperties.getIgnoreRoles();
-        if (CollectionUtils.isEmpty(ignoreRoles)) {
+        if (role == null || role.name() == null) {
             return false;
         }
-        String roleName = role.name().trim().toLowerCase();
-        return ignoreRoles.stream().anyMatch(r -> r != null && roleName.equals(r.trim().toLowerCase()));
+        return roleValidationService.isIgnoredRoleName(role.name());
+    }
+
+    private void synchronizeRoleInIdp(ClientEntity client, RoleEntity role) {
+        var roleRepresentation = findOrCreateRoleInIdp(client, role);
+        if (roleRepresentation != null && StringUtils.isNotBlank(roleRepresentation.id())) {
+            role.setRoleExternalId(roleRepresentation.id());
+            roleRepository.save(role);
+        }
+    }
+
+    private RoleRepresentationDTO findOrCreateRoleInIdp(ClientEntity client, RoleEntity role) {
+        try {
+            var representation = identityProviderService.getRole(client.getClientUUID(), role.getName());
+            if (representation != null) {
+                identityProviderService.updateRole(client.getClientUUID(), role.getName(), RoleRepresentationDTO.builder()
+                    .name(role.getName())
+                    .description(role.getDescription())
+                    .build());
+                return representation;
+            }
+        } catch (Exception ex) {
+            log.debug("Role '{}' not found/updated in IDP for client '{}', will create. Reason: {}",
+                role.getName(), client.getClientId(), ex.getMessage());
+        }
+
+        identityProviderService.createRole(client.getClientUUID(), RoleRepresentationDTO.builder()
+            .name(role.getName())
+            .description(role.getDescription())
+            .build());
+        return identityProviderService.getRole(client.getClientUUID(), role.getName());
+    }
+
+    private boolean shouldSyncClientToIdp(ClientEntity clientEntity) {
+        return clientEntity != null
+            && Boolean.TRUE.equals(clientEntity.getManaged())
+            && StringUtils.isNotBlank(clientEntity.getClientUUID());
+    }
+
+    private boolean isValidLocalRole(RoleEntity role) {
+        return role != null && StringUtils.isNotBlank(role.getName());
     }
 
     public void synchronizeRole(RoleRepresentationDTO role, ClientEntity clientEntity,
