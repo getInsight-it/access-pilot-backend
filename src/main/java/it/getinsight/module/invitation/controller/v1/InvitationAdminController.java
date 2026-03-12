@@ -41,6 +41,12 @@ public class InvitationAdminController {
         return ResponseEntity.ok(invitationService.getAllInvitations(pageRequest));
     }
 
+    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Retrieve invitation by id")
+    public ResponseEntity<InvitationListDTO> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(invitationService.findById(id));
+    }
+
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Create invitations (returns tokens; email sending is out of scope)")
     public ResponseEntity<InvitationCreateResponseDTO> create(@Valid @RequestBody InvitationCreateRequestDTO request) {

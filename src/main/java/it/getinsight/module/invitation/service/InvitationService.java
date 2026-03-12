@@ -165,6 +165,13 @@ public class InvitationService {
         return toPageableResponse(page, now);
     }
 
+    @Transactional(readOnly = true)
+    public InvitationListDTO findById(Long id) {
+        var invitation = invitationRepository.findById(id)
+            .orElseThrow(INVITATION_NOT_FOUND_ERROR::resourceNotFoundException);
+        return invitationListMapper.toDto(invitation);
+    }
+
     @Transactional(propagation = Propagation.REQUIRED)
     public void cancelInvitation(Long invitationId) {
         var invitation = invitationRepository.findById(invitationId).orElseThrow(INVITATION_NOT_FOUND_ERROR::resourceNotFoundException);
