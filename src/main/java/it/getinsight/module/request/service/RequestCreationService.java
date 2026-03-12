@@ -1,5 +1,8 @@
 package it.getinsight.module.request.service;
 
+import it.getinsight.module.configuration.entity.AttachmentConfigurationEntity;
+import it.getinsight.module.invitation.entity.InvitationEntity;
+import it.getinsight.module.invitation.service.InvitationService;
 import it.getinsight.module.request.dto.RequestDTO;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
@@ -14,12 +17,15 @@ import it.getinsight.module.user.repository.UserRepository;
 import it.getinsight.module.user.service.AuthenticationContextService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 import static it.getinsight.message.MessageProperty.REQUEST_NOT_FOUND_ERROR;
 
@@ -39,9 +45,12 @@ public class RequestCreationService {
     private final ProtocolGeneratorService protocolGeneratorService;
     private final RoleLevelPolicyService roleLevelPolicyService;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final InvitationService invitationService;
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public RequestDTO createRequest(final RequestDTO requestDTO, MultiValueMap<String, MultipartFile> attachments) {
+    public RequestDTO createRequest(RequestDTO requestDTO, MultiValueMap<String, MultipartFile> attachments) {
+        var invitation = processInvitationIfPresent(requestDTO);
+
         log.debug("Starting request creation process for role: {}", requestDTO.role().id());
 
         var roleEntity = findAndValidateRole(requestDTO);
@@ -61,7 +70,19 @@ public class RequestCreationService {
 
         applicationEventPublisher.publishEvent(new RequestCreatedEvent(entity.getId()));
 
+        if (invitation != null) {
+            invitationService.consumeInvitation(invitation.getId(), entity);
+        }
+
         return requestMapper.toDto(entity);
+    }
+
+    private InvitationEntity processInvitationIfPresent(RequestDTO requestDTO) {
+        if (StringUtils.isBlank(requestDTO.invitationToken())) {
+            return null;
+        }
+        String currentUserEmail = authenticationContextService.getCurrentUserEmail();
+        return invitationService.getValidatedInvitationForUpdate(requestDTO.invitationToken(), currentUserEmail);
     }
 
     private RoleEntity findAndValidateRole(RequestDTO requestDTO) {
@@ -70,7 +91,7 @@ public class RequestCreationService {
     }
 
     private void validateRequestCreation(RequestDTO requestDTO, RoleEntity roleEntity,
-                                        java.util.List<it.getinsight.module.configuration.entity.AttachmentConfigurationEntity> configurations,
+                                        List<AttachmentConfigurationEntity> configurations,
                                         MultiValueMap<String, MultipartFile> attachments) {
         requestValidationService.validateItemExistence(requestDTO.codeItem(), roleEntity);
         requestValidationService.validateAttachments(configurations, attachments);
@@ -108,4 +129,3 @@ public class RequestCreationService {
         });
     }
 }
-

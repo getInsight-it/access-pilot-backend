@@ -108,6 +108,13 @@ public enum MessageProperty implements IMessageProperty {
     INVALID_URL_PROTOCOL_ERROR("invalid.url.protocol"),
     INVALID_JSON_FORMAT_ERROR("invalid.json.format"),
 
+    // Invitation
+    INVITATION_NOT_FOUND_ERROR("invitation.not.found"),
+    INVITATION_EXPIRED_ERROR("invitation.expired"),
+    INVITATION_CANCELLED_ERROR("invitation.cancelled"),
+    INVITATION_CONSUMED_ERROR("invitation.consumed"),
+    INVITATION_EMAIL_MISMATCH_ERROR("invitation.email.mismatch"),
+
     // Hierarchy Validation
     ROLE_HIERARCHY_INVALID_ERROR("role.hierarchy.invalid"),
     LEVEL_HIERARCHY_INVALID_ERROR("level.hierarchy.invalid"),

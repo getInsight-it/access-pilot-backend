@@ -50,9 +50,15 @@ public class RequestController {
         String request) {
         try {
             final var requestCreateDTO = objectMapper.readValue(request, RequestCreateDTO.class);
-            RequestDTO requestDTO = RequestDTO.builder().description(requestCreateDTO.description()).codeItem(requestCreateDTO.codeItem()).role(RoleDTO.builder().id(requestCreateDTO.roleId()).build()).build();
-            var uri = ServletUriComponentsBuilder.fromCurrentRequest().path(
-                "/{id}").buildAndExpand(requestService.createRequest(requestDTO, attachments).id()).toUri();
+            RequestDTO requestDTO = RequestDTO.builder()
+                .description(requestCreateDTO.description())
+                .codeItem(requestCreateDTO.codeItem())
+                .role(RoleDTO.builder().id(requestCreateDTO.roleId()).build())
+                .invitationToken(requestCreateDTO.invitationToken())
+                .build();
+
+            var created = requestService.createRequest(requestDTO, attachments);
+            var uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(created.id()).toUri();
             return ResponseEntity.created(uri).build();
         } catch (JsonProcessingException e) {
             throw INVALID_JSON_FORMAT_ERROR.businessException();
