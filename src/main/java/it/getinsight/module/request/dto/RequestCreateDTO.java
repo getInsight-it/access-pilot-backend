@@ -19,7 +19,9 @@ public record RequestCreateDTO(
     String codeItem,
 
     @Size(max = 1000)
-    String description
+    String description,
+
+    String invitationToken
 
 ) implements Serializable {
 

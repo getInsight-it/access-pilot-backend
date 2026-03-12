@@ -45,7 +45,9 @@ public record RequestDTO(
 
     UserDTO revokingUser,
 
-    Date criacao
+    Date criacao,
+
+    String invitationToken
 ) implements Serializable {
 
     @Serial
