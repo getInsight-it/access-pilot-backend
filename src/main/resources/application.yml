@@ -206,6 +206,32 @@ spring:
       host: localhost
       port: 6379
 
+  rabbitmq:
+    host: ${QUEUE_HOST:localhost}
+    port: ${QUEUE_PORT:5672}
+    username: ${QUEUE_USERNAME:guest}
+    password: ${QUEUE_PASSWORD:guest}
+
+cali:
+  queue:
+    connection:
+      url: ${QUEUE_URL:amqp://localhost:5672}
+      credential:
+        username: ${QUEUE_USERNAME:guest}
+        password: ${QUEUE_PASSWORD:guest}
+    listenTo:
+      - ${QUEUE_NAME:accesspilot_notifications}
+    publishTo:
+      - name: ${QUEUE_NAME:accesspilot_notifications}
+    retry:
+      max-attempts: ${QUEUE_RETRY_MAX_ATTEMPTS:5}
+      initial-interval: ${QUEUE_RETRY_INITIAL_INTERVAL:1000}
+      multiplier: ${QUEUE_RETRY_MULTIPLIER:2.0}
+      max-interval: ${QUEUE_RETRY_MAX_INTERVAL:30000}
+    dlq:
+      suffix: ${QUEUE_DLQ_SUFFIX:.dlq}
+      exchange: ${QUEUE_DLQ_EXCHANGE:dlx.exchange}
+
 minio:
   endpoint: http://localhost:9002
   accessKey: admin

@@ -15,8 +15,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-import static it.getinsight.message.MessageProperty.APPROVERS_NOT_FOUND_ERROR;
-
 
 @Service
 @RequiredArgsConstructor
@@ -38,8 +36,7 @@ public class ApproverEmailBuilderService {
             .toList();
 
         if (approves.isEmpty()) {
-            log.warn("No approvers found for role {}", roleEntity.getName());
-            throw APPROVERS_NOT_FOUND_ERROR.resourceNotFoundException();
+            log.warn("No approvers found for role {}. Skipping approver notifications.", roleEntity.getName());
         }
 
         return approves;
@@ -63,10 +60,5 @@ public class ApproverEmailBuilderService {
             ))
             .isHtml(true)
             .build();
-    }
-
-
-    public void updateRequestStatusToPending(RequestEntity requestEntity) {
-        requestEntity.setStatus(RequestStatus.PENDING);
     }
 }
