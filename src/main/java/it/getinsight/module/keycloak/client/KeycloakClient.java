@@ -65,6 +65,10 @@ public interface KeycloakClient {
     @Retry(name = "keycloak")
     Map<String, List<RoleRepresentationDTO>> getUserRoles(@PathVariable("id") String userId);
 
+    @GetMapping("/users")
+    @Retry(name = "keycloak")
+    List<UserRepresentationDTO> getUsersByEmail(@RequestParam String email, @RequestParam(defaultValue = "true") Boolean exact);
+
     @PutMapping("/users/{id}")
     void updateUser(@PathVariable String id, @RequestBody UserRepresentationDTO userRepresentationDTO);
 
