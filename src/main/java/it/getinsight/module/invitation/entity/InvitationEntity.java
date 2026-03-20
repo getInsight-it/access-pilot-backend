@@ -44,7 +44,7 @@ public class InvitationEntity extends AuditableEntity<Long, String> {
     @JoinColumn(name = "ID_ROLE", nullable = false)
     private RoleEntity role;
 
-    @Column(name = "CODIGO_ITEM", nullable = false)
+    @Column(name = "CODIGO_ITEM")
     private String codeItem;
 
     @Column(name = "DESCRICAO", length = 1000)

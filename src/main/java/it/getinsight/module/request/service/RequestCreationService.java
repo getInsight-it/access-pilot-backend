@@ -3,8 +3,6 @@ package it.getinsight.module.request.service;
 import it.getinsight.module.configuration.entity.AttachmentConfigurationEntity;
 import it.getinsight.module.invitation.entity.InvitationEntity;
 import it.getinsight.module.invitation.service.InvitationService;
-import it.getinsight.common.queue.MessageQueueProducer;
-import it.getinsight.common.queue.dto.NotificationQueueMessage;
 import it.getinsight.module.request.dto.RequestDTO;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
@@ -44,7 +42,7 @@ public class RequestCreationService {
     private final RequestAttachmentService requestAttachmentService;
     private final ProtocolGeneratorService protocolGeneratorService;
     private final RoleLevelPolicyService roleLevelPolicyService;
-    private final MessageQueueProducer messageQueueProducer;
+    private final RequestNotificationService requestNotificationService;
     private final InvitationService invitationService;
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -68,7 +66,7 @@ public class RequestCreationService {
 
         requestAttachmentService.saveRequestFiles(attachments, configurations, entity);
 
-        messageQueueProducer.publishNotification(entity.getId(), NotificationQueueMessage.NotificationType.REQUEST_CREATED, user.getId());
+        requestNotificationService.publishRequestCreated(entity, user.getId().toString());
 
         if (invitation != null) {
             invitationService.consumeInvitation(invitation.getId(), entity);

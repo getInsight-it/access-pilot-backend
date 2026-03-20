@@ -219,10 +219,24 @@ cali:
       credential:
         username: ${QUEUE_USERNAME:guest}
         password: ${QUEUE_PASSWORD:guest}
-    listenTo:
-      - ${QUEUE_NAME:accesspilot_notifications}
-    publishTo:
-      - name: ${QUEUE_NAME:accesspilot_notifications}
+    exchanges:
+      - id: request-events
+        name: ${QUEUE_EXCHANGE_REQUEST_EVENTS:accesspilot.request-events}
+        type: topic
+        bindings:
+          - queue: ${QUEUE_REQUEST_NOTIFICATIONS:request-notification-events}
+            routing-pattern: "request.#"
+            channel: request-notification
+      - id: notifications
+        name: ${QUEUE_EXCHANGE_NOTIFICATIONS:accesspilot.notifications}
+        type: topic
+        bindings:
+          - queue: ${QUEUE_EMAIL_QUEUE:email-notifications}
+            routing-pattern: "notify.email"
+            channel: email
+          - queue: ${QUEUE_WEB_QUEUE:web-notifications}
+            routing-pattern: "notify.web"
+            channel: web
     retry:
       max-attempts: ${QUEUE_RETRY_MAX_ATTEMPTS:5}
       initial-interval: ${QUEUE_RETRY_INITIAL_INTERVAL:1000}

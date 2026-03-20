@@ -1,38 +1,39 @@
 package it.getinsight.core.queue.config;
 
 import it.getinsight.core.queue.QueueConfigProperties;
-import it.getinsight.core.queue.QueueConsumer;
-import it.getinsight.core.queue.QueueMessageDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.core.AbstractExchange;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Declarable;
 import org.springframework.amqp.core.Declarables;
 import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 
-import org.slf4j.MDC;
-
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 @Configuration
 @ConditionalOnProperty(prefix = "cali.queue.connection", name = "url")
@@ -96,36 +97,47 @@ public class QueueConfiguration {
     }
 
     @Bean
-    public Declarables queues(DirectExchange deadLetterExchange) {
-        List<String> queueNames = new ArrayList<>(queueConfigProperties.getListenTo());
-        queueConfigProperties.getPublishTo().stream()
-            .map(QueueConfigProperties.QueueDefinition::getName)
-            .filter(name -> !queueNames.contains(name))
-            .forEach(queueNames::add);
-
-        String dlqSuffix = queueConfigProperties.getDlq().getSuffix();
-        String dlxExchange = queueConfigProperties.getDlq().getExchange();
-
+    public Declarables queuesAndExchanges(DirectExchange deadLetterExchange) {
         List<Declarable> declarables = new ArrayList<>();
         declarables.add(deadLetterExchange);
 
-        for (String queueName : queueNames) {
-            String dlqName = queueName + dlqSuffix;
+        String dlqSuffix = queueConfigProperties.getDlq().getSuffix();
+        Set<String> declaredQueues = new HashSet<>();
+        Map<String, Queue> queueRegistry = new HashMap<>();
 
-            Queue mainQueue = QueueBuilder.durable(queueName)
-                .withArgument("x-dead-letter-exchange", dlxExchange)
-                .withArgument("x-dead-letter-routing-key", dlqName)
-                .build();
+        for (var exchangeDefinition : queueConfigProperties.getExchanges()) {
+            AbstractExchange exchange = buildExchange(exchangeDefinition);
+            declarables.add(exchange);
 
-            Queue dlq = QueueBuilder.durable(dlqName).build();
-            Binding dlqBinding = BindingBuilder.bind(dlq).to(deadLetterExchange).with(dlqName);
+            for (var binding : exchangeDefinition.getBindings()) {
+                String queueName = binding.getQueue();
+                String dlqName = queueName + dlqSuffix;
 
-            declarables.add(mainQueue);
-            declarables.add(dlq);
-            declarables.add(dlqBinding);
+                Queue mainQueue = queueRegistry.computeIfAbsent(queueName, name -> QueueBuilder.durable(name)
+                        .withArgument("x-dead-letter-exchange", deadLetterExchange.getName())
+                        .withArgument("x-dead-letter-routing-key", dlqName)
+                        .build());
+
+                if (declaredQueues.add(queueName)) {
+                    Queue dlq = QueueBuilder.durable(dlqName).build();
+
+                    Binding dlqBinding = BindingBuilder.bind(dlq)
+                        .to(deadLetterExchange)
+                        .with(dlqName);
+
+                    declarables.add(mainQueue);
+                    declarables.add(dlq);
+                    declarables.add(dlqBinding);
+                }
+
+                Binding queueBinding = buildBinding(binding, exchange, mainQueue);
+                declarables.add(queueBinding);
+
+                log.info("Configured queue '{}' on exchange '{}' with pattern '{}' and DLQ '{}'",
+                    queueName, exchange.getName(), binding.getRoutingPattern(), dlqName);
+            }
         }
 
-        log.info("Declaring queues with DLQ: {}", queueNames);
         return new Declarables(declarables);
     }
 
@@ -139,58 +151,30 @@ public class QueueConfiguration {
             .build();
     }
 
-    @Bean
-    public SimpleMessageListenerContainer messageListenerContainer(
-            ConnectionFactory connectionFactory,
-            MessageConverter messageConverter,
-            RetryOperationsInterceptor retryInterceptor,
-            @Autowired ApplicationContext applicationContext) {
+    private AbstractExchange buildExchange(QueueConfigProperties.ExchangeDefinition exchangeDefinition) {
+        String type = exchangeDefinition.getType() == null ? "topic" : exchangeDefinition.getType().toLowerCase(Locale.ROOT);
+        return switch (type) {
+            case "topic" -> new TopicExchange(exchangeDefinition.getName());
+            case "direct" -> new DirectExchange(exchangeDefinition.getName());
+            case "fanout" -> new FanoutExchange(exchangeDefinition.getName());
+            default -> throw new IllegalArgumentException("Unsupported exchange type: " + exchangeDefinition.getType());
+        };
+    }
 
-        List<String> queueNames = queueConfigProperties.getListenTo();
-        if (queueNames.isEmpty()) {
-            log.info("No queues configured to listen to");
-            return new SimpleMessageListenerContainer();
+    private Binding buildBinding(QueueConfigProperties.QueueBinding binding, AbstractExchange exchange, Queue queue) {
+        if (exchange instanceof FanoutExchange fanoutExchange) {
+            return BindingBuilder.bind(queue).to(fanoutExchange);
         }
-
-        log.info("Configuring listener for queues: {}", queueNames);
-
-        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
-        container.setConnectionFactory(connectionFactory);
-        container.setQueueNames(queueNames.toArray(new String[0]));
-        container.setMissingQueuesFatal(false);
-        container.setDefaultRequeueRejected(false);
-        container.setAdviceChain(retryInterceptor);
-
-        container.setMessageListener(message -> {
-            String correlationId = message.getMessageProperties().getCorrelationId();
-            try {
-                if (correlationId != null) {
-                    MDC.put("correlationId", correlationId);
-                }
-
-                QueueMessageDTO dto = (QueueMessageDTO) messageConverter.fromMessage(message);
-                String beanName = dto.getListenerBeanName();
-
-                if (beanName == null || beanName.isBlank()) {
-                    log.error("Message received without listenerBeanName, cannot route");
-                    return;
-                }
-
-                Object bean = applicationContext.getBean(beanName);
-                if (bean instanceof QueueConsumer consumer) {
-                    log.debug("Routing message to consumer: {}, correlationId: {}", beanName, correlationId);
-                    consumer.onMessage(dto);
-                } else {
-                    log.error("Bean {} is not a QueueConsumer", beanName);
-                }
-            } catch (Exception e) {
-                log.error("Error processing queue message, attempt will be retried", e);
-                throw new RuntimeException(e);
-            } finally {
-                MDC.remove("correlationId");
-            }
-        });
-
-        return container;
+        String routingPattern = binding.getRoutingPattern();
+        if (routingPattern == null || routingPattern.isBlank()) {
+            throw new IllegalArgumentException("Routing pattern is required for exchange: " + exchange.getName());
+        }
+        if (exchange instanceof TopicExchange topicExchange) {
+            return BindingBuilder.bind(queue).to(topicExchange).with(routingPattern);
+        }
+        if (exchange instanceof DirectExchange directExchange) {
+            return BindingBuilder.bind(queue).to(directExchange).with(routingPattern);
+        }
+        throw new IllegalArgumentException("Unsupported exchange type for binding: " + exchange.getType());
     }
 }

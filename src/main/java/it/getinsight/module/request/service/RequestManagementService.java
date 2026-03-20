@@ -1,13 +1,10 @@
 package it.getinsight.module.request.service;
 
-import it.getinsight.common.queue.MessageQueueProducer;
-import it.getinsight.common.queue.dto.NotificationQueueMessage;
 import it.getinsight.module.request.dto.RequestUpdateDTO;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.enuns.RequestAction;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.request.repository.RequestRepository;
-import it.getinsight.module.user.entity.UserEntity;
 import it.getinsight.module.user.repository.UserRepository;
 import it.getinsight.module.user.service.AuthenticationContextService;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +27,7 @@ public class RequestManagementService {
     private final RequestRepository requestRepository;
     private final RequestValidationService requestValidationService;
     private final RequestStatusManagementService requestStatusManagementService;
-    private final MessageQueueProducer messageQueueProducer;
+    private final RequestNotificationService requestNotificationService;
     private final AuthenticationContextService authenticationContextService;
     private final UserAccessValidationService userAccessValidationService;
     private final UserRepository userRepository;
@@ -73,15 +70,11 @@ public class RequestManagementService {
 
     private void publishStatusNotificationEvent(RequestEntity requestEntity) {
         String externalId = authenticationContextService.getCurrentUserId();
-        Long userId = userRepository.findByExternalId(externalId)
-            .map(UserEntity::getId)
-            .orElse(null);
+        String userId = userRepository.findByExternalId(externalId)
+            .map(user -> user.getId().toString())
+            .orElseThrow(() -> new IllegalStateException("User not found for externalId: " + externalId));
 
-        messageQueueProducer.publishNotification(
-            requestEntity.getId(),
-            NotificationQueueMessage.NotificationType.REQUEST_STATUS_CHANGED,
-            userId
-        );
+        requestNotificationService.publishRequestStatusChanged(requestEntity, userId);
     }
 
 
@@ -109,4 +102,3 @@ public class RequestManagementService {
         return actions;
     }
 }
-

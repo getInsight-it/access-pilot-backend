@@ -13,8 +13,7 @@ import java.util.List;
 public class QueueConfigProperties {
 
     private Connection connection = new Connection();
-    private List<String> listenTo = new ArrayList<>();
-    private List<QueueDefinition> publishTo = new ArrayList<>();
+    private List<ExchangeDefinition> exchanges = new ArrayList<>();
     private Retry retry = new Retry();
     private Dlq dlq = new Dlq();
 
@@ -31,11 +30,6 @@ public class QueueConfigProperties {
     }
 
     @Data
-    public static class QueueDefinition {
-        private String name;
-    }
-
-    @Data
     public static class Retry {
         private int maxAttempts;
         private long initialInterval;
@@ -47,5 +41,27 @@ public class QueueConfigProperties {
     public static class Dlq {
         private String suffix;
         private String exchange;
+    }
+
+    @Data
+    public static class ExchangeDefinition {
+        private String id;
+        private String name;
+        private String type = "topic";
+        private List<QueueBinding> bindings = new ArrayList<>();
+    }
+
+    @Data
+    public static class QueueBinding {
+        private String queue;
+        private String routingPattern;
+        private String channel;
+    }
+
+    public ExchangeDefinition getExchangeById(String id) {
+        return exchanges.stream()
+            .filter(exchange -> id.equals(exchange.getId()))
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("No exchange configured with id: " + id));
     }
 }

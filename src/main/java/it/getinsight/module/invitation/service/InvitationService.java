@@ -14,6 +14,7 @@ import it.getinsight.module.invitation.repository.InvitationRepository;
 import it.getinsight.module.invitation.repository.specification.InvitationSpecification;
 import it.getinsight.module.keycloak.client.KeycloakClient;
 import it.getinsight.module.request.entity.RequestEntity;
+import it.getinsight.module.request.service.ItemValidationService;
 import it.getinsight.module.role.repository.RoleRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,7 @@ public class InvitationService {
     private final InvitationTokenService invitationTokenService;
     private final InvitationProtocolCodeService invitationProtocolCodeService;
     private final KeycloakClient keycloakClient;
+    private final ItemValidationService itemValidationService;
 
     @Transactional(readOnly = true)
     public InvitationPublicDTO getPublicInvitation(String token) {
@@ -193,6 +195,8 @@ public class InvitationService {
     @Transactional(propagation = Propagation.REQUIRED)
     public InvitationCreateResponseDTO createInvitations(@Valid InvitationCreateRequestDTO request) {
         var role = roleRepository.findById(request.roleId()).orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
+        itemValidationService.validateItemExistence(request.codeItem(), role);
+        String normalizedCodeItem = StringUtils.isBlank(request.codeItem()) ? null : request.codeItem();
         var protocolCode = StringUtils.isNotBlank(request.protocolCode())
             ? request.protocolCode()
             : invitationProtocolCodeService.generateProtocolCode();
@@ -206,7 +210,7 @@ public class InvitationService {
                 .tokenHash(invitationTokenService.hashToken(token))
                 .email(email)
                 .role(role)
-                .codeItem(request.codeItem())
+                .codeItem(normalizedCodeItem)
                 .description(request.description())
                 .status(InvitationStatus.PENDING)
                 .expiresAt(request.expiresAt())
