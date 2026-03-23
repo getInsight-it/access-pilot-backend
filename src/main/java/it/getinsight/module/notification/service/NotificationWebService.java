@@ -20,8 +20,15 @@ public class NotificationWebService {
     private final NotificationService notificationService;
     private final RequestRepository requestRepository;
 
-    
     public void createWebNotification(NotificationPayloadDTO payload) {
+        if (RoutingKeys.NOTIFICATION_INVITATION_CREATED.equals(payload.getNotificationType())) {
+            createInvitationWebNotification(payload);
+        } else {
+            createRequestWebNotification(payload);
+        }
+    }
+
+    private void createRequestWebNotification(NotificationPayloadDTO payload) {
         var request = requestRepository.findByIdWithRelationships(payload.getRequestId())
             .orElseThrow(() -> new IllegalStateException("Request not found: " + payload.getRequestId()));
 
@@ -42,6 +49,28 @@ public class NotificationWebService {
 
         log.info("Web notification created: type={}, recipientId={}, requestId={}",
             payload.getNotificationType(), payload.getRecipientId(), payload.getRequestId());
+    }
+
+    private void createInvitationWebNotification(NotificationPayloadDTO payload) {
+        String description = String.format(
+            "Voce foi convidado para o perfil %s no sistema %s",
+            payload.getInvitationRoleLabel(),
+            payload.getInvitationClientLabel()
+        );
+
+        var webDTO = WebNotificationDTO.builder()
+            .title("Convite para acesso")
+            .uuid(UUID.randomUUID().toString())
+            .isOpened(false)
+            .type(NotificationType.WEB)
+            .priority(1L)
+            .description(description)
+            .build();
+
+        notificationService.send(webDTO);
+
+        log.info("Invitation web notification created: invitationId={}, email={}",
+            payload.getInvitationId(), payload.getInvitationEmail());
     }
 
     private String resolveDescription(String notificationType, it.getinsight.module.request.entity.RequestEntity request) {

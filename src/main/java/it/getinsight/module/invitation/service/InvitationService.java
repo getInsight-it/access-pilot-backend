@@ -45,6 +45,7 @@ public class InvitationService {
     private final InvitationProtocolCodeService invitationProtocolCodeService;
     private final KeycloakClient keycloakClient;
     private final ItemValidationService itemValidationService;
+    private final InvitationNotificationService invitationNotificationService;
 
     @Transactional(readOnly = true)
     public InvitationPublicDTO getPublicInvitation(String token) {
@@ -218,6 +219,7 @@ public class InvitationService {
                 .build();
 
             token = saveWithRetryOnTokenCollision(entity, token);
+            invitationNotificationService.publishInvitationCreated(entity, token);
             created.add(new InvitationCreateResponseDTO.InvitationCreatedDTO(email, token, request.expiresAt()));
         }
 

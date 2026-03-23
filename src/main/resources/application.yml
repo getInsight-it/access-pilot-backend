@@ -73,6 +73,8 @@ email-notification:
     subject: Aprovação de solicitação
   status-request:
     subject: Status da solicitação de perfil
+  invitation:
+    subject: Convite para acesso ao AccessPilot
   url:
     hint: AccessPilot frontend
     client-url: http://localhost:8080/swagger-ui.html

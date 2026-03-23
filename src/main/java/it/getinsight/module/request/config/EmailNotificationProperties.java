@@ -15,6 +15,7 @@ public class EmailNotificationProperties {
     private Url url;
     private StatusRequest statusRequest;
     private Approver approver;
+    private Invitation invitation;
 
     @Data
     public static class Url {
@@ -33,5 +34,8 @@ public class EmailNotificationProperties {
         private String subject;
     }
 
-
+    @Data
+    public static class Invitation {
+        private String subject;
+    }
 }

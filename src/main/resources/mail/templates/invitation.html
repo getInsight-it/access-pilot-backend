@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Convite para Acesso</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: "Mulish";
+        }
+
+        img {
+            width: 200px;
+        }
+
+        h1 {
+            font-size: 1.5em;
+        }
+        .ap-container {
+            padding: 20px;
+        }
+        ul {
+            list-style: none;
+            padding-left: 0px;
+        }
+        ul li {
+            margin-top: 10px;
+        }
+        .detalhes {
+            background: black;
+            color: white;
+            max-width: 720px;
+            width: 100%;
+            padding: 10px 20px;
+        }
+        .titulo {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .btn-aceitar {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .btn-aceitar:hover {
+            background-color: #45a049;
+        }
+        .expiracao {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 15px;
+        }
+    </style>
+
+</head>
+<body>
+<div class="ap-container">
+    <img th:src="${link.frontendUrl + '/img/accesspilot.svg'}" />
+    <div class="titulo">
+        <h1>
+            Convite para Acesso
+        </h1>
+    </div>
+    <div class="">
+        <p>
+            Você foi convidado para acessar o AccessPilot.
+        </p>
+        <p>Detalhes do convite:</p>
+    </div>
+    <div class="detalhes">
+        <ul>
+            <li>
+                <strong>Perfil:</strong>
+                <span th:text="${roleLabel}"></span>
+            </li>
+            <li>
+                <strong>Sistema:</strong>
+                <span th:text="${clientLabel}"></span>
+            </li>
+            <li th:if="${levelName != null}">
+                <strong>Esfera:</strong>
+                <span th:text="${levelName}"></span>
+            </li>
+            <li th:if="${codeItem != null}">
+                <strong>Item:</strong>
+                <span th:text="${codeItem}"></span>
+            </li>
+        </ul>
+    </div>
+
+    <a th:href="${link.invitationUrl}" class="btn-aceitar" target="_blank">
+        Aceitar Convite
+    </a>
+
+    <p class="expiracao" th:if="${expiresAt != null}">
+        Este convite expira em: <strong th:text="${expiresAt}"></strong>
+    </p>
+
+    <p>
+        Se você nao reconhece este convite, por favor ignore este e-mail.
+        <br />
+        Obrigado,
+    </p>
+    <p>AccessPilot</p>
+</div>
+</body>
+</html>

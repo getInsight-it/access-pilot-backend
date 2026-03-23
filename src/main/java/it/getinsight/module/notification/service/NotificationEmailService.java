@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 
@@ -26,8 +28,15 @@ public class NotificationEmailService {
     private final RequestVariableService requestVariableService;
     private final EmailNotificationProperties emailNotificationProperties;
 
-    
     public void sendEmail(NotificationPayloadDTO payload) {
+        if (RoutingKeys.NOTIFICATION_INVITATION_CREATED.equals(payload.getNotificationType())) {
+            sendInvitationEmail(payload);
+        } else {
+            sendRequestEmail(payload);
+        }
+    }
+
+    private void sendRequestEmail(NotificationPayloadDTO payload) {
         var request = requestRepository.findByIdWithRelationships(payload.getRequestId())
             .orElseThrow(() -> new IllegalStateException("Request not found: " + payload.getRequestId()));
 
@@ -61,6 +70,46 @@ public class NotificationEmailService {
 
         log.info("Email sent: type={}, to={}, requestId={}",
             payload.getNotificationType(), recipient.getEmail(), payload.getRequestId());
+    }
+
+    private void sendInvitationEmail(NotificationPayloadDTO payload) {
+        var variables = buildInvitationVariables(payload);
+
+        var emailDTO = EmailDTO.builder()
+            .to(payload.getInvitationEmail())
+            .subject(emailNotificationProperties.getInvitation().getSubject())
+            .templateName("invitation.html")
+            .isOpened(false)
+            .uuid(UUID.randomUUID().toString())
+            .type(NotificationType.EMAIL)
+            .variables(variables)
+            .isHtml(true)
+            .build();
+
+        notificationService.send(emailDTO);
+
+        log.info("Invitation email sent: invitationId={}, to={}",
+            payload.getInvitationId(), payload.getInvitationEmail());
+    }
+
+    private Map<String, Object> buildInvitationVariables(NotificationPayloadDTO payload) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("email", payload.getInvitationEmail());
+        variables.put("roleLabel", payload.getInvitationRoleLabel());
+        variables.put("clientLabel", payload.getInvitationClientLabel());
+        variables.put("levelName", payload.getInvitationLevelName());
+        variables.put("codeItem", payload.getInvitationCodeItem());
+        variables.put("expiresAt", payload.getInvitationExpiresAt());
+
+        String invitationUrl = emailNotificationProperties.getUrl().getFrontendUrl()
+            + "/invitation?invitationToken=" + payload.getInvitationToken();
+
+        variables.put("link", Map.of(
+            "invitationUrl", invitationUrl,
+            "frontendUrl", emailNotificationProperties.getUrl().getFrontendUrl()
+        ));
+
+        return variables;
     }
 
     private String resolveTemplateName(String notificationType) {
