@@ -17,7 +17,6 @@ public record InvitationCreateRequestDTO(
     @NotNull
     Long roleId,
 
-    @NotBlank
     String codeItem,
 
     @Size(max = 1000)

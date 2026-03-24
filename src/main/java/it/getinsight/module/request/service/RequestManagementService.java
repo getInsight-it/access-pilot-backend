@@ -4,12 +4,11 @@ import it.getinsight.module.request.dto.RequestUpdateDTO;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.enuns.RequestAction;
 import it.getinsight.module.request.enuns.RequestStatus;
-import it.getinsight.module.request.event.RequestStatusToUserEvent;
 import it.getinsight.module.request.repository.RequestRepository;
+import it.getinsight.module.user.repository.UserRepository;
 import it.getinsight.module.user.service.AuthenticationContextService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,9 +27,10 @@ public class RequestManagementService {
     private final RequestRepository requestRepository;
     private final RequestValidationService requestValidationService;
     private final RequestStatusManagementService requestStatusManagementService;
-    private final ApplicationEventPublisher applicationEventPublisher;
+    private final RequestNotificationService requestNotificationService;
     private final AuthenticationContextService authenticationContextService;
     private final UserAccessValidationService userAccessValidationService;
+    private final UserRepository userRepository;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public void processRequestUpdate(Long id, RequestUpdateDTO requestUpdateDTO) {
@@ -69,9 +69,12 @@ public class RequestManagementService {
     }
 
     private void publishStatusNotificationEvent(RequestEntity requestEntity) {
-        applicationEventPublisher.publishEvent(
-            new RequestStatusToUserEvent(requestEntity.getId())
-        );
+        String externalId = authenticationContextService.getCurrentUserId();
+        String userId = userRepository.findByExternalId(externalId)
+            .map(user -> user.getId().toString())
+            .orElseThrow(() -> new IllegalStateException("User not found for externalId: " + externalId));
+
+        requestNotificationService.publishRequestStatusChanged(requestEntity, userId);
     }
 
 
@@ -99,4 +102,3 @@ public class RequestManagementService {
         return actions;
     }
 }
-

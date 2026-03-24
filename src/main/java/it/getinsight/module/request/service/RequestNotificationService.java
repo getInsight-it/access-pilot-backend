@@ -1,72 +1,108 @@
 package it.getinsight.module.request.service;
 
-import it.getinsight.module.email.dto.EmailDTO;
-import it.getinsight.module.notification.enums.NotificationType;
-import it.getinsight.module.notification.service.NotificationService;
-import it.getinsight.module.request.config.EmailNotificationProperties;
+import it.getinsight.core.queue.QueueMessageDTO;
+import it.getinsight.core.queue.RoutingKeys;
+import it.getinsight.module.notification.queue.NotificationPublisher;
+import it.getinsight.module.notification.queue.dto.NotificationPayloadDTO;
 import it.getinsight.module.request.entity.RequestEntity;
-import it.getinsight.module.user.mapper.UserMapper;
-import it.getinsight.module.web_notification.dto.WebNotificationDTO;
+import it.getinsight.module.request.queue.RequestEventPublisher;
+import it.getinsight.module.request.queue.dto.RequestEventPayloadDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 import java.util.UUID;
+
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class RequestNotificationService {
 
-    private final NotificationService notificationService;
-    private final RequestVariableService requestVariableService;
+    private final RequestEventPublisher requestEventPublisher;
+    private final NotificationPublisher notificationPublisher;
     private final ApproverEmailBuilderService approverEmailBuilderService;
-    private final EmailNotificationProperties emailNotificationProperties;
-    private final UserMapper userMapper;
 
-    @Transactional
-    public void sendNotificationsToApprovers(RequestEntity requestEntity) {
-        var approvers = approverEmailBuilderService.findApproversForRole(requestEntity);
-
-        approvers.stream()
-            .map(approver -> approverEmailBuilderService.buildEmailForApprover(requestEntity, approver))
-            .forEach(notificationService::send);
-
-        var variables = requestVariableService.buildVariables(
-            requestEntity.getRequestingUser(), null,
-            requestEntity, requestEntity.getRole(),
-            requestEntity.getRole().getClient()
-        );
-        sendNotificationStatusToUser(requestEntity, variables);
+    
+    public void publishRequestCreated(RequestEntity request, String actorUserId) {
+        var message = buildRequestEventMessage(request, RoutingKeys.REQUEST_CREATED, actorUserId);
+        requestEventPublisher.publish(message);
     }
 
-    public void sendNotificationStatusToUser(RequestEntity requestEntity, Map<String, Object> variables) {
-        var userDTO = userMapper.toDto(requestEntity.getRequestingUser());
-        var emailDTO = EmailDTO.builder()
-            .to(userDTO.email())
-            .subject(emailNotificationProperties.getStatusRequest().getSubject())
-            .templateName("status-request.html")
-            .userId(userDTO.id())
-            .isOpened(false)
-            .uuid(UUID.randomUUID().toString())
-            .type(NotificationType.EMAIL)
-            .variables(variables)
-            .isHtml(true)
-            .build();
-        notificationService.send(emailDTO);
+    
+    public void publishRequestStatusChanged(RequestEntity request, String actorUserId) {
+        var message = buildRequestEventMessage(request, RoutingKeys.REQUEST_STATUS_CHANGED, actorUserId);
+        requestEventPublisher.publish(message);
+    }
 
-        var webDTO = WebNotificationDTO.builder()
-            .userId(userDTO.id())
-            .title("protocolo: " + requestEntity.getProtocolCode())
-            .uuid(UUID.randomUUID().toString())
-            .requestId(requestEntity.getId())
-            .isOpened(false)
-            .type(NotificationType.WEB)
-            .priority(1L)
-            .description(requestEntity.getDescription())
+    
+    public void notifyRequestCreated(RequestEntity request, String actorUserId) {
+        var approvers = approverEmailBuilderService.findApproversForRole(request);
+        log.info("Queueing notifications for {} approvers on request {}", approvers.size(), request.getId());
+
+        approvers.forEach(approver -> {
+            var message = buildNotificationMessage(request.getId(), approver.id(), RoutingKeys.NOTIFICATION_REQUEST_CREATED_APPROVER, actorUserId);
+            notificationPublisher.publish(message);
+        });
+
+        var requesterMessage = buildNotificationMessage(
+            request.getId(),
+            request.getRequestingUser().getId(),
+            RoutingKeys.NOTIFICATION_REQUEST_CREATED_CONFIRMATION,
+            actorUserId
+        );
+        notificationPublisher.publish(requesterMessage);
+
+        log.info("Notification events published for request {} creation", request.getId());
+    }
+
+    
+    public void notifyStatusChanged(RequestEntity request, String actorUserId) {
+        var message = buildNotificationMessage(
+            request.getId(),
+            request.getRequestingUser().getId(),
+            RoutingKeys.NOTIFICATION_REQUEST_STATUS_CHANGED,
+            actorUserId
+        );
+        notificationPublisher.publish(message);
+
+        log.info("Notification events published for request {} status change to {}",
+            request.getId(), request.getStatus());
+    }
+
+    
+    private QueueMessageDTO<RequestEventPayloadDTO> buildRequestEventMessage(
+            RequestEntity request, String eventType, String userId) {
+        var payload = RequestEventPayloadDTO.builder()
+            .eventType(eventType)
+            .requestId(request.getId())
+            .requesterId(request.getRequestingUser().getId())
+            .roleId(request.getRole() != null ? request.getRole().getId() : null)
+            .status(request.getStatus().name())
+            .protocolCode(request.getProtocolCode())
             .build();
-        notificationService.send(webDTO);
+
+        return QueueMessageDTO.<RequestEventPayloadDTO>builder()
+            .messageId(UUID.randomUUID().toString())
+            .userId(userId)
+            .payload(payload)
+            .build();
+    }
+
+    
+    private QueueMessageDTO<NotificationPayloadDTO> buildNotificationMessage(
+            Long requestId, Long recipientId, String type, String userId) {
+        var payload = NotificationPayloadDTO.builder()
+            .version("v1")
+            .requestId(requestId)
+            .recipientId(recipientId)
+            .notificationType(type)
+            .build();
+
+        return QueueMessageDTO.<NotificationPayloadDTO>builder()
+            .messageId(UUID.randomUUID().toString())
+            .userId(userId)
+            .payload(payload)
+            .build();
     }
 }

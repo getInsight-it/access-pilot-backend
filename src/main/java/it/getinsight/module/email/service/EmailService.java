@@ -60,7 +60,9 @@ public class EmailService implements NotificationSender {
 
      private void sendMail(EmailDTO emailDTO){
          final var content = isTrue(emailDTO.isHtml()) ? processContentByTemplate(emailDTO.templateName(), emailDTO.variables()) : emailDTO.content();
-         final var userEntity = userRepository.findById(emailDTO.userId()).orElseThrow(USER_NOT_FOUND_ERROR::resourceNotFoundException);
+         final var userEntity = emailDTO.userId() != null
+             ? userRepository.findById(emailDTO.userId()).orElseThrow(USER_NOT_FOUND_ERROR::resourceNotFoundException)
+             : null;
          final var emailSent = EmailSentEntity.builder()
                  .uuid(UUID.randomUUID())
                  .user(userEntity)

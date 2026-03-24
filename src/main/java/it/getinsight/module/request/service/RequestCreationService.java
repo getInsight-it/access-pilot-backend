@@ -6,7 +6,6 @@ import it.getinsight.module.invitation.service.InvitationService;
 import it.getinsight.module.request.dto.RequestDTO;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
-import it.getinsight.module.request.event.RequestCreatedEvent;
 import it.getinsight.module.request.mapper.RequestMapper;
 import it.getinsight.module.request.repository.RequestRepository;
 import it.getinsight.module.role.entity.RoleEntity;
@@ -18,7 +17,6 @@ import it.getinsight.module.user.service.AuthenticationContextService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +42,7 @@ public class RequestCreationService {
     private final RequestAttachmentService requestAttachmentService;
     private final ProtocolGeneratorService protocolGeneratorService;
     private final RoleLevelPolicyService roleLevelPolicyService;
-    private final ApplicationEventPublisher applicationEventPublisher;
+    private final RequestNotificationService requestNotificationService;
     private final InvitationService invitationService;
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -68,7 +66,7 @@ public class RequestCreationService {
 
         requestAttachmentService.saveRequestFiles(attachments, configurations, entity);
 
-        applicationEventPublisher.publishEvent(new RequestCreatedEvent(entity.getId()));
+        requestNotificationService.publishRequestCreated(entity, user.getId().toString());
 
         if (invitation != null) {
             invitationService.consumeInvitation(invitation.getId(), entity);

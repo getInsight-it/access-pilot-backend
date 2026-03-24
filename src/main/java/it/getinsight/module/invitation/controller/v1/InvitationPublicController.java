@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/v1/public/invitations")
+@RequestMapping("/public/invitations")
 @Tag(name = "Invitation (Public)", description = "Public operations for invitation links.")
 @RequiredArgsConstructor
 public class InvitationPublicController {

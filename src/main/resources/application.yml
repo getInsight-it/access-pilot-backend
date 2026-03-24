@@ -73,6 +73,8 @@ email-notification:
     subject: Aprovação de solicitação
   status-request:
     subject: Status da solicitação de perfil
+  invitation:
+    subject: Convite para acesso ao AccessPilot
   url:
     hint: AccessPilot frontend
     client-url: http://localhost:8080/swagger-ui.html
@@ -205,6 +207,46 @@ spring:
     redis:
       host: localhost
       port: 6379
+
+  rabbitmq:
+    host: ${QUEUE_HOST:localhost}
+    port: ${QUEUE_PORT:5672}
+    username: ${QUEUE_USERNAME:guest}
+    password: ${QUEUE_PASSWORD:guest}
+
+cali:
+  queue:
+    connection:
+      url: ${QUEUE_URL:amqp://localhost:5672}
+      credential:
+        username: ${QUEUE_USERNAME:guest}
+        password: ${QUEUE_PASSWORD:guest}
+    exchanges:
+      - id: request-events
+        name: ${QUEUE_EXCHANGE_REQUEST_EVENTS:accesspilot.request-events}
+        type: topic
+        bindings:
+          - queue: ${QUEUE_REQUEST_NOTIFICATIONS:request-notification-events}
+            routing-pattern: "request.#"
+            channel: request-notification
+      - id: notifications
+        name: ${QUEUE_EXCHANGE_NOTIFICATIONS:accesspilot.notifications}
+        type: topic
+        bindings:
+          - queue: ${QUEUE_EMAIL_QUEUE:email-notifications}
+            routing-pattern: "notify.email"
+            channel: email
+          - queue: ${QUEUE_WEB_QUEUE:web-notifications}
+            routing-pattern: "notify.web"
+            channel: web
+    retry:
+      max-attempts: ${QUEUE_RETRY_MAX_ATTEMPTS:5}
+      initial-interval: ${QUEUE_RETRY_INITIAL_INTERVAL:1000}
+      multiplier: ${QUEUE_RETRY_MULTIPLIER:2.0}
+      max-interval: ${QUEUE_RETRY_MAX_INTERVAL:30000}
+    dlq:
+      suffix: ${QUEUE_DLQ_SUFFIX:.dlq}
+      exchange: ${QUEUE_DLQ_EXCHANGE:dlx.exchange}
 
 minio:
   endpoint: http://localhost:9002
