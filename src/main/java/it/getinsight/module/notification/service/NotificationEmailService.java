@@ -99,6 +99,7 @@ public class NotificationEmailService {
         variables.put("clientLabel", payload.getInvitationClientLabel());
         variables.put("levelName", payload.getInvitationLevelName());
         variables.put("codeItem", payload.getInvitationCodeItem());
+        variables.put("itemLabel", payload.getInvitationItemLabel());
         variables.put("expiresAt", payload.getInvitationExpiresAt());
 
         String invitationUrl = emailNotificationProperties.getUrl().getFrontendUrl()

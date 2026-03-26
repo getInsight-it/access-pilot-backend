@@ -32,5 +32,6 @@ public class NotificationPayloadDTO implements Serializable {
     private String invitationClientLabel;
     private String invitationLevelName;
     private String invitationCodeItem;
+    private String invitationItemLabel;
     private String invitationExpiresAt;
 }
