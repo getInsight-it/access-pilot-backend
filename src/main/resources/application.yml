@@ -78,7 +78,7 @@ email-notification:
   url:
     hint: AccessPilot frontend
     client-url: http://localhost:8080/swagger-ui.html
-    frontend-url: http://localhost:9080
+    frontend-url: http://localhost:5173
 
 spring:
   application:
