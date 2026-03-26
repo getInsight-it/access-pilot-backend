@@ -1,104 +1,351 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Nova Solicitação de Acesso</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
-
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Nova Solicitação de Acesso - AccessPilot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Mulish:wght@700;800;900&amp;display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: "Mulish";
+            margin: 0;
+            padding: 0;
+            background: #f6fafb;
+            color: #181c1d;
+            font-family: "Inter", Arial, sans-serif;
         }
 
-        img {
-            width: 200px;
+        .email-wrapper {
+            max-width: 640px;
+            margin: 0 auto;
+            background: #f6fafb;
         }
 
-        h1 {
-            font-size: 1.5em;
+        .section-padding {
+            padding-left: 32px;
+            padding-right: 32px;
         }
-        .ap-container {
-            padding: 20px;
-        }
-        ul {
-            list-style: none;
-            padding-left: 0px;
 
-        }
-        ul li {
-            margin-top: 10px;
-
-        }
-        .detalhes {
-            background: black;
-            color: white;
-            max-width: 720px;
-            width: 100%;
-            padding: 10px 20px;
-        }
-        .titulo {
+        .header {
+            padding-top: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #dfe3e4;
             display: flex;
             align-items: center;
-            margin-top: 20px;
+            justify-content: flex-start;
         }
-        img.key-icon {
-            width: 24px;
-            height: 24px;
-            margin-left: 10px;
+
+        .brand-logo {
+            height: 30px;
+            width: auto;
+            display: block;
+        }
+
+        .main {
+            padding-top: 28px;
+            padding-bottom: 20px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-left: 4px solid #0057c4;
+            border-radius: 8px;
+            padding: 28px;
+            box-shadow: 0 2px 10px rgba(24, 28, 29, 0.05);
+        }
+
+        .title {
+            margin: 0 0 14px;
+            font-family: "Mulish", Arial, sans-serif;
+            font-size: 30px;
+            line-height: 1.25;
+            color: #181c1d;
+        }
+
+        .intro {
+            margin: 0 0 24px;
+            color: #424754;
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .metadata {
+            position: relative;
+            background: #f0f4f5;
+            border-radius: 8px;
+            padding: 18px 18px 18px 20px;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .metadata::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #0057c4;
+        }
+
+        .metadata-table {
+            width: 100%;
+            border-spacing: 0;
+        }
+
+        .metadata-table td {
+            width: 50%;
+            vertical-align: top;
+            padding: 8px 8px 8px 0;
+        }
+
+        .meta-label {
+            display: block;
+            margin-bottom: 6px;
+            color: #727785;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .meta-value {
+            color: #181c1d;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .cta {
+            margin-bottom: 24px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #0057c4, #2670e8);
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 12px 22px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .security {
+            margin: 0;
+            border-top: 1px solid #dfe3e4;
+            padding-top: 16px;
+            color: #727785;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .security strong {
+            color: #424754;
+        }
+
+        .details-table {
+            width: 100%;
+            border-spacing: 0;
+            margin-top: 16px;
+            margin-bottom: 8px;
+        }
+
+        .details-table td {
+            vertical-align: top;
+        }
+
+        .context-cell {
+            width: 66%;
+            padding-right: 12px;
+        }
+
+        .image-cell {
+            width: 34%;
+            padding-left: 12px;
+        }
+
+        .context-card {
+            background: #e5e9ea;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .context-title {
+            margin: 0 0 8px;
+            color: #181c1d;
+            font-family: "Mulish", Arial, sans-serif;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .context-text {
+            margin: 0;
+            color: #424754;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .context-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            display: block;
+        }
+
+        .footer {
+            border-top: 1px solid #dfe3e4;
+            padding-top: 24px;
+            padding-bottom: 30px;
+        }
+
+        .footer-note {
+            margin: 0 0 12px;
+            color: #727785;
+            font-size: 12px;
+            line-height: 1.55;
+        }
+
+        .footer-links a {
+            color: #727785;
+            text-decoration: none;
+            font-size: 12px;
+            margin-right: 14px;
+        }
+
+        @media only screen and (max-width: 680px) {
+            .section-padding {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .header {
+                display: block;
+            }
+
+            .brand-logo {
+                display: block;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .title {
+                font-size: 24px;
+            }
+
+            .metadata-table td {
+                display: block;
+                width: auto;
+                padding-right: 0;
+            }
+
+            .context-cell,
+            .image-cell {
+                display: block;
+                width: auto;
+                padding-right: 0;
+                padding-left: 0;
+            }
+
+            .image-cell {
+                padding-top: 10px;
+            }
         }
     </style>
-
 </head>
 <body>
-<div class="ap-container">
-    <img th:src="${link.frontendUrl + '/img/accesspilot.svg'}" />
-    <div class="titulo">
-        <h1>
-            Nova Solicitação de Acesso
-        </h1>
-    </div>
-    <div class="">
-        <p>
-            Você recebeu uma nova solicitação de acesso.
-        </p>
-        <p>Detalhes:</p>
-    </div>
-    <div class="detalhes">
-        <ul>
-            <li th:if="${request != null}">
-                <strong>Protocolo:</strong>
-                <span th:text="${request.protocolCode}"></span>
-            </li>
-            <li>
-                <strong>Nome do solicitante:</strong>
-                <span th:text="${requestingUser.username}"></span>
-            </li>
-            <li>
-                <strong>Perfil:</strong>
-                <span th:text="${role.name}"></span>
-            </li>
-            <li>
-                <strong>Sistema:</strong>
-                <span th:text="${client.clientId}"></span>
-            </li>
-            <li th:if="${level != null && level.name != null}">
-                <strong>Esfera:</strong>
-                <span th:text="${level.name}"></span>
-            </li>
-            <li th:if="${item != null && item.name != null}">
-                <strong>Item da esfera:</strong>
-                <span th:text="${item.name}"></span>
-            </li>
-        </ul>
-    </div>
-    <p>
-        Por favor, <a th:href="${link.address}" th:placeholder="${link.hint}" target="_blank">acesse o sistema</a> para aprovar ou rejeitar a solicitação.
-        <br />
-        Obrigado,
-    </p>
-    <p>Accesspilot</p>
+<div class="email-wrapper">
+    <header class="header section-padding">
+        <img class="brand-logo" th:src="${link.frontendUrl + '/img/accesspilot.svg'}" alt="AccessPilot">
+    </header>
+
+    <main class="main section-padding">
+        <section class="card">
+            <h1 class="title">Nova solicitação de acesso recebida.</h1>
+            <p class="intro">
+                Você recebeu um novo pedido de acesso que requer sua análise técnica.
+                Revise os detalhes abaixo para prosseguir com a aprovação ou rejeição.
+            </p>
+
+            <div class="metadata">
+                <table class="metadata-table" role="presentation">
+                    <tr>
+                        <td>
+                            <span class="meta-label">Protocolo</span>
+                            <span class="meta-value" th:text="${request != null && request.protocolCode != null ? '#' + request.protocolCode : '-'}">#PROTOCOLO</span>
+                        </td>
+                        <td>
+                            <span class="meta-label">Solicitante</span>
+                            <span class="meta-value" th:text="${requestingUser != null && requestingUser.username != null ? requestingUser.username : '-'}">Solicitante</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="meta-label">Esfera</span>
+                            <span class="meta-value" th:text="${level != null && level.name != null ? level.name : '-'}">Esfera</span>
+                        </td>
+                        <td>
+                            <span class="meta-label">Item da Esfera</span>
+                            <span class="meta-value" th:text="${item != null && item.name != null ? item.name : '-'}">Item</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="meta-label">Sistema</span>
+                            <span class="meta-value" th:text="${client != null ? (client.label != null ? client.label : (client.name != null ? client.name : client.clientId)) : '-'}">Sistema</span>
+                        </td>
+                        <td>
+                            <span class="meta-label">Perfil</span>
+                            <span class="meta-value" th:text="${role != null ? (role.label != null ? role.label : role.name) : '-'}">Perfil</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="cta">
+                <a class="cta-button" th:href="${link.address}" th:if="${link != null}" target="_blank">Analisar Solicitação</a>
+            </div>
+
+            <p class="security">
+                <strong>Aviso de Segurança:</strong> certifique-se de validar a identidade do solicitante
+                antes de conceder permissões elevadas.
+            </p>
+        </section>
+
+        <table class="details-table" role="presentation">
+            <tr>
+                <td class="context-cell">
+                    <div class="context-card">
+                        <h3 class="context-title">Contexto Institucional</h3>
+                        <p class="context-text">
+                            Este acesso faz parte do protocolo de governança interna para o sistema
+                            <span th:text="${client != null ? (client.label != null ? client.label : (client.name != null ? client.name : client.clientId)) : '-'}">Sistema</span>.
+                            Todas as aprovações são registradas em trilha de auditoria permanente.
+                        </p>
+                    </div>
+                </td>
+                <td class="image-cell">
+                    <img
+                        alt="Infraestrutura digital segura"
+                        class="context-image"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqNHD6sRcE6JeLT88rQuhWfZBQDCXtN-PPTfXl_1Ot37_3KQCyqDr2de_gpq4LFAbyX3SNFn7GUXewIAXCD8zmayWgAbk222Iq1tSbUkq7ga8roS-NHXy47jSQN__qvnblTPZHN7sNHwjWxgN4MaPjygq0leDJC9KS-C_SY1cLL13K6LjDB8Yo6Rj7ylmitF9Fkay8A5mMEIhBzt0CtsWUudit3n2agTD_dqFG6Yq4vobQqcOo8L2Sju7bzaG-bYKflfIq3BI2aA">
+                </td>
+            </tr>
+        </table>
+    </main>
+
+    <footer class="footer section-padding">
+        <p class="footer-note">© 2026 AccessPilot. All rights reserved. Institutional Security Grade.</p>
+        <div class="footer-links">
+            <a href="#">Support Center</a>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Security Protocol</a>
+        </div>
+    </footer>
 </div>
 </body>
 </html>

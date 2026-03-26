@@ -37,6 +37,7 @@ public class RequestVariableService {
 
     public Map<String, Object> buildVariables(UserEntity requestingUser, UserEntity approvingUser,
                                               RequestEntity request, RoleEntity role, ClientEntity client) {
+        var item = getItemOrDefault(role, request);
         return Map.of(
             "link", buildLinkVariables(),
             "approvingUser", Optional.ofNullable(userMapper.toDto(approvingUser)).orElse(UserDTO.builder().build()),
@@ -46,7 +47,8 @@ public class RequestVariableService {
             "role", Optional.ofNullable(roleMapper.toDto(role)).orElse(RoleDTO.builder().build()),
             "client", Optional.ofNullable(clientMapper.toDto(client)).orElse(ClientDTO.builder().build()),
             "level", Optional.ofNullable(levelMapper.toDto(request.getLevel())).orElse(LevelDTO.builder().build()),
-            "codeItem", getItemOrDefault(role, request)
+            "codeItem", item,
+            "item", item
         );
     }
 

@@ -1,111 +1,315 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Status da solicitação de acesso</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
-
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Status da Solicitação - AccessPilot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Mulish:wght@600;700;800&amp;display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: "Mulish";
+            margin: 0;
+            padding: 0;
+            background: #f6fafb;
+            color: #181c1d;
+            font-family: "Inter", Arial, sans-serif;
         }
 
-        img {
-            width: 200px;
+        .email-wrapper {
+            max-width: 640px;
+            margin: 0 auto;
+            background: #f6fafb;
         }
 
-        h1 {
-            font-size: 1.5em;
+        .section-padding {
+            padding-left: 24px;
+            padding-right: 24px;
         }
-        .ap-container {
-            padding: 20px;
-        }
-        ul {
-            list-style: none;
-            padding-left: 0px;
 
-        }
-        ul li {
-            margin-top: 10px;
-
-        }
-        .detalhes {
-            background: black;
-            color: white;
-            max-width: 720px;
-            width: 100%;
-            padding: 10px 20px;
-        }
-        .titulo {
+        .header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            margin-top: 20px;
+            padding-top: 18px;
+            padding-bottom: 18px;
         }
-        img.key-icon {
-            width: 24px;
-            height: 24px;
-            margin-left: 10px;
+
+        .brand {
+            font-family: "Mulish", Arial, sans-serif;
+            font-size: 23px;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            color: #181c1d;
+        }
+
+        .brand-logo {
+            height: 28px;
+            width: auto;
+            display: block;
+        }
+
+        .main {
+            padding-top: 12px;
+            padding-bottom: 8px;
+        }
+
+        .main-card {
+            background: #ffffff;
+            border: 1px solid #c2c6d6;
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 22px;
+        }
+
+        .title {
+            margin: 0 0 14px;
+            color: #181c1d;
+            font-family: "Mulish", Arial, sans-serif;
+            font-size: 30px;
+            line-height: 1.25;
+        }
+
+        .intro {
+            margin: 0 0 22px;
+            color: #424754;
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .metadata {
+            position: relative;
+            background: #f0f4f5;
+            border-radius: 8px;
+            padding: 18px 18px 18px 20px;
+            margin-bottom: 26px;
+            overflow: hidden;
+        }
+
+        .metadata::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #0057c4;
+        }
+
+        .metadata-table {
+            width: 100%;
+            border-spacing: 0;
+        }
+
+        .metadata-table td {
+            width: 50%;
+            vertical-align: top;
+            padding: 8px 8px 8px 0;
+        }
+
+        .meta-label {
+            display: block;
+            margin-bottom: 5px;
+            color: #727785;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .meta-value {
+            color: #181c1d;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .status-badge {
+            display: inline-block;
+            margin-top: 2px;
+            background: #0057c4;
+            color: #ffffff;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .cta {
+            margin-top: 6px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #0057c4, #2670e8);
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .security-box {
+            background: #dfe3e4;
+            border-left: 4px solid #9b4200;
+            border-radius: 0 8px 8px 0;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .security-title {
+            display: block;
+            margin-bottom: 6px;
+            color: #181c1d;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .security-text {
+            margin: 0;
+            color: #424754;
+            font-size: 12px;
+            line-height: 1.55;
+        }
+
+        .footer {
+            border-top: 1px solid #dfe3e4;
+            padding-top: 20px;
+            padding-bottom: 18px;
+            margin-top: 6px;
+        }
+
+        .footer-note {
+            margin: 0 0 12px;
+            color: #727785;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .footer-links a {
+            color: #727785;
+            font-size: 12px;
+            text-decoration: none;
+            margin-right: 12px;
+        }
+
+        @media only screen and (max-width: 680px) {
+            .section-padding {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .header {
+                display: block;
+            }
+
+            .brand-logo {
+                display: inline-block;
+                margin-top: 10px;
+            }
+
+            .main-card {
+                padding: 20px;
+            }
+
+            .title {
+                font-size: 24px;
+            }
+
+            .metadata-table td {
+                display: block;
+                width: auto;
+                padding-right: 0;
+            }
         }
     </style>
-
 </head>
 <body>
-<div class="ap-container">
-    <img th:if="${link != null}" th:src="${link.frontendUrl + '/img/accesspilot.svg'}" />
-    <div class="titulo">
-        <h1>
-            Status da solicitação de acesso
-        </h1>
-    </div>
-    <div class="">
-        <p>
-            Você recebeu uma atualização no status da solicitação de acesso.
-        </p>
-        <p>Detalhes:</p>
-    </div>
-    <div class="detalhes">
-        <ul>
-            <li th:if="${request != null}">
-                <strong>Protocolo:</strong>
-                <span th:text="${request.protocolCode}"></span>
-            </li>
-            <li th:if="${approvingUser != null}">
-                <strong>Nome do aprovador:</strong>
-                <span th:text="${approvingUser.username}"></span>
-            </li>
-            <li th:if="${requestingUser != null}">
-                <strong>Nome do solicitante:</strong>
-                <span th:text="${requestingUser.username}"></span>
-            </li>
-            <li>
-                <strong>Perfil:</strong>
-                <span th:if="${role != null}" th:text="${role.name}"></span>
-            </li>
-            <li>
-                <strong>Sistema:</strong>
-                <span th:if="${client != null}" th:text="${client.clientId}"></span>
-            </li>
-            <li th:if="${level != null && level.name != null}">
-                <strong>Esfera:</strong>
-                <span th:text="${level.name}"></span>
-            </li>
-            <li th:if="${item != null && item.name != null}">
-                <strong>Item da esfera:</strong>
-                <span th:text="${item.name}"></span>
-            </li>
-            <li>
-                <strong>Status:</strong>
-                <span th:text="${status}"></span>
-            </li>
-        </ul>
+<div class="email-wrapper">
+    <header class="header section-padding">
+        <span class="brand">AccessPilot</span>
+        <img class="brand-logo" th:src="${link.frontendUrl + '/img/accesspilot.svg'}" alt="AccessPilot">
+    </header>
 
-    </div>
-    <p>
-        Obrigado,
-    </p>
-    <p>Accesspilot</p>
+    <main class="main section-padding">
+        <section class="main-card">
+            <h1 class="title">Status da solicitação atualizado.</h1>
+            <p class="intro">
+                Olá <span th:text="${requestingUser != null && requestingUser.username != null ? requestingUser.username : 'usuário'}">usuário</span>,
+                houve uma mudança no status do seu pedido de acesso. Veja os detalhes atualizados abaixo.
+            </p>
+
+            <div class="metadata">
+                <table class="metadata-table" role="presentation">
+                    <tr>
+                        <td>
+                            <span class="meta-label">Protocolo</span>
+                            <span class="meta-value" th:text="${request != null && request.protocolCode != null ? '#' + request.protocolCode : '-'}">#PROTOCOLO</span>
+                        </td>
+                        <td>
+                            <span class="meta-label">Aprovador</span>
+                            <span class="meta-value" th:text="${approvingUser != null && approvingUser.username != null ? approvingUser.username : '-'}">Aprovador</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="meta-label">Solicitante</span>
+                            <span class="meta-value" th:text="${requestingUser != null && requestingUser.username != null ? requestingUser.username : '-'}">Solicitante</span>
+                        </td>
+                        <td>
+                            <span class="meta-label">Perfil</span>
+                            <span class="meta-value" th:text="${role != null ? (role.label != null ? role.label : role.name) : '-'}">Perfil</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="meta-label">Sistema</span>
+                            <span class="meta-value" th:text="${client != null ? (client.label != null ? client.label : (client.name != null ? client.name : client.clientId)) : '-'}">Sistema</span>
+                        </td>
+                        <td>
+                            <span class="meta-label">Esfera</span>
+                            <span class="meta-value" th:text="${level != null && level.name != null ? level.name : '-'}">Esfera</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <span class="meta-label">Item da Esfera</span>
+                            <span class="meta-value" th:text="${item != null && item.name != null ? item.name : '-'}">Item</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <span class="meta-label">Novo Status</span>
+                            <span class="status-badge" th:text="${status != null && !#strings.isEmpty(status) ? status : 'ATUALIZADO'}">ATUALIZADO</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="cta">
+                <a class="cta-button" th:href="${link.address}" th:if="${link != null}" target="_blank">Ver solicitação no portal</a>
+            </div>
+        </section>
+
+        <div class="security-box">
+            <span class="security-title">Aviso de Segurança:</span>
+            <p class="security-text">
+                Se você não reconhece esta ação, por favor ignore este e-mail ou contate o suporte
+                imediatamente através do nosso portal de segurança.
+            </p>
+        </div>
+    </main>
+
+    <footer class="footer section-padding">
+        <p class="footer-note">© 2026 AccessPilot Security. All rights reserved.</p>
+        <div class="footer-links">
+            <a href="#">Security Policy</a>
+            <a href="#">Privacy Center</a>
+            <a href="#">Audit Logs</a>
+            <a href="#">Support</a>
+        </div>
+    </footer>
 </div>
 </body>
 </html>

@@ -1,116 +1,339 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Convite para Acesso</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
-
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Convite para Acesso - AccessPilot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Mulish:wght@700;800;900&amp;display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: "Mulish";
+            margin: 0;
+            padding: 0;
+            background: #f6fafb;
+            color: #181c1d;
+            font-family: "Inter", Arial, sans-serif;
         }
 
-        img {
-            width: 200px;
+        .email-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #f6fafb;
         }
 
-        h1 {
-            font-size: 1.5em;
+        .section-padding {
+            padding-left: 32px;
+            padding-right: 32px;
         }
-        .ap-container {
-            padding: 20px;
-        }
-        ul {
-            list-style: none;
-            padding-left: 0px;
-        }
-        ul li {
-            margin-top: 10px;
-        }
-        .detalhes {
-            background: black;
-            color: white;
-            max-width: 720px;
-            width: 100%;
-            padding: 10px 20px;
-        }
-        .titulo {
+
+        .header {
+            padding-top: 24px;
+            padding-bottom: 24px;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            margin-top: 20px;
         }
-        .btn-aceitar {
+
+        .brand {
+            font-family: "Mulish", Arial, sans-serif;
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: -0.01em;
+            color: #181c1d;
+        }
+
+        .brand-logo {
+            height: 28px;
+            width: auto;
+            display: block;
+        }
+
+        .main {
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 2px 10px rgba(24, 28, 29, 0.05);
+            border-left: 4px solid #0057c4;
+        }
+
+        .title {
+            font-family: "Mulish", Arial, sans-serif;
+            font-size: 30px;
+            line-height: 1.25;
+            margin: 0 0 16px;
+            color: #181c1d;
+        }
+
+        .intro {
+            margin: 0 0 24px;
+            color: #424754;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .alert {
+            background: #ffdbcb;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 24px;
+            color: #783100;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .alert-label {
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 4px;
+        }
+
+        .metadata {
+            background: #f0f4f5;
+            border-left: 4px solid #dfe3e4;
+            border-radius: 8px;
+            padding: 18px 18px 8px;
+            margin-bottom: 24px;
+        }
+
+        .meta-item {
+            margin-bottom: 10px;
+        }
+
+        .meta-label {
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            color: #727785;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 4px;
+        }
+
+        .meta-value {
+            color: #181c1d;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .cta {
+            margin-bottom: 24px;
+        }
+
+        .cta-button {
             display: inline-block;
-            background-color: #4CAF50;
-            color: white;
-            padding: 12px 24px;
+            background: linear-gradient(135deg, #0057c4, #2670e8);
+            color: #ffffff !important;
             text-decoration: none;
-            border-radius: 4px;
-            margin-top: 20px;
-            font-weight: bold;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
         }
-        .btn-aceitar:hover {
-            background-color: #45a049;
+
+        .security {
+            border-top: 1px solid #dfe3e4;
+            padding-top: 16px;
+            color: #727785;
+            font-size: 12px;
+            line-height: 1.6;
+            margin: 0;
         }
-        .expiracao {
-            color: #666;
-            font-size: 0.9em;
-            margin-top: 15px;
+
+        .security strong {
+            color: #424754;
+        }
+
+        .info-grid {
+            margin-top: 16px;
+            margin-bottom: 8px;
+            width: 100%;
+            border-spacing: 0;
+        }
+
+        .info-cell {
+            width: 50%;
+            vertical-align: top;
+        }
+
+        .info-card {
+            background: #f0f4f5;
+            border-radius: 8px;
+            padding: 14px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .info-cell:last-child .info-card {
+            margin-right: 0;
+            margin-left: 8px;
+        }
+
+        .info-title {
+            margin: 0 0 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #181c1d;
+        }
+
+        .info-text {
+            margin: 0;
+            font-size: 11px;
+            color: #424754;
+            line-height: 1.45;
+        }
+
+        .footer {
+            border-top: 1px solid #dfe3e4;
+            padding-top: 24px;
+            padding-bottom: 32px;
+        }
+
+        .footer-brand {
+            margin: 0 0 16px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #181c1d;
+        }
+
+        .footer-links {
+            margin-bottom: 16px;
+        }
+
+        .footer-links a {
+            color: #727785;
+            text-decoration: none;
+            font-size: 12px;
+            margin-right: 12px;
+        }
+
+        .footer-note {
+            margin: 0;
+            color: #727785;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        @media only screen and (max-width: 640px) {
+            .section-padding {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .card {
+                padding: 22px;
+            }
+
+            .title {
+                font-size: 24px;
+            }
+
+            .header {
+                display: block;
+            }
+
+            .brand-logo {
+                margin-top: 10px;
+            }
+
+            .info-cell {
+                display: block;
+                width: 100%;
+            }
+
+            .info-card,
+            .info-cell:last-child .info-card {
+                margin-right: 0;
+                margin-left: 0;
+            }
         }
     </style>
-
 </head>
 <body>
-<div class="ap-container">
-    <img th:src="${link.frontendUrl + '/img/accesspilot.svg'}" />
-    <div class="titulo">
-        <h1>
-            Convite para Acesso
-        </h1>
-    </div>
-    <div class="">
-        <p>
-            Você foi convidado para acessar o AccessPilot.
+<div class="email-wrapper">
+    <header class="header section-padding">
+        <span class="brand">AccessPilot</span>
+        <img class="brand-logo" th:src="${link.frontendUrl + '/img/accesspilot.svg'}" alt="AccessPilot">
+    </header>
+
+    <main class="main section-padding">
+        <section class="card">
+            <h1 class="title">Bem-vindo ao AccessPilot.</h1>
+            <p class="intro">
+                Você foi convidado para acessar as ferramentas de gestão de identidade do sistema
+                <strong th:text="${clientLabel}">Sistema</strong>.
+            </p>
+
+            <div class="alert" th:if="${expiresAt != null}">
+                <span class="alert-label">Ação Necessária</span>
+                Este convite expira em <strong th:text="${expiresAt}">Data de expiração</strong>.
+            </div>
+
+            <div class="metadata">
+                <div class="meta-item">
+                    <span class="meta-label">Perfil Atribuído</span>
+                    <span class="meta-value" th:text="${roleLabel}">Perfil</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Sistema</span>
+                    <span class="meta-value" th:text="${clientLabel}">Sistema</span>
+                </div>
+                <div class="meta-item" th:if="${levelName != null}">
+                    <span class="meta-label">Esfera</span>
+                    <span class="meta-value" th:text="${levelName}">Esfera</span>
+                </div>
+                <div class="meta-item" th:if="${itemLabel != null}">
+                    <span class="meta-label">Item da esfera</span>
+                    <span class="meta-value" th:text="${itemLabel}">Item</span>
+                </div>
+            </div>
+
+            <div class="cta">
+                <a class="cta-button" th:href="${link.invitationUrl}" target="_blank">Aceitar Convite</a>
+            </div>
+
+            <p class="security">
+                Este link é exclusivo para <strong th:text="${email}">email@exemplo.com</strong>.
+                Não o compartilhe. Por motivos de segurança, este convite é de uso único.
+            </p>
+        </section>
+
+        <table class="info-grid" role="presentation">
+            <tr>
+                <td class="info-cell">
+                    <div class="info-card">
+                        <h3 class="info-title">Segurança Total</h3>
+                        <p class="info-text">Seus dados são protegidos por criptografia de ponta.</p>
+                    </div>
+                </td>
+                <td class="info-cell">
+                    <div class="info-card">
+                        <h3 class="info-title">Suporte 24/7</h3>
+                        <p class="info-text">Dúvidas? Acesse nosso portal de ajuda a qualquer momento.</p>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </main>
+
+    <footer class="footer section-padding">
+        <p class="footer-brand">AccessPilot Security</p>
+        <div class="footer-links">
+            <a href="#">Support Center</a>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Security Portal</a>
+        </div>
+        <p class="footer-note">
+            © 2026 AccessPilot Security. All rights reserved. Esta é uma notificação automática do sistema.
+            Por favor, não responda a este e-mail.
         </p>
-        <p>Detalhes do convite:</p>
-    </div>
-    <div class="detalhes">
-        <ul>
-            <li>
-                <strong>Perfil:</strong>
-                <span th:text="${roleLabel}"></span>
-            </li>
-            <li>
-                <strong>Sistema:</strong>
-                <span th:text="${clientLabel}"></span>
-            </li>
-            <li th:if="${levelName != null}">
-                <strong>Esfera:</strong>
-                <span th:text="${levelName}"></span>
-            </li>
-            <li th:if="${codeItem != null}">
-                <strong>Item:</strong>
-                <span th:text="${codeItem}"></span>
-            </li>
-        </ul>
-    </div>
-
-    <a th:href="${link.invitationUrl}" class="btn-aceitar" target="_blank">
-        Aceitar Convite
-    </a>
-
-    <p class="expiracao" th:if="${expiresAt != null}">
-        Este convite expira em: <strong th:text="${expiresAt}"></strong>
-    </p>
-
-    <p>
-        Se você nao reconhece este convite, por favor ignore este e-mail.
-        <br />
-        Obrigado,
-    </p>
-    <p>AccessPilot</p>
+    </footer>
 </div>
 </body>
 </html>
