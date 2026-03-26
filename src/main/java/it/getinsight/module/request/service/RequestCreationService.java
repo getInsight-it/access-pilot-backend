@@ -93,7 +93,6 @@ public class RequestCreationService {
                                         MultiValueMap<String, MultipartFile> attachments) {
         requestValidationService.validateItemExistence(requestDTO.codeItem(), roleEntity);
         requestValidationService.validateAttachments(configurations, attachments);
-        requestValidationService.validateRoleParent(roleEntity);
 
         if (roleEntity.getRole() != null) {
             Long parentLevelId = roleEntity.getRole().getLevel() != null ? roleEntity.getRole().getLevel().getId() : null;

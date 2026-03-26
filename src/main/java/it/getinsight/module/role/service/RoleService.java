@@ -5,9 +5,15 @@ import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.repository.ClientRepository;
+import it.getinsight.module.keycloak.config.KeycloakProperties;
 import it.getinsight.module.keycloak.dto.RoleRepresentationDTO;
+import it.getinsight.module.keycloak.dto.UserRepresentationDTO;
 import it.getinsight.module.keycloak.service.IdentityProviderService;
+import it.getinsight.module.level.entity.LevelType;
+import it.getinsight.module.level.repository.ItemRepository;
 import it.getinsight.module.level.repository.LevelRepository;
+import it.getinsight.module.level.service.ItemService;
+import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.request.repository.RequestRepository;
 import it.getinsight.module.role.dto.RoleDTO;
@@ -21,6 +27,7 @@ import it.getinsight.module.role.mapper.RoleRepresentationMapper;
 import it.getinsight.module.role.mapper.RoleResponseMapper;
 import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.user.dto.UserDTO;
+import it.getinsight.module.user.service.ScopeRef;
 import it.getinsight.module.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +38,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static it.getinsight.message.MessageProperty.*;
@@ -52,9 +60,13 @@ public class RoleService {
     private final UserService userService;
     private final RequestRepository requestRepository;
     private final LevelRepository levelRepository;
+    private final ItemRepository itemRepository;
+    private final ItemService itemService;
+    private final KeycloakProperties keycloakProperties;
 
     private final RoleValidationService roleValidationService;
     private final RoleLevelPolicyService roleLevelPolicyService;
+    private static final String ADMIN_ROLE_NAME = "ADMIN";
 
     public List<RoleResponseDTO> getAllRoles(String filter, Boolean hasParent) {
         return roleRepository.findAll(hasClientId(filter).and(hasParent(hasParent))).stream()
@@ -104,13 +116,123 @@ public class RoleService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     public List<UserDTO> getOrImportApprovesByRoleId(Long id) {
-        var roleEntity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
-        var roleParent = Optional.ofNullable(roleEntity.getRole()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::resourceNotFoundException);
-        var role = identityProviderService.getRoleByNameAndClientUUID(roleParent.getName(), roleEntity.getClient().getClientUUID());
-        return identityProviderService.getUsersByClientUUIDAndRoleName(roleEntity.getClient().getClientUUID(), role.name()).stream()
-            .map(user ->
-                userService.findOrImportByExternalId(user.id())
-            )
+        var requestedRole = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
+        return resolveApproversByHierarchy(requestedRole);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public List<UserDTO> getOrImportApprovesByRequest(RequestEntity requestEntity) {
+        if (requestEntity == null || requestEntity.getRole() == null) {
+            return List.of();
+        }
+        return resolveApproversByHierarchy(requestEntity.getRole(), requestEntity);
+    }
+
+    private List<UserDTO> resolveApproversByHierarchy(RoleEntity requestedRole) {
+        return resolveApproversByHierarchy(requestedRole, null);
+    }
+
+    private List<UserDTO> resolveApproversByHierarchy(RoleEntity requestedRole, RequestEntity requestEntity) {
+        if (requestedRole.getRole() == null) {
+            return findFallbackApprovers();
+        }
+
+        var parentApprovers = findEligibleApproversByRole(requestedRole.getRole(), requestEntity);
+        if (!parentApprovers.isEmpty()) {
+            return parentApprovers;
+        }
+
+        if (requestedRole.getRole().getRole() != null) {
+            return List.of();
+        }
+
+        return findFallbackApprovers();
+    }
+
+    public boolean isFallbackScenario(RequestEntity requestEntity) {
+        if (requestEntity == null || requestEntity.getRole() == null) {
+            return false;
+        }
+        var requestedRole = requestEntity.getRole();
+        if (requestedRole.getRole() == null) {
+            return true;
+        }
+        if (requestedRole.getRole().getRole() != null) {
+            return false;
+        }
+        return findEligibleApproversByRole(requestedRole.getRole(), requestEntity).isEmpty();
+    }
+
+    private List<UserDTO> findEligibleApproversByRole(RoleEntity approverRole, RequestEntity requestEntity) {
+        if (approverRole == null || approverRole.getClient() == null) {
+            return List.of();
+        }
+        return identityProviderService.getUsersByClientUUIDAndRoleName(approverRole.getClient().getClientUUID(), approverRole.getName()).stream()
+            .filter(user -> isEligibleApproverForRequest(user, approverRole, requestEntity))
+            .map(user -> userService.findOrImportByExternalId(user.id()))
+            .toList();
+    }
+
+    private boolean isEligibleApproverForRequest(UserRepresentationDTO user, RoleEntity approverRole, RequestEntity requestEntity) {
+        if (requestEntity == null || requestEntity.getLevel() == null || StringUtils.isBlank(requestEntity.getCodeItem())) {
+            return true;
+        }
+        if (approverRole.getLevel() == null) {
+            return true;
+        }
+        return getUserLevelScopes(user).stream().anyMatch(scope -> matchesScopeForRequest(scope, approverRole, requestEntity));
+    }
+
+    private List<ScopeRef> getUserLevelScopes(UserRepresentationDTO user) {
+        if (user == null || user.attributes() == null) {
+            return List.of();
+        }
+        var rawScopes = user.attributes().get("levelAttributes");
+        if (rawScopes == null || rawScopes.isEmpty()) {
+            return List.of();
+        }
+        return rawScopes.stream().map(ScopeRef::parse).flatMap(Optional::stream).toList();
+    }
+
+    private boolean matchesScopeForRequest(ScopeRef scope, RoleEntity approverRole, RequestEntity requestEntity) {
+        if (!Objects.equals(scope.clientId(), approverRole.getClient().getId())) {
+            return false;
+        }
+        if (!Objects.equals(scope.roleId(), approverRole.getId())) {
+            return false;
+        }
+        if (!Objects.equals(scope.levelId(), approverRole.getLevel().getId())) {
+            return false;
+        }
+        if (Objects.equals(requestEntity.getLevel().getId(), approverRole.getLevel().getId())) {
+            return Objects.equals(scope.codeItem(), requestEntity.getCodeItem());
+        }
+        return isChildItemFromScopeParent(scope.codeItem(), requestEntity);
+    }
+
+    private boolean isChildItemFromScopeParent(String parentCodeItem, RequestEntity requestEntity) {
+        if (StringUtils.isBlank(parentCodeItem)) {
+            return false;
+        }
+        try {
+            if (LevelType.EXTERNAL.equals(requestEntity.getLevel().getType())) {
+                return itemService.getAllSubitemCodes(requestEntity.getLevel().getId(), parentCodeItem).contains(requestEntity.getCodeItem());
+            }
+            return itemRepository.findAllByLevelIdAndParentExternalCode(requestEntity.getLevel().getId(), parentCodeItem).stream()
+                .anyMatch(item -> Objects.equals(item.getExternalCode(), requestEntity.getCodeItem()));
+        } catch (Exception e) {
+            log.warn("Error validating scope hierarchy for request {}", requestEntity.getId(), e);
+            return false;
+        }
+    }
+
+    private List<UserDTO> findFallbackApprovers() {
+        var accessPilotClient = clientRepository.findByClientId(keycloakProperties.getClientId()).orElse(null);
+        if (accessPilotClient == null || StringUtils.isBlank(accessPilotClient.getClientUUID())) {
+            return List.of();
+        }
+        return identityProviderService.getUsersByClientUUIDAndRoleName(accessPilotClient.getClientUUID(), ADMIN_ROLE_NAME).stream()
+            .map(user -> userService.findOrImportByExternalId(user.id()))
             .toList();
     }
 

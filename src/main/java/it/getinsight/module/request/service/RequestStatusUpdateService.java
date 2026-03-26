@@ -4,7 +4,6 @@ import it.getinsight.module.request.dto.RequestUpdateDTO;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.request.repository.RequestRepository;
-import it.getinsight.module.role.repository.RoleRepository;
 import it.getinsight.module.role.service.RoleService;
 import it.getinsight.module.user.repository.UserRepository;
 import it.getinsight.module.user.service.AuthenticationContextService;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 import static it.getinsight.message.MessageProperty.REQUEST_INVALID_STATUS_TRANSITION;
-import static it.getinsight.message.MessageProperty.ROLE_NOT_FOUND_ERROR;
 import static it.getinsight.message.MessageProperty.USER_NOT_FOUND_ERROR;
 
 
@@ -28,17 +26,19 @@ public class RequestStatusUpdateService {
     private final AuthenticationContextService authenticationContextService;
     private final UserService userService;
     private final RoleService roleService;
+    private final UserAccessValidationService userAccessValidationService;
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
     private final RequestRepository requestRepository;
 
 
     public boolean isLoggedUserAssignedAsApprover(RequestEntity requestEntity) {
+        if (userAccessValidationService.hasNoValidScopeWithHierarchyForRequest(requestEntity)) {
+            return false;
+        }
+
         var currentUserId = authenticationContextService.getCurrentUserId();
         var approvingUserDTO = userService.findOrImportByExternalId(currentUserId);
-        var roleEntityParent = roleRepository.findByRoleExternalId(requestEntity.getRole().getRoleExternalId())
-            .orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
-        var approvingUsersDTO = roleService.getOrImportApprovesByRoleId(roleEntityParent.getId());
+        var approvingUsersDTO = roleService.getOrImportApprovesByRequest(requestEntity);
 
         return approvingUsersDTO.stream().anyMatch(obj -> obj.id().equals(approvingUserDTO.id()));
     }

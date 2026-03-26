@@ -3,15 +3,21 @@ package it.getinsight.module.request.service;
 
 import it.getinsight.module.request.dto.RequestFilterDTO;
 import it.getinsight.module.request.entity.RequestEntity;
+import it.getinsight.module.request.repository.RequestRepository;
 import it.getinsight.module.request.repository.specification.RequestSpecification;
+import it.getinsight.module.role.entity.RoleEntity;
+import it.getinsight.module.role.repository.RoleRepository;
+import it.getinsight.module.role.service.RoleService;
 import it.getinsight.module.user.entity.UserEntity;
 import it.getinsight.module.user.service.AuthenticationContextService;
 import it.getinsight.module.user.service.SecurityScopes;
+import it.getinsight.module.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -22,6 +28,10 @@ public class RequestQueryBuilderService {
 
     private final AuthenticationContextService authenticationContextService;
     private final SecurityScopes securityScopes;
+    private final RequestRepository requestRepository;
+    private final RoleRepository roleRepository;
+    private final RoleService roleService;
+    private final UserService userService;
 
 
     public Specification<RequestEntity> buildCreatedRequestsSpecification(RequestEntity model, String currentUserId) {
@@ -44,10 +54,68 @@ public class RequestQueryBuilderService {
             RequestSpecification.inTriples(hierarchyLevel) :
             null;
 
-        Specification<RequestEntity> specRolesWithLevelIsNull = RequestSpecification.rolesWithLevelIsNull(rolesWithoutLevel);
+        Specification<RequestEntity> specRolesWithLevelIsNull = !rolesWithoutLevel.isEmpty()
+            ? RequestSpecification.rolesWithLevelIsNull(rolesWithoutLevel)
+            : null;
 
-        Specification<RequestEntity> combinedSpec = Specification.anyOf(triplesSpec, additionalTriplesSpec, specRolesWithLevelIsNull);
+        var fallbackSpec = buildFallbackApproversSpecification(model);
+        if (triplesSpec == null && additionalTriplesSpec == null && specRolesWithLevelIsNull == null && fallbackSpec == null) {
+            return spec.and((root, query, cb) -> cb.disjunction());
+        }
+
+        Specification<RequestEntity> combinedSpec = Specification.anyOf(triplesSpec, additionalTriplesSpec, specRolesWithLevelIsNull, fallbackSpec);
         return spec.and(combinedSpec);
+    }
+
+    private Specification<RequestEntity> buildFallbackApproversSpecification(RequestEntity model) {
+        if (!userService.isUserLoggedAdmin()) {
+            return null;
+        }
+
+        var currentUser = userService.findOrImportByExternalId(authenticationContextService.getCurrentUserId());
+        var structurallyFallbackRoleIds = findStructurallyFallbackRoleIds();
+        if (structurallyFallbackRoleIds.isEmpty()) {
+            return null;
+        }
+
+        var candidateFallbackRequests = requestRepository.findAll(
+            RequestSpecification.matchCustom(model)
+                .and(RequestSpecification.requesterRoleIn(structurallyFallbackRoleIds))
+        );
+
+        var fallbackRequestIds = candidateFallbackRequests.stream()
+            .filter(roleService::isFallbackScenario)
+            .filter(request ->
+                roleService.getOrImportApprovesByRequest(request).stream()
+                    .anyMatch(user -> user.id().equals(currentUser.id()))
+            )
+            .map(RequestEntity::getId)
+            .distinct()
+            .toList();
+
+        if (fallbackRequestIds.isEmpty()) {
+            return null;
+        }
+
+        return RequestSpecification.requestIdIn(fallbackRequestIds);
+    }
+
+    private List<Long> findStructurallyFallbackRoleIds() {
+        return roleRepository.findAll().stream()
+            .filter(this::isStructurallyFallbackEligible)
+            .map(RoleEntity::getId)
+            .distinct()
+            .toList();
+    }
+
+    private boolean isStructurallyFallbackEligible(RoleEntity role) {
+        if (role == null) {
+            return false;
+        }
+        if (role.getRole() == null) {
+            return true;
+        }
+        return role.getRole().getRole() == null;
     }
 
     // Methods moved to SecurityScopes class

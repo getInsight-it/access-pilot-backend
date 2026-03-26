@@ -1,8 +1,10 @@
 package it.getinsight.module.request.service;
 
 import it.getinsight.module.request.entity.RequestEntity;
+import it.getinsight.module.role.service.RoleService;
 import it.getinsight.module.user.service.AuthenticationContextService;
 import it.getinsight.module.user.service.SecurityScopes;
+import it.getinsight.module.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,8 @@ public class UserAccessValidationService {
 
     private final AuthenticationContextService authenticationContextService;
     private final SecurityScopes securityScopes;
+    private final RoleService roleService;
+    private final UserService userService;
 
 
     public void validateUserAccessToRequest(Long requestId, RequestEntity requestEntity) {
@@ -49,7 +53,9 @@ public class UserAccessValidationService {
             && rolesWithoutLevel.stream()
                 .anyMatch(scope -> matchesRoleWithoutLevelScope(scope, clientId, roleId));
 
-        return !(matchesDirect || matchesHierarchical || matchesRoleWithoutLevel);
+        boolean fallbackAllowed = isCurrentUserFallbackApproverForRequest(requestEntity);
+
+        return !(matchesDirect || matchesHierarchical || matchesRoleWithoutLevel || fallbackAllowed);
     }
 
     private boolean matchesScope(String scope, Long clientId, Long roleId, Long levelId, String codeItem) {
@@ -94,6 +100,24 @@ public class UserAccessValidationService {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    public boolean isCurrentUserApproverForRequest(RequestEntity requestEntity) {
+        var currentUserId = authenticationContextService.getCurrentUserId();
+        var approvingUser = userService.findOrImportByExternalId(currentUserId);
+        var approvingUsers = roleService.getOrImportApprovesByRequest(requestEntity);
+        return approvingUsers.stream().anyMatch(user -> user.id().equals(approvingUser.id()));
+    }
+
+    private boolean isCurrentUserFallbackApproverForRequest(RequestEntity requestEntity) {
+        if (!userService.isUserLoggedAdmin()) {
+            return false;
+        }
+
+        if (!roleService.isFallbackScenario(requestEntity)) {
+            return false;
+        }
+        return isCurrentUserApproverForRequest(requestEntity);
     }
 
     public void validateUserPermissionToUpdateToAllowOrDenyRequest(RequestEntity requestEntity) {

@@ -1,14 +1,12 @@
 package it.getinsight.module.request.service;
 
 import it.getinsight.module.email.dto.EmailDTO;
-import it.getinsight.module.keycloak.service.IdentityProviderService;
 import it.getinsight.module.notification.enums.NotificationType;
 import it.getinsight.module.request.config.EmailNotificationProperties;
 import it.getinsight.module.request.entity.RequestEntity;
-import it.getinsight.module.request.enuns.RequestStatus;
+import it.getinsight.module.role.service.RoleService;
 import it.getinsight.module.user.dto.UserDTO;
 import it.getinsight.module.user.mapper.UserMapper;
-import it.getinsight.module.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,25 +19,46 @@ import java.util.List;
 @Slf4j
 public class ApproverEmailBuilderService {
 
-    private final IdentityProviderService identityProviderService;
-    private final UserService userService;
+    private final RoleService roleService;
     private final UserMapper userMapper;
     private final RequestVariableService requestVariableService;
     private final EmailNotificationProperties emailNotificationProperties;
 
-    public List<UserDTO> findApproversForRole(RequestEntity requestEntity) {
-        var roleEntity = requestEntity.getRole().getRole();
-
-        var approves = identityProviderService.getUsersByClientUUIDAndRoleName(roleEntity.getClient().getClientUUID(), roleEntity.getName())
-            .stream()
-            .map(user -> userService.findOrImportByExternalId(user.id()))
-            .toList();
+    public List<UserDTO> findApproversForRequest(RequestEntity requestEntity) {
+        var approves = roleService.getOrImportApprovesByRequest(requestEntity);
 
         if (approves.isEmpty()) {
-            log.warn("No approvers found for role {}. Skipping approver notifications.", roleEntity.getName());
+            logNoApproversForRequest(requestEntity);
         }
 
         return approves;
+    }
+
+    private void logNoApproversForRequest(RequestEntity requestEntity) {
+        if (requestEntity == null || requestEntity.getRole() == null) {
+            log.warn("No approvers found for request without role. Skipping approver notifications.");
+            return;
+        }
+
+        var requestedRole = requestEntity.getRole();
+        var parentRole = requestedRole.getRole();
+        var requestedRoleName = requestedRole.getName();
+        var parentRoleName = parentRole != null ? parentRole.getName() : "NONE";
+
+        if (requestedRole.getRole() == null) {
+            log.warn("No approvers found for request {}. requestedRole={}, mode=FALLBACK_TOP_ROLE, reason=ACCESS_PILOT_ADMIN_UNAVAILABLE",
+                requestEntity.getId(), requestedRoleName);
+            return;
+        }
+
+        if (requestedRole.getRole().getRole() != null) {
+            log.warn("No approvers found for request {}. requestedRole={}, expectedParentRole={}, mode=IMMEDIATE_PARENT_ONLY, reason=PARENT_WITHOUT_ELIGIBLE_USERS_NON_TOP",
+                requestEntity.getId(), requestedRoleName, parentRoleName);
+            return;
+        }
+
+        log.warn("No approvers found for request {}. requestedRole={}, expectedParentRole={}, mode=FALLBACK_TOP_PARENT, reason=TOP_PARENT_WITHOUT_USERS_FALLBACK_UNAVAILABLE",
+            requestEntity.getId(), requestedRoleName, parentRoleName);
     }
 
 

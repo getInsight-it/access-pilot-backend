@@ -189,6 +189,15 @@ public class RequestSpecification {
         };
     }
 
+    public static Specification<RequestEntity> requestIdIn(Collection<Long> requestIds) {
+        return (root, query, cb) -> {
+            if (requestIds == null || requestIds.isEmpty()) {
+                return cb.disjunction();
+            }
+            return root.get("id").in(requestIds);
+        };
+    }
+
     private static Predicate addRoleFiltersByIds(Predicate p, Root<RequestEntity> root, CriteriaBuilder cb, List<Long> roles) {
         if (roles != null && !roles.isEmpty()) {
             if (roles.size() == 1) {
@@ -362,7 +371,6 @@ public class RequestSpecification {
     public static Specification<RequestEntity> rolesWithLevelIsNull(List<String> roleRefs) {
         return (root, query, cb) -> {
             if (roleRefs == null || roleRefs.isEmpty()) {
-                // When no roles are provided, do not match any request to avoid leaking all results
                 return cb.conjunction();
             }
 

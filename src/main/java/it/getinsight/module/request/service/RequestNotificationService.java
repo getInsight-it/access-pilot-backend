@@ -23,21 +23,21 @@ public class RequestNotificationService {
     private final NotificationPublisher notificationPublisher;
     private final ApproverEmailBuilderService approverEmailBuilderService;
 
-    
+
     public void publishRequestCreated(RequestEntity request, String actorUserId) {
         var message = buildRequestEventMessage(request, RoutingKeys.REQUEST_CREATED, actorUserId);
         requestEventPublisher.publish(message);
     }
 
-    
+
     public void publishRequestStatusChanged(RequestEntity request, String actorUserId) {
         var message = buildRequestEventMessage(request, RoutingKeys.REQUEST_STATUS_CHANGED, actorUserId);
         requestEventPublisher.publish(message);
     }
 
-    
+
     public void notifyRequestCreated(RequestEntity request, String actorUserId) {
-        var approvers = approverEmailBuilderService.findApproversForRole(request);
+        var approvers = approverEmailBuilderService.findApproversForRequest(request);
         log.info("Queueing notifications for {} approvers on request {}", approvers.size(), request.getId());
 
         approvers.forEach(approver -> {
@@ -56,7 +56,7 @@ public class RequestNotificationService {
         log.info("Notification events published for request {} creation", request.getId());
     }
 
-    
+
     public void notifyStatusChanged(RequestEntity request, String actorUserId) {
         var message = buildNotificationMessage(
             request.getId(),
@@ -70,7 +70,7 @@ public class RequestNotificationService {
             request.getId(), request.getStatus());
     }
 
-    
+
     private QueueMessageDTO<RequestEventPayloadDTO> buildRequestEventMessage(
             RequestEntity request, String eventType, String userId) {
         var payload = RequestEventPayloadDTO.builder()
@@ -89,7 +89,7 @@ public class RequestNotificationService {
             .build();
     }
 
-    
+
     private QueueMessageDTO<NotificationPayloadDTO> buildNotificationMessage(
             Long requestId, Long recipientId, String type, String userId) {
         var payload = NotificationPayloadDTO.builder()
