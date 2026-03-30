@@ -18,6 +18,7 @@ import java.util.List;
 
 import static it.getinsight.message.MessageProperty.REQUEST_NOT_FOUND_ERROR;
 import static it.getinsight.message.MessageProperty.USER_NOT_AUTHORIZED;
+import static it.getinsight.message.MessageProperty.USER_NOT_FOUND_ERROR;
 
 @Service
 @RequiredArgsConstructor
@@ -72,7 +73,7 @@ public class RequestManagementService {
         String externalId = authenticationContextService.getCurrentUserId();
         String userId = userRepository.findByExternalId(externalId)
             .map(user -> user.getId().toString())
-            .orElseThrow(() -> new IllegalStateException("User not found for externalId: " + externalId));
+            .orElseThrow(USER_NOT_FOUND_ERROR::resourceNotFoundException);
 
         requestNotificationService.publishRequestStatusChanged(requestEntity, userId);
     }

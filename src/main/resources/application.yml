@@ -241,7 +241,7 @@ cali:
             channel: web
     retry:
       max-attempts: ${QUEUE_RETRY_MAX_ATTEMPTS:5}
-      initial-interval: ${QUEUE_RETRY_INITIAL_INTERVAL:1000}
+      initial-interval: ${QUEUE_RETRY_INITIAL_INTERVAL:3000}
       multiplier: ${QUEUE_RETRY_MULTIPLIER:2.0}
       max-interval: ${QUEUE_RETRY_MAX_INTERVAL:30000}
     dlq:

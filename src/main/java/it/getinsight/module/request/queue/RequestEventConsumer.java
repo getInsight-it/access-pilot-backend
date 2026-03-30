@@ -13,6 +13,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import static it.getinsight.message.MessageProperty.REQUEST_NOT_FOUND_ERROR;
+
 
 @Component
 @RequiredArgsConstructor
@@ -49,7 +51,7 @@ public class RequestEventConsumer implements QueueMessageHandler<RequestEventPay
             routingKey, payload.getRequestId(), payload.getEventType());
 
         var request = requestRepository.findByIdWithRelationships(payload.getRequestId())
-            .orElseThrow(() -> new IllegalStateException("Request not found: " + payload.getRequestId()));
+            .orElseThrow(REQUEST_NOT_FOUND_ERROR::resourceNotFoundException);
 
         switch (routingKey) {
             case RoutingKeys.REQUEST_CREATED ->

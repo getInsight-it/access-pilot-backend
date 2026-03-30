@@ -16,6 +16,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static it.getinsight.message.MessageProperty.REQUEST_NOT_FOUND_ERROR;
+import static it.getinsight.message.MessageProperty.USER_NOT_FOUND_ERROR;
+
 
 @Service
 @RequiredArgsConstructor
@@ -38,10 +41,10 @@ public class NotificationEmailService {
 
     private void sendRequestEmail(NotificationPayloadDTO payload) {
         var request = requestRepository.findByIdWithRelationships(payload.getRequestId())
-            .orElseThrow(() -> new IllegalStateException("Request not found: " + payload.getRequestId()));
+            .orElseThrow(REQUEST_NOT_FOUND_ERROR::resourceNotFoundException);
 
         var recipient = userRepository.findById(payload.getRecipientId())
-            .orElseThrow(() -> new IllegalStateException("Recipient not found: " + payload.getRecipientId()));
+            .orElseThrow(USER_NOT_FOUND_ERROR::resourceNotFoundException);
 
         var variables = requestVariableService.buildVariables(
             request.getRequestingUser(),

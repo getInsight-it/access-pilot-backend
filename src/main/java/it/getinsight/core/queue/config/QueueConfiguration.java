@@ -4,6 +4,7 @@ import it.getinsight.core.queue.QueueConfigProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.AbstractExchange;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Declarable;
@@ -147,7 +148,20 @@ public class QueueConfiguration {
         return RetryInterceptorBuilder.stateless()
             .maxAttempts(retry.getMaxAttempts())
             .backOffOptions(retry.getInitialInterval(), retry.getMultiplier(), retry.getMaxInterval())
-            .recoverer(new RejectAndDontRequeueRecoverer())
+            .recoverer(new RejectAndDontRequeueRecoverer() {
+                @Override
+                public void recover(Message message, Throwable cause) {
+                    var props = message.getMessageProperties();
+                    log.error("Message exhausted {} retries, sending to DLQ: queue={}, routingKey={}, messageId={}, error={}",
+                        retry.getMaxAttempts(),
+                        props.getConsumerQueue(),
+                        props.getReceivedRoutingKey(),
+                        props.getMessageId(),
+                        cause.getMessage(),
+                        cause);
+                    super.recover(message, cause);
+                }
+            })
             .build();
     }
 

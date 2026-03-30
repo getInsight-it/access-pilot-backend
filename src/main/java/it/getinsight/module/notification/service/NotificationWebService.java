@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+import static it.getinsight.message.MessageProperty.REQUEST_NOT_FOUND_ERROR;
+
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +32,7 @@ public class NotificationWebService {
 
     private void createRequestWebNotification(NotificationPayloadDTO payload) {
         var request = requestRepository.findByIdWithRelationships(payload.getRequestId())
-            .orElseThrow(() -> new IllegalStateException("Request not found: " + payload.getRequestId()));
+            .orElseThrow(REQUEST_NOT_FOUND_ERROR::resourceNotFoundException);
 
         String description = resolveDescription(payload.getNotificationType(), request);
 

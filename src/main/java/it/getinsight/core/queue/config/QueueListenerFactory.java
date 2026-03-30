@@ -11,6 +11,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
+import org.springframework.retry.support.RetrySynchronizationManager;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -52,7 +53,11 @@ public class QueueListenerFactory {
                 handler.onMessage(dto, routingKey);
 
             } catch (Exception e) {
-                log.error("Error processing queue message on {}: {}", queueName, e.getMessage(), e);
+                var ctx = RetrySynchronizationManager.getContext();
+                int attempt = ctx != null ? ctx.getRetryCount() + 1 : 1;
+                log.warn("Retry attempt {} failed on queue {}: routingKey={}, messageId={}, error={}",
+                    attempt, queueName, routingKey, messageId, e.getMessage());
+                if (e instanceof RuntimeException re) throw re;
                 throw new RuntimeException(e);
             } finally {
                 MDC.remove("correlationId");
