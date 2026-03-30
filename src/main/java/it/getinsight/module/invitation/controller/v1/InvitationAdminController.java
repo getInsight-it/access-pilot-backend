@@ -48,7 +48,7 @@ public class InvitationAdminController {
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(summary = "Create invitations (returns tokens; email sending is out of scope)")
+    @Operation(summary = "Create invitations (returns invitation UUIDs; email sending is out of scope)")
     public ResponseEntity<InvitationCreateResponseDTO> create(@Valid @RequestBody InvitationCreateRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(invitationService.createInvitations(request));
     }

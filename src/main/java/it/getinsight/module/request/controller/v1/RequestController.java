@@ -54,7 +54,7 @@ public class RequestController {
                 .description(requestCreateDTO.description())
                 .codeItem(requestCreateDTO.codeItem())
                 .role(RoleDTO.builder().id(requestCreateDTO.roleId()).build())
-                .invitationToken(requestCreateDTO.invitationToken())
+                .invitationUuid(requestCreateDTO.invitationUuid())
                 .build();
 
             var created = requestService.createRequest(requestDTO, attachments);

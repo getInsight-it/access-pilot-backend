@@ -29,10 +29,10 @@ public class InvitationController {
     private final InvitationService invitationService;
     private final AuthenticationContextService authenticationContextService;
 
-    @GetMapping(value = "/{token}/request-context", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/{invitationUuid}/request-context", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Get request-context for the existing request access screen")
-    public ResponseEntity<InvitationRequestContextDTO> getRequestContext(@PathVariable String token) {
-        return ResponseEntity.ok(invitationService.getRequestContext(token, authenticationContextService.getCurrentUserEmail()));
+    public ResponseEntity<InvitationRequestContextDTO> getRequestContext(@PathVariable String invitationUuid) {
+        return ResponseEntity.ok(invitationService.getRequestContext(invitationUuid, authenticationContextService.getCurrentUserEmail()));
     }
 
     @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)

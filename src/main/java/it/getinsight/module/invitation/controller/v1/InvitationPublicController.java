@@ -21,16 +21,15 @@ public class InvitationPublicController {
 
     private final InvitationService invitationService;
 
-    @GetMapping(value = "/{token}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/{invitationUuid}", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Get invitation status for the public page")
-    public ResponseEntity<InvitationPublicDTO> getInvitation(@PathVariable String token) {
-        return ResponseEntity.ok(invitationService.getPublicInvitation(token));
+    public ResponseEntity<InvitationPublicDTO> getInvitation(@PathVariable String invitationUuid) {
+        return ResponseEntity.ok(invitationService.getPublicInvitation(invitationUuid));
     }
 
-    @GetMapping(value = "/{token}/auth-intent", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/{invitationUuid}/auth-intent", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Get auth intent for login/register decision")
-    public ResponseEntity<InvitationAuthIntentDTO> getAuthIntent(@PathVariable String token) {
-        return ResponseEntity.ok(invitationService.getAuthIntent(token));
+    public ResponseEntity<InvitationAuthIntentDTO> getAuthIntent(@PathVariable String invitationUuid) {
+        return ResponseEntity.ok(invitationService.getAuthIntent(invitationUuid));
     }
 }
-

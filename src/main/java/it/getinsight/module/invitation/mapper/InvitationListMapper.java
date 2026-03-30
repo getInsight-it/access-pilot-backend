@@ -58,6 +58,7 @@ public interface InvitationListMapper extends BaseMapper<InvitationEntity, Invit
     }
 
     @Named("toDtoWithContext")
+    @Mapping(target = "invitationUuid", expression = "java(entity.getUuid() != null ? entity.getUuid().toString() : null)")
     @Mapping(target = "roleId", source = "entity.role.id")
     @Mapping(target = "roleLabel", source = "entity.role.label")
     @Mapping(target = "clientId", source = "entity.role.client.clientId")

@@ -7,7 +7,7 @@ import java.io.Serializable;
 
 @Builder
 public record InvitationRequestContextDTO(
-    String invitationToken,
+    String invitationUuid,
     String clientId,
     Long roleId,
     String roleLabel,

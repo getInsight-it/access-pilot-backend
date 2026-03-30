@@ -35,7 +35,7 @@ public class InvitationEntity extends AuditableEntity<Long, String> {
     private UUID uuid;
 
     @Column(name = "TOKEN_HASH", nullable = false, unique = true, length = 64)
-    private String tokenHash;
+    private String invitationHash;
 
     @Column(name = "EMAIL", nullable = false)
     private String email;

@@ -12,7 +12,7 @@ public record InvitationAuthIntentDTO(
     InvitationPublicStatus status,
     InvitationNextStep nextStep,
     String loginHint,
-    String invitationToken
+    String invitationUuid
 ) implements Serializable {
 
     @Serial

@@ -39,7 +39,7 @@ public class RequestVariableService {
                                               RequestEntity request, RoleEntity role, ClientEntity client) {
         var item = getItemOrDefault(role, request);
         return Map.of(
-            "link", buildLinkVariables(),
+            "link", buildLinkVariables(request),
             "approvingUser", Optional.ofNullable(userMapper.toDto(approvingUser)).orElse(UserDTO.builder().build()),
             "requestingUser", Optional.ofNullable(userMapper.toDto(requestingUser)).orElse(UserDTO.builder().build()),
             "request", Optional.ofNullable(requestMapper.toDto(request)).orElse(RequestDTO.builder().build()),
@@ -52,10 +52,13 @@ public class RequestVariableService {
         );
     }
 
-    private Map<String, String> buildLinkVariables() {
+    private Map<String, String> buildLinkVariables(RequestEntity request) {
         var url = emailNotificationProperties.getUrl();
+        String address = request != null && request.getId() != null
+            ? url.getFrontendUrl() + "/access-requests/" + request.getId()
+            : url.getFrontendUrl();
         return Map.of(
-            "address", url.getClientUrl(),
+            "address", address,
             "hint", url.getHint(),
             "frontendUrl", url.getFrontendUrl()
         );

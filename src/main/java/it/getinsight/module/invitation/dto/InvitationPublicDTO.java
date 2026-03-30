@@ -10,6 +10,7 @@ import java.time.Instant;
 @Builder
 public record InvitationPublicDTO(
     InvitationPublicStatus status,
+    String invitationUuid,
     Instant expiresAt,
     String emailMasked,
     String codeItem,

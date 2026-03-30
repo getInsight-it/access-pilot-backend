@@ -76,11 +76,11 @@ public class RequestCreationService {
     }
 
     private InvitationEntity processInvitationIfPresent(RequestDTO requestDTO) {
-        if (StringUtils.isBlank(requestDTO.invitationToken())) {
+        if (StringUtils.isBlank(requestDTO.invitationUuid())) {
             return null;
         }
         String currentUserEmail = authenticationContextService.getCurrentUserEmail();
-        return invitationService.getValidatedInvitationForUpdate(requestDTO.invitationToken(), currentUserEmail);
+        return invitationService.getValidatedInvitationForUpdate(requestDTO.invitationUuid(), currentUserEmail);
     }
 
     private RoleEntity findAndValidateRole(RequestDTO requestDTO) {

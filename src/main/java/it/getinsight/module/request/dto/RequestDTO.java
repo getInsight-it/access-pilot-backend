@@ -47,7 +47,7 @@ public record RequestDTO(
 
     Date criacao,
 
-    String invitationToken
+    String invitationUuid
 ) implements Serializable {
 
     @Serial

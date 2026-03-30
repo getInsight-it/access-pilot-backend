@@ -103,7 +103,7 @@ public class NotificationEmailService {
         variables.put("expiresAt", payload.getInvitationExpiresAt());
 
         String invitationUrl = emailNotificationProperties.getUrl().getFrontendUrl()
-            + "/invitation?invitationToken=" + payload.getInvitationToken();
+            + "/invitation?invitationUuid=" + payload.getInvitationUuid();
 
         variables.put("link", Map.of(
             "invitationUrl", invitationUrl,

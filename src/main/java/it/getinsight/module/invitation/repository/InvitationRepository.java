@@ -16,17 +16,18 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface InvitationRepository extends JpaRepository<InvitationEntity, Long>, JpaSpecificationExecutor<InvitationEntity> {
 
     @EntityGraph(attributePaths = {"role", "role.client", "role.level"})
-    Optional<InvitationEntity> findByTokenHash(String tokenHash);
+    Optional<InvitationEntity> findByUuid(UUID uuid);
 
     @EntityGraph(attributePaths = {"role", "role.client", "role.level"})
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select i from InvitationEntity i where i.tokenHash = :tokenHash")
-    Optional<InvitationEntity> findByTokenHashForUpdate(@Param("tokenHash") String tokenHash);
+    @Query("select i from InvitationEntity i where i.uuid = :invitationUuid")
+    Optional<InvitationEntity> findByUuidForUpdate(@Param("invitationUuid") UUID invitationUuid);
 
     @EntityGraph(attributePaths = {"role", "role.client", "role.level"})
     @NonNull

@@ -26,7 +26,7 @@ public class NotificationPayloadDTO implements Serializable {
     private String notificationType;
 
     private Long invitationId;
-    private String invitationToken;
+    private String invitationUuid;
     private String invitationEmail;
     private String invitationRoleLabel;
     private String invitationClientLabel;

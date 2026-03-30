@@ -19,7 +19,7 @@ public record InvitationCreateResponseDTO(
     @Builder
     public record InvitationCreatedDTO(
         String email,
-        String token,
+        String invitationUuid,
         Instant expiresAt
     ) implements Serializable {
 

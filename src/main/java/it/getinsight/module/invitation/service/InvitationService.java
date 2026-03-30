@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.UUID;
 
 import static it.getinsight.message.MessageProperty.*;
 
@@ -41,22 +42,23 @@ public class InvitationService {
     private final InvitationRepository invitationRepository;
     private final RoleRepository roleRepository;
     private final InvitationListMapper invitationListMapper;
-    private final InvitationTokenService invitationTokenService;
+    private final InvitationUuidService invitationUuidService;
     private final InvitationProtocolCodeService invitationProtocolCodeService;
     private final KeycloakClient keycloakClient;
     private final ItemValidationService itemValidationService;
     private final InvitationNotificationService invitationNotificationService;
 
     @Transactional(readOnly = true)
-    public InvitationPublicDTO getPublicInvitation(String token) {
+    public InvitationPublicDTO getPublicInvitation(String invitationUuid) {
         Instant now = Instant.now();
-        var invitation = findByToken(token);
+        var invitation = findByInvitationUuid(invitationUuid);
         if (invitation.isEmpty()) {
-            return new InvitationPublicDTO(InvitationPublicStatus.NOT_FOUND, null, null, null, null, null, null, null);
+            return new InvitationPublicDTO(InvitationPublicStatus.NOT_FOUND, null, null, null, null, null, null, null, null);
         }
 
         var entity = invitation.get();
         var status = computePublicStatus(entity, now);
+        var resolvedInvitationUuid = resolveInvitationUuid(entity);
 
         var role = new InvitationPublicDTO.RoleResumedDTO(entity.getRole().getId(), entity.getRole().getName(), entity.getRole().getLabel());
         var client = new InvitationPublicDTO.ClientResumedDTO(entity.getRole().getClient().getId(), entity.getRole().getClient().getName(), entity.getRole().getClient().getLabel());
@@ -66,6 +68,7 @@ public class InvitationService {
 
         return new InvitationPublicDTO(
             status,
+            resolvedInvitationUuid,
             entity.getExpiresAt(),
             maskEmail(entity.getEmail()),
             entity.getCodeItem(),
@@ -77,9 +80,9 @@ public class InvitationService {
     }
 
     @Transactional(readOnly = true)
-    public InvitationAuthIntentDTO getAuthIntent(String token) {
+    public InvitationAuthIntentDTO getAuthIntent(String invitationUuid) {
         Instant now = Instant.now();
-        var invitation = findByToken(token);
+        var invitation = findByInvitationUuid(invitationUuid);
         if (invitation.isEmpty()) {
             return new InvitationAuthIntentDTO(InvitationPublicStatus.NOT_FOUND, null, null, null);
         }
@@ -91,16 +94,16 @@ public class InvitationService {
         }
 
         InvitationNextStep nextStep = resolveNextStep(entity.getEmail());
-        return new InvitationAuthIntentDTO(status, nextStep, entity.getEmail(), token);
+        return new InvitationAuthIntentDTO(status, nextStep, entity.getEmail(), resolveInvitationUuid(entity));
     }
 
     @Transactional(readOnly = true)
-    public InvitationRequestContextDTO getRequestContext(String token, String currentUserEmail) {
-        var invitation = getValidatedInvitation(token, currentUserEmail);
+    public InvitationRequestContextDTO getRequestContext(String invitationUuid, String currentUserEmail) {
+        var invitation = getValidatedInvitation(invitationUuid, currentUserEmail);
         var level = invitation.getRole().getLevel();
 
         return new InvitationRequestContextDTO(
-            token,
+            resolveInvitationUuid(invitation),
             invitation.getRole().getClient().getClientId(),
             invitation.getRole().getId(),
             invitation.getRole().getLabel(),
@@ -113,9 +116,9 @@ public class InvitationService {
     }
 
     @Transactional(readOnly = true)
-    public InvitationEntity getValidatedInvitation(String token, String currentUserEmail) {
+    public InvitationEntity getValidatedInvitation(String invitationUuid, String currentUserEmail) {
         Instant now = Instant.now();
-        var invitation = findByToken(token).orElseThrow(INVITATION_NOT_FOUND_ERROR::resourceNotFoundException);
+        var invitation = findByInvitationUuid(invitationUuid).orElseThrow(INVITATION_NOT_FOUND_ERROR::resourceNotFoundException);
 
         validatePending(invitation, now);
         validateEmailBinding(invitation.getEmail(), currentUserEmail);
@@ -124,10 +127,9 @@ public class InvitationService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public InvitationEntity getValidatedInvitationForUpdate(String token, String currentUserEmail) {
+    public InvitationEntity getValidatedInvitationForUpdate(String invitationUuid, String currentUserEmail) {
         Instant now = Instant.now();
-        String tokenHash = invitationTokenService.hashToken(token);
-        var invitation = invitationRepository.findByTokenHashForUpdate(tokenHash)
+        var invitation = findByInvitationUuidForUpdate(invitationUuid)
             .orElseThrow(INVITATION_NOT_FOUND_ERROR::resourceNotFoundException);
 
         validatePending(invitation, now);
@@ -205,10 +207,12 @@ public class InvitationService {
         var created = new ArrayList<InvitationCreateResponseDTO.InvitationCreatedDTO>();
         for (String rawEmail : request.emails()) {
             String email = EmailNormalizationUtil.normalize(rawEmail);
-            String token = invitationTokenService.generateToken();
+            UUID generatedInvitationUuid = UUID.randomUUID();
+            String invitationUuid = generatedInvitationUuid.toString();
 
             InvitationEntity entity = InvitationEntity.builder()
-                .tokenHash(invitationTokenService.hashToken(token))
+                .uuid(generatedInvitationUuid)
+                .invitationHash(invitationUuidService.hashInvitationUuid(invitationUuid))
                 .email(email)
                 .role(role)
                 .codeItem(normalizedCodeItem)
@@ -218,9 +222,9 @@ public class InvitationService {
                 .protocolCode(protocolCode)
                 .build();
 
-            token = saveWithRetryOnTokenCollision(entity, token);
-            invitationNotificationService.publishInvitationCreated(entity, token);
-            created.add(new InvitationCreateResponseDTO.InvitationCreatedDTO(email, token, request.expiresAt()));
+            invitationUuid = saveWithRetryOnInvitationHashCollision(entity, invitationUuid);
+            invitationNotificationService.publishInvitationCreated(entity, invitationUuid);
+            created.add(new InvitationCreateResponseDTO.InvitationCreatedDTO(email, invitationUuid, request.expiresAt()));
         }
 
         return new InvitationCreateResponseDTO(protocolCode, created);
@@ -236,12 +240,29 @@ public class InvitationService {
             .and(InvitationSpecification.hasStatus(filter != null ? filter.status() : null, now));
     }
 
-    private Optional<InvitationEntity> findByToken(String token) {
-        if (StringUtils.isBlank(token)) {
+    private Optional<InvitationEntity> findByInvitationUuid(String invitationUuid) {
+        return parseInvitationUuid(invitationUuid)
+            .flatMap(invitationRepository::findByUuid);
+    }
+
+    private Optional<InvitationEntity> findByInvitationUuidForUpdate(String invitationUuid) {
+        return parseInvitationUuid(invitationUuid)
+            .flatMap(invitationRepository::findByUuidForUpdate);
+    }
+
+    private Optional<UUID> parseInvitationUuid(String invitationUuid) {
+        if (StringUtils.isBlank(invitationUuid)) {
             return Optional.empty();
         }
-        String tokenHash = invitationTokenService.hashToken(token);
-        return invitationRepository.findByTokenHash(tokenHash);
+        try {
+            return Optional.of(UUID.fromString(invitationUuid));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
+    }
+
+    private String resolveInvitationUuid(InvitationEntity invitation) {
+        return invitation.getUuid() != null ? invitation.getUuid().toString() : null;
     }
 
     private InvitationPublicStatus computePublicStatus(InvitationEntity invitation, Instant now) {
@@ -306,20 +327,22 @@ public class InvitationService {
         }
     }
 
-    private String saveWithRetryOnTokenCollision(InvitationEntity entity, String initialToken) {
-        String token = initialToken;
+    private String saveWithRetryOnInvitationHashCollision(InvitationEntity entity, String initialInvitationUuid) {
+        String invitationUuid = initialInvitationUuid;
         for (int attempt = 0; attempt < 3; attempt++) {
             try {
                 invitationRepository.save(entity);
-                return token;
+                return invitationUuid;
             } catch (DataIntegrityViolationException e) {
                 if (attempt == 2) {
                     throw e;
                 }
-                token = invitationTokenService.generateToken();
-                entity.setTokenHash(invitationTokenService.hashToken(token));
+                UUID regeneratedInvitationUuid = UUID.randomUUID();
+                invitationUuid = regeneratedInvitationUuid.toString();
+                entity.setUuid(regeneratedInvitationUuid);
+                entity.setInvitationHash(invitationUuidService.hashInvitationUuid(invitationUuid));
             }
         }
-        return token;
+        return invitationUuid;
     }
 }

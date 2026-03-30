@@ -33,12 +33,12 @@ public class InvitationNotificationService {
     private final ItemRepository itemRepository;
     private final LevelClient levelClient;
 
-    public void publishInvitationCreated(InvitationEntity invitation, String token) {
+    public void publishInvitationCreated(InvitationEntity invitation, String invitationUuid) {
 
         var payload = NotificationPayloadDTO.builder()
             .notificationType(RoutingKeys.NOTIFICATION_INVITATION_CREATED)
             .invitationId(invitation.getId())
-            .invitationToken(token)
+            .invitationUuid(invitationUuid)
             .invitationEmail(invitation.getEmail())
             .invitationRoleLabel(invitation.getRole().getLabel())
             .invitationClientLabel(invitation.getRole().getClient().getLabel())
