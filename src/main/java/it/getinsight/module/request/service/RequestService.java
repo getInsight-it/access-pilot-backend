@@ -171,6 +171,13 @@ public class RequestService {
         return requestRepository.countRequestingUserDistinct(spec);
     }
 
+    @Transactional(readOnly = true)
+    public boolean hasAssignedRequestsForCurrentUser() {
+        var model = new RequestEntity();
+        Specification<RequestEntity> spec = requestQueryBuilderService.buildAssignedRequestsSpecification(model);
+        return requestRepository.exists(spec);
+    }
+
     public Long getTotalUsers(RequestStatus status) {
         var filter = RequestEntitySpecificationFilter.builder().status(status).build();
         return requestRepository.countRequestingUserDistinct(RequestSpecification.matchCustom(filter));
@@ -188,11 +195,6 @@ public class RequestService {
 
     public List<RequestAction> getAllowedActionsForRequest(Long requestId) {
         return requestManagementService.getAllowedActionsForRequest(requestId);
-    }
-
-
-    public List<RequestAction> getAllowedActionsForRequest(RequestEntity requestEntity) {
-        return requestManagementService.getAllowedActionsForRequest(requestEntity);
     }
 
 }

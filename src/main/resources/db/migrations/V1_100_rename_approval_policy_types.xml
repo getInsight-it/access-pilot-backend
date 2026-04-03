@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_100" author="luan.rodrigues@getinsight.it">
+        <comment>Rename approval policy types from Portuguese to English</comment>
+
+        <update tableName="TB_POLITICA_APROVACAO">
+            <column name="TIPO_POLITICA" value="AUTO_APPROVAL"/>
+            <where>TIPO_POLITICA = 'AUTO_APROVACAO'</where>
+        </update>
+
+        <update tableName="TB_POLITICA_APROVACAO">
+            <column name="TIPO_POLITICA" value="LATERAL_APPROVAL"/>
+            <where>TIPO_POLITICA = 'APROVACAO_LATERAL'</where>
+        </update>
+
+        <update tableName="TB_POLITICA_APROVACAO_AUD">
+            <column name="TIPO_POLITICA" value="AUTO_APPROVAL"/>
+            <where>TIPO_POLITICA = 'AUTO_APROVACAO'</where>
+        </update>
+
+        <update tableName="TB_POLITICA_APROVACAO_AUD">
+            <column name="TIPO_POLITICA" value="LATERAL_APPROVAL"/>
+            <where>TIPO_POLITICA = 'APROVACAO_LATERAL'</where>
+        </update>
+
+        <rollback>
+            <update tableName="TB_POLITICA_APROVACAO">
+                <column name="TIPO_POLITICA" value="AUTO_APROVACAO"/>
+                <where>TIPO_POLITICA = 'AUTO_APPROVAL'</where>
+            </update>
+
+            <update tableName="TB_POLITICA_APROVACAO">
+                <column name="TIPO_POLITICA" value="APROVACAO_LATERAL"/>
+                <where>TIPO_POLITICA = 'LATERAL_APPROVAL'</where>
+            </update>
+
+            <update tableName="TB_POLITICA_APROVACAO_AUD">
+                <column name="TIPO_POLITICA" value="AUTO_APROVACAO"/>
+                <where>TIPO_POLITICA = 'AUTO_APPROVAL'</where>
+            </update>
+
+            <update tableName="TB_POLITICA_APROVACAO_AUD">
+                <column name="TIPO_POLITICA" value="APROVACAO_LATERAL"/>
+                <where>TIPO_POLITICA = 'LATERAL_APPROVAL'</where>
+            </update>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

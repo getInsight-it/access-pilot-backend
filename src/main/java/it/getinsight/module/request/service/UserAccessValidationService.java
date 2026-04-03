@@ -1,6 +1,9 @@
 package it.getinsight.module.request.service;
 
 import it.getinsight.module.request.entity.RequestEntity;
+import it.getinsight.module.request.enuns.RequestStatus;
+import it.getinsight.module.role.entity.ApprovalPolicyRoleEntity;
+import it.getinsight.module.role.service.ApprovalPolicyService;
 import it.getinsight.module.role.service.RoleService;
 import it.getinsight.module.user.service.AuthenticationContextService;
 import it.getinsight.module.user.service.SecurityScopes;
@@ -10,6 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static it.getinsight.message.MessageProperty.APPROVE_NOT_AUTHORIZED;
 import static it.getinsight.message.MessageProperty.USER_NOT_AUTHORIZED;
@@ -24,16 +30,50 @@ public class UserAccessValidationService {
     private final SecurityScopes securityScopes;
     private final RoleService roleService;
     private final UserService userService;
+    private final ApprovalPolicyService approvalPolicyService;
 
 
     public void validateUserAccessToRequest(Long requestId, RequestEntity requestEntity) {
-        if (hasNoValidScopeWithHierarchyForRequest(requestEntity)) {
+        if (!canViewRequest(requestEntity)) {
             log.warn("Unauthorized access attempt to request {} by user {}", requestId, authenticationContextService.getCurrentUserId());
             throw APPROVE_NOT_AUTHORIZED.accessForbiddenException();
         }
     }
 
+    public boolean canViewRequest(RequestEntity requestEntity) {
+        return hasHierarchyAccess(requestEntity) || hasLateralViewAccess(requestEntity);
+    }
+
+    public boolean canApproveRequest(RequestEntity requestEntity) {
+        return hasHierarchyAccess(requestEntity) || hasLateralApproveAccess(requestEntity);
+    }
+
+    public boolean canRejectRequest(RequestEntity requestEntity) {
+        return hasHierarchyAccess(requestEntity) || hasLateralRejectAccess(requestEntity);
+    }
+
+    public boolean canRevokeRequest(RequestEntity requestEntity) {
+        return hasHierarchyAccess(requestEntity) || hasLateralRevokeAccess(requestEntity);
+    }
+
+    public boolean canTransitionToStatus(RequestEntity requestEntity, RequestStatus targetStatus) {
+        return switch (targetStatus) {
+            case APPROVED -> canApproveRequest(requestEntity);
+            case REJECTED -> canRejectRequest(requestEntity);
+            case REVOKED -> canRevokeRequest(requestEntity);
+            default -> false;
+        };
+    }
+
+    private boolean hasHierarchyAccess(RequestEntity requestEntity) {
+        return !hasNoValidScopeWithHierarchyForRequest(requestEntity);
+    }
+
     public boolean hasNoValidScopeWithHierarchyForRequest(RequestEntity requestEntity) {
+        if (requestEntity == null || requestEntity.getRole() == null || requestEntity.getRole().getClient() == null) {
+            return true;
+        }
+
         Long clientId = requestEntity.getRole().getClient().getId();
         Long roleId = requestEntity.getRole().getId();
         Long levelId = requestEntity.getLevel() != null ? requestEntity.getLevel().getId() : null;
@@ -59,6 +99,9 @@ public class UserAccessValidationService {
     }
 
     private boolean matchesScope(String scope, Long clientId, Long roleId, Long levelId, String codeItem) {
+        if (scope == null || scope.isBlank() || roleId == null || levelId == null || codeItem == null) {
+            return false;
+        }
         String[] parts = scope.split(":");
         if (parts.length != 4) return false;
 
@@ -94,6 +137,82 @@ public class UserAccessValidationService {
         return scopeRoleId != null && scopeRoleId.equals(roleId);
     }
 
+    private boolean hasLateralViewAccess(RequestEntity requestEntity) {
+        return hasLateralPermission(requestEntity, target -> true);
+    }
+
+    private boolean hasLateralApproveAccess(RequestEntity requestEntity) {
+        return hasLateralPermission(requestEntity, target -> Boolean.TRUE.equals(target.getCanApprove()));
+    }
+
+    private boolean hasLateralRejectAccess(RequestEntity requestEntity) {
+        return hasLateralPermission(requestEntity, target -> Boolean.TRUE.equals(target.getCanReject()));
+    }
+
+    private boolean hasLateralRevokeAccess(RequestEntity requestEntity) {
+        return hasLateralPermission(requestEntity, target -> Boolean.TRUE.equals(target.getCanRevoke()));
+    }
+
+    private boolean hasLateralPermission(RequestEntity requestEntity,
+                                         java.util.function.Predicate<ApprovalPolicyRoleEntity> targetFilter) {
+        if (requestEntity == null || requestEntity.getRole() == null || requestEntity.getRole().getClient() == null) {
+            return false;
+        }
+
+        var lateralPolicy = approvalPolicyService.findEnabledLateralPolicy(requestEntity.getRole()).orElse(null);
+        if (lateralPolicy == null || lateralPolicy.getRoles() == null || lateralPolicy.getRoles().isEmpty()) {
+            return false;
+        }
+
+        Set<Long> targetRoleIds = lateralPolicy.getRoles().stream()
+            .filter(target -> target != null && Boolean.TRUE.equals(target.getActive()))
+            .filter(targetFilter)
+            .map(ApprovalPolicyRoleEntity::getRole)
+            .filter(java.util.Objects::nonNull)
+            .map(targetRole -> targetRole.getId())
+            .filter(java.util.Objects::nonNull)
+            .collect(Collectors.toSet());
+
+        if (targetRoleIds.isEmpty()) {
+            return false;
+        }
+
+        Long clientId = requestEntity.getRole().getClient().getId();
+        Long levelId = requestEntity.getLevel() != null ? requestEntity.getLevel().getId() : null;
+        String codeItem = requestEntity.getCodeItem();
+
+        if (levelId == null) {
+            var roleScopesWithoutLevel = securityScopes.findRolesWithoutDirectAccess();
+            return targetRoleIds.stream()
+                .anyMatch(targetRoleId -> roleScopesWithoutLevel.stream()
+                    .anyMatch(scope -> matchesRoleWithoutLevelScope(scope, clientId, targetRoleId)));
+        }
+
+        var levelScopes = Stream.of(
+                securityScopes.findDirectRoleAccessScopes(),
+                securityScopes.findHierarchicalRoleAccessScopes(),
+                toRawLevelScopes(securityScopes.all())
+            )
+            .flatMap(List::stream)
+            .distinct()
+            .toList();
+
+        return targetRoleIds.stream()
+            .anyMatch(targetRoleId -> levelScopes.stream()
+                .anyMatch(scope -> matchesScope(scope, clientId, targetRoleId, levelId, codeItem)));
+    }
+
+    private List<String> toRawLevelScopes(List<it.getinsight.module.user.service.ScopeRef> scopeRefs) {
+        if (scopeRefs == null || scopeRefs.isEmpty()) {
+            return List.of();
+        }
+        return scopeRefs.stream()
+            .filter(java.util.Objects::nonNull)
+            .filter(scope -> scope.clientId() != null && scope.roleId() != null && scope.levelId() != null && scope.codeItem() != null)
+            .map(scope -> scope.clientId() + ":" + scope.roleId() + ":" + scope.levelId() + ":" + scope.codeItem())
+            .toList();
+    }
+
     private Long tryParseLong(String raw) {
         try {
             return raw == null ? null : Long.valueOf(raw);
@@ -121,7 +240,7 @@ public class UserAccessValidationService {
     }
 
     public void validateUserPermissionToUpdateToAllowOrDenyRequest(RequestEntity requestEntity) {
-        if (hasNoValidScopeWithHierarchyForRequest(requestEntity)) {
+        if (!(canApproveRequest(requestEntity) || canRejectRequest(requestEntity) || canRevokeRequest(requestEntity))) {
             throw USER_NOT_AUTHORIZED.accessForbiddenException();
         }
     }

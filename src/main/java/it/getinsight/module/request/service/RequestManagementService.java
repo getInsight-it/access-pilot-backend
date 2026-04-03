@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static it.getinsight.message.MessageProperty.REQUEST_NOT_FOUND_ERROR;
 import static it.getinsight.message.MessageProperty.USER_NOT_AUTHORIZED;
@@ -56,9 +58,16 @@ public class RequestManagementService {
     }
 
     private void validateUpdatePermissions(RequestEntity requestEntity, RequestStatus finalStatus) {
-        if (getAllowedActionsForRequest(requestEntity).stream().anyMatch(action -> action.getTargetStatus().isHierarchicalApprovalStatus(finalStatus))) {
-            requestValidationService.validateUserPermissionToUpdateToAllowOrDenyRequest(requestEntity);
-        }else if (getAllowedActionsForRequest(requestEntity).stream().noneMatch(action -> action.getTargetStatus().isNotHierarchicalApprovalStatus(finalStatus))) {
+        var allowedTargetStatuses = getAllowedActionsForRequest(requestEntity).stream()
+            .map(RequestAction::getTargetStatus)
+            .collect(Collectors.toSet());
+
+        if (!allowedTargetStatuses.contains(finalStatus)) {
+            throw USER_NOT_AUTHORIZED.accessForbiddenException();
+        }
+
+        if (!userAccessValidationService.canTransitionToStatus(requestEntity, finalStatus)
+            && Set.of(RequestStatus.APPROVED, RequestStatus.REJECTED, RequestStatus.REVOKED).contains(finalStatus)) {
             throw USER_NOT_AUTHORIZED.accessForbiddenException();
         }
         requestValidationService.validateClientStatus(requestEntity);
@@ -88,18 +97,27 @@ public class RequestManagementService {
 
     public List<RequestAction> getAllowedActionsForRequest(RequestEntity requestEntity) {
         var isOwnerRequester = authenticationContextService.getCurrentUserId().equals(requestEntity.getRequestingUser().getExternalId());
-        var canApproveOrReject = !userAccessValidationService.hasNoValidScopeWithHierarchyForRequest(requestEntity);
+        var canApprove = userAccessValidationService.canApproveRequest(requestEntity);
+        var canReject = userAccessValidationService.canRejectRequest(requestEntity);
+        var canRevoke = userAccessValidationService.canRevokeRequest(requestEntity);
         List<RequestAction> actions = new ArrayList<>();
-        if (isOwnerRequester){
-            actions.add(RequestAction.CANCEL);
+
+        if (RequestStatus.PENDING.equals(requestEntity.getStatus())) {
+            if (isOwnerRequester) {
+                actions.add(RequestAction.CANCEL);
+            }
+            if (canApprove) {
+                actions.add(RequestAction.APPROVE);
+            }
+            if (canReject) {
+                actions.add(RequestAction.REJECT);
+            }
         }
-        if (canApproveOrReject) {
-            actions.add(RequestAction.APPROVE);
-            actions.add(RequestAction.REJECT);
-        }
-        if (RequestStatus.APPROVED.equals(requestEntity.getStatus())) {
+
+        if (RequestStatus.APPROVED.equals(requestEntity.getStatus()) && canRevoke) {
             actions.add(RequestAction.REVOKE);
         }
+
         return actions;
     }
 }

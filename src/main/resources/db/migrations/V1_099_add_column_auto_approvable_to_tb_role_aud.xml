@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_099" author="luan.rodrigues@getinsight.it">
+
+        <createTable tableName="TB_POLITICA_APROVACAO_AUD">
+            <column name="ID" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REV" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REVTYPE" type="SMALLINT"/>
+            <column name="ID_ROLE" type="BIGINT"/>
+            <column name="TIPO_POLITICA" type="VARCHAR(64)"/>
+            <column name="HABILITADA" type="BOOLEAN"/>
+            <column name="ATIVO" type="BOOLEAN"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_CRIACAO" type="TIMESTAMP"/>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP"/>
+        </createTable>
+
+        <addPrimaryKey columnNames="REV, ID"
+                       constraintName="TB_POLITICA_APROVACAO_AUD_PKEY"
+                       tableName="TB_POLITICA_APROVACAO_AUD"/>
+
+        <addForeignKeyConstraint baseColumnNames="REV"
+                                 baseTableName="TB_POLITICA_APROVACAO_AUD"
+                                 constraintName="FK_POLITICA_APROVACAO_AUD_REVINFO"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="NO ACTION"
+                                 onUpdate="NO ACTION"
+                                 referencedColumnNames="REV"
+                                 referencedTableName="REVINFO"
+                                 validate="true"/>
+
+        <createTable tableName="TB_POLITICA_APROVACAO_ROLE_AUD">
+            <column name="ID" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REV" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REVTYPE" type="SMALLINT"/>
+            <column name="ID_POLITICA" type="BIGINT"/>
+            <column name="ID_ROLE" type="BIGINT"/>
+            <column name="PODE_APROVAR" type="BOOLEAN"/>
+            <column name="PODE_REJEITAR" type="BOOLEAN"/>
+            <column name="PODE_REVOGAR" type="BOOLEAN"/>
+            <column name="ATIVO" type="BOOLEAN"/>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_CRIACAO" type="TIMESTAMP"/>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP"/>
+        </createTable>
+
+        <addPrimaryKey columnNames="REV, ID"
+                       constraintName="TB_POLITICA_APROVACAO_ROLE_AUD_PKEY"
+                       tableName="TB_POLITICA_APROVACAO_ROLE_AUD"/>
+
+        <addForeignKeyConstraint baseColumnNames="REV"
+                                 baseTableName="TB_POLITICA_APROVACAO_ROLE_AUD"
+                                 constraintName="FK_POLITICA_APROVACAO_ROLE_AUD_REVINFO"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="NO ACTION"
+                                 onUpdate="NO ACTION"
+                                 referencedColumnNames="REV"
+                                 referencedTableName="REVINFO"
+                                 validate="true"/>
+
+        <sql>ALTER TABLE TB_ROLE_AUD DROP COLUMN IF EXISTS AUTO_APROVAVEL;</sql>
+
+        <rollback>
+            <addColumn tableName="TB_ROLE_AUD">
+                <column name="AUTO_APROVAVEL" type="BOOLEAN" defaultValueBoolean="false">
+                    <constraints nullable="false"/>
+                </column>
+            </addColumn>
+
+            <dropForeignKeyConstraint baseTableName="TB_POLITICA_APROVACAO_ROLE_AUD"
+                                      constraintName="FK_POLITICA_APROVACAO_ROLE_AUD_REVINFO"/>
+            <dropForeignKeyConstraint baseTableName="TB_POLITICA_APROVACAO_AUD"
+                                      constraintName="FK_POLITICA_APROVACAO_AUD_REVINFO"/>
+            <dropTable tableName="TB_POLITICA_APROVACAO_ROLE_AUD"/>
+            <dropTable tableName="TB_POLITICA_APROVACAO_AUD"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

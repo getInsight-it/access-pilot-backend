@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
+import it.getinsight.module.request.service.RequestService;
 import it.getinsight.module.user.dto.UserDTO;
 import it.getinsight.module.user.service.UserService;
 import jakarta.validation.Valid;
@@ -28,6 +29,7 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final RequestService requestService;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
@@ -122,7 +124,21 @@ public class UserController {
 
     @GetMapping("me")
     public ResponseEntity<UserDTO> getMe() {
-        return ResponseEntity.ok(userService.getMe());
+        var user = userService.getMe();
+        var isApprover = requestService.hasAssignedRequestsForCurrentUser();
+        return ResponseEntity.ok(copyWithApproverFlag(user, isApprover));
+    }
+
+    private UserDTO copyWithApproverFlag(UserDTO user, boolean isApprover) {
+        return UserDTO.builder()
+            .id(user.id())
+            .username(user.username())
+            .firstName(user.firstName())
+            .lastName(user.lastName())
+            .email(user.email())
+            .isApprover(isApprover)
+            .externalId(user.externalId())
+            .build();
     }
 
 }

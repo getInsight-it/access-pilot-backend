@@ -4,6 +4,8 @@ import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.module.client.dto.ClientExportClientDTO;
 import it.getinsight.module.client.dto.ClientExportDTO;
+import it.getinsight.module.client.dto.ClientExportApprovalPolicyDTO;
+import it.getinsight.module.client.dto.ClientExportApprovalPolicyRoleDTO;
 import it.getinsight.module.client.dto.ClientExportRoleDTO;
 import it.getinsight.module.client.dto.ClientImportCountersDTO;
 import it.getinsight.module.client.dto.ClientImportRequestDTO;
@@ -30,13 +32,18 @@ import it.getinsight.module.keycloak.service.IdentityProviderService;
 import it.getinsight.module.level.repository.LevelRepository;
 import it.getinsight.module.level.entity.LevelEntity;
 import it.getinsight.module.level.entity.LevelType;
+import it.getinsight.module.role.dto.ApprovalPolicyDTO;
+import it.getinsight.module.role.dto.ApprovalPolicyRoleDTO;
 import it.getinsight.module.role.entity.RoleEntity;
+import it.getinsight.module.role.enuns.ApprovalPolicyType;
 import it.getinsight.module.role.repository.RoleRepository;
+import it.getinsight.module.role.service.ApprovalPolicyService;
 import it.getinsight.module.role.service.RoleLevelPolicyService;
 import it.getinsight.module.role.service.RoleValidationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.cache.annotation.CacheEvict;
@@ -44,7 +51,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.*;
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -71,6 +77,7 @@ public class ClientExportService {
     private final LevelRepository levelRepository;
     private final IdentityProviderService identityProviderService;
     private final RoleLevelPolicyService roleLevelPolicyService;
+    private final ApprovalPolicyService approvalPolicyService;
     private final ClientValidationService clientValidationService;
     private final RoleValidationService roleValidationService;
     private final KeycloakProperties keycloakProperties;
@@ -120,7 +127,7 @@ public class ClientExportService {
         var roles = includeRoles
             ? roleRepository.findAllByClient(client).stream()
                 .filter(role -> !roleValidationService.isIgnoredRoleName(role.getName()))
-                .map(clientExportMapper::toExportRole)
+                .map(this::toExportRole)
                 .toList()
             : List.<ClientExportRoleDTO>of();
 
@@ -129,6 +136,56 @@ public class ClientExportService {
             .configurations(configurations)
             .roles(roles)
             .build();
+    }
+
+    private ClientExportRoleDTO toExportRole(RoleEntity roleEntity) {
+        var base = clientExportMapper.toExportRole(roleEntity);
+        return ClientExportRoleDTO.builder()
+            .name(base.name())
+            .label(base.label())
+            .description(base.description())
+            .icon(base.icon())
+            .parentName(base.parentName())
+            .levelName(base.levelName())
+            .levelType(base.levelType())
+            .approvalPolicies(toExportApprovalPolicies(roleEntity))
+            .build();
+    }
+
+    private List<ClientExportApprovalPolicyDTO> toExportApprovalPolicies(RoleEntity roleEntity) {
+        var byType = new EnumMap<ApprovalPolicyType, it.getinsight.module.role.entity.ApprovalPolicyEntity>(ApprovalPolicyType.class);
+        Optional.ofNullable(roleEntity.getApprovalPolicies()).orElse(List.of()).stream()
+            .filter(Objects::nonNull)
+            .filter(policy -> policy.getType() != null)
+            .forEach(policy -> byType.put(policy.getType(), policy));
+
+        return Arrays.stream(ApprovalPolicyType.values())
+            .map(type -> {
+                var policy = byType.get(type);
+                return ClientExportApprovalPolicyDTO.builder()
+                    .type(type)
+                    .enabled(policy != null && Boolean.TRUE.equals(policy.getEnabled()))
+                    .roles(toExportPolicyTargets(policy))
+                    .build();
+            })
+            .toList();
+    }
+
+    private List<ClientExportApprovalPolicyRoleDTO> toExportPolicyTargets(it.getinsight.module.role.entity.ApprovalPolicyEntity policy) {
+        if (policy == null || policy.getRoles() == null || policy.getRoles().isEmpty()) {
+            return List.of();
+        }
+        return policy.getRoles().stream()
+            .filter(Objects::nonNull)
+            .filter(target -> Boolean.TRUE.equals(target.getActive()))
+            .filter(target -> target.getRole() != null && StringUtils.isNotBlank(target.getRole().getName()))
+            .map(target -> ClientExportApprovalPolicyRoleDTO.builder()
+                .roleName(target.getRole().getName())
+                .canApprove(Boolean.TRUE.equals(target.getCanApprove()))
+                .canReject(Boolean.TRUE.equals(target.getCanReject()))
+                .canRevoke(Boolean.TRUE.equals(target.getCanRevoke()))
+                .build())
+            .toList();
     }
 
     @CacheEvict(value = {"clients", "getTotalClients"}, allEntries = true)
@@ -374,6 +431,7 @@ public class ClientExportService {
 
         var upserted = upsertRoles(client, roleList, counters);
         applyRoleParents(client, roleList, upserted);
+        applyApprovalPolicies(roleList, upserted);
         if (force) {
             deleteMissingRoles(client, providedNames, counters);
         }
@@ -474,9 +532,8 @@ public class ClientExportService {
                 entity.setActive(true);
                 created = true;
             }
-
-            entity.setClient(client);
             var label = StringUtils.trimToNull(dto.label());
+            entity.setClient(client);
             entity.setLabel(label != null ? label : name);
             entity.setDescription(dto.description());
             entity.setIcon(dto.icon());
@@ -504,6 +561,64 @@ public class ClientExportService {
             synchronizeRoleInIdp(client, entity);
         }
         return upserted;
+    }
+
+    private void applyApprovalPolicies(List<ClientExportRoleDTO> roles, Map<String, RoleEntity> upserted) {
+        for (var dto : roles) {
+            if (dto == null || StringUtils.isBlank(dto.name())) {
+                continue;
+            }
+            var role = upserted.get(dto.name().trim().toLowerCase(Locale.ROOT));
+            if (role == null) {
+                continue;
+            }
+            var approvalPolicies = toApprovalPolicies(dto.approvalPolicies(), upserted);
+            approvalPolicyService.syncPolicies(role, approvalPolicies);
+            roleRepository.save(role);
+        }
+    }
+
+    private List<ApprovalPolicyDTO> toApprovalPolicies(List<ClientExportApprovalPolicyDTO> exportedPolicies,
+                                                       Map<String, RoleEntity> upserted) {
+        if (exportedPolicies == null || exportedPolicies.isEmpty()) {
+            return List.of();
+        }
+        return exportedPolicies.stream()
+            .filter(Objects::nonNull)
+            .filter(policy -> policy.type() != null)
+            .map(policy -> ApprovalPolicyDTO.builder()
+                .type(policy.type())
+                .enabled(Boolean.TRUE.equals(policy.enabled()))
+                .roles(toApprovalPolicyRoles(policy, upserted))
+                .build())
+            .toList();
+    }
+
+    private List<ApprovalPolicyRoleDTO> toApprovalPolicyRoles(ClientExportApprovalPolicyDTO policy,
+                                                              Map<String, RoleEntity> upserted) {
+        if (policy == null || policy.type() == ApprovalPolicyType.AUTO_APPROVAL) {
+            return List.of();
+        }
+        return Optional.ofNullable(policy.roles()).orElse(List.of()).stream()
+            .filter(Objects::nonNull)
+            .map(target -> {
+                var targetRoleName = StringUtils.trimToNull(target.roleName());
+                if (targetRoleName == null) {
+                    return null;
+                }
+                var targetRole = upserted.get(targetRoleName.toLowerCase(Locale.ROOT));
+                if (targetRole == null || targetRole.getId() == null) {
+                    throw ROLE_NOT_FOUND_ERROR.resourceNotFoundException();
+                }
+                return ApprovalPolicyRoleDTO.builder()
+                    .roleId(targetRole.getId())
+                    .canApprove(Boolean.TRUE.equals(target.canApprove()))
+                    .canReject(Boolean.TRUE.equals(target.canReject()))
+                    .canRevoke(Boolean.TRUE.equals(target.canRevoke()))
+                    .build();
+            })
+            .filter(Objects::nonNull)
+            .toList();
     }
 
     private void deleteMissingRoles(ClientEntity client,
