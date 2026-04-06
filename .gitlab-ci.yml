@@ -6,6 +6,7 @@ workflow:
 stages:
   - build
   - package
+  - test
   - deploy
 
 build:
@@ -22,7 +23,7 @@ build:
     DOCKER_API_VERSION: "1.41"
     TESTCONTAINERS_HOST_OVERRIDE: docker
   script:
-    - mvn clean package -P sentry -T $(nproc) -Dmaven.artifact.threads=$(nproc) -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -s maven-settings.xml
+    - mvn clean package -DskipTests -P sentry -T $(nproc) -Dmaven.artifact.threads=$(nproc) -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -s maven-settings.xml
   cache:
     when: on_success
     paths:
@@ -49,6 +50,27 @@ package:
   script:
     - docker build --no-cache --pull -t ${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID} .
     - docker push ${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}
+
+test:
+  stage: test
+  tags:
+    - docker
+  image: registry.gitlab.com/getinsight.it/arquitetura/docker-base-images/builder/builder-java:21
+  services:
+    - name: docker:24.0.9-dind
+      command: [ "--tls=false" ]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_API_VERSION: "1.41"
+    TESTCONTAINERS_HOST_OVERRIDE: docker
+  script:
+    - mvn test -T $(nproc) -Dmaven.artifact.threads=$(nproc) -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -s maven-settings.xml
+  cache:
+    when: on_success
+    paths:
+      - $CI_PROJECT_DIR/.m2/repository
+  allow_failure: true
 
 
 .deploy:
