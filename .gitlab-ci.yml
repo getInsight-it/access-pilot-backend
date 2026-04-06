@@ -13,6 +13,13 @@ build:
   tags:
     - docker
   image: registry.gitlab.com/getinsight.it/arquitetura/docker-base-images/builder/builder-java:21
+  services:
+    - name: docker:dind
+      command: [ "--tls=false" ]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    TESTCONTAINERS_HOST_OVERRIDE: docker
   script:
     - mvn clean package -P sentry -T $(nproc) -Dmaven.artifact.threads=$(nproc) -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -s maven-settings.xml
   cache:
