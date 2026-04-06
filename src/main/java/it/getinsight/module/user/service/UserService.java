@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static it.getinsight.message.MessageProperty.USER_NOT_FOUND_ERROR;
 
@@ -141,7 +143,8 @@ public class UserService {
         }
 
         return authentication.getAuthorities().stream()
-            .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+            .map(GrantedAuthority::getAuthority)
+            .anyMatch(Set.of("ROLE_ADMIN", "ADMIN")::contains);
     }
 
 }

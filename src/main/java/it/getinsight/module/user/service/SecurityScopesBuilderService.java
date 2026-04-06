@@ -39,7 +39,7 @@ public class SecurityScopesBuilderService {
 
         List<String> sameLevels = scopes.stream()
             .flatMap(s ->
-                roleRepository.findDescendantRoles(s.roleId(), s.clientId())
+                roleRepository.findDirectChildRoles(s.roleId(), s.clientId())
                     .stream()
                     .filter(roleEntity ->
                         roleEntity != null
@@ -60,7 +60,7 @@ public class SecurityScopesBuilderService {
 
         List<String> hierarchyLevels = scopes.stream()
             .flatMap(s ->
-                roleRepository.findDescendantRoles(s.roleId(), s.clientId())
+                roleRepository.findDirectChildRoles(s.roleId(), s.clientId())
                     .stream()
                     .filter(roleEntity ->
                         roleEntity != null
@@ -171,7 +171,7 @@ public class SecurityScopesBuilderService {
                                 + ":" + WILDCARD
                                 + ":" + WILDCARD);
 
-                            roleRepository.findDescendantRoles(roleEntity.getId(), roleEntity.getClient().getId())
+                            roleRepository.findDirectChildRoles(roleEntity.getId(), roleEntity.getClient().getId())
                                 .stream()
                                 .filter(descendant -> descendant.getLevel() == null)
                                 .map(descendant -> descendant.getClient().getId()

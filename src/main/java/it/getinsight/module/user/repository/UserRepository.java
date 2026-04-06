@@ -13,4 +13,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, Dynamic
 
     Optional<UserEntity> findByExternalId(String id);
 
+    Optional<UserEntity> findByUsername(String username);
+
 }

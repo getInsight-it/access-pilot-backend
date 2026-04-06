@@ -44,8 +44,7 @@ public class RequestStatusManagementService {
         }
     }
 
-
-    private void confirmRoles(RequestEntity entity) {
+    public void confirmRoles(RequestEntity entity) {
         try {
             var roleEntity = roleRepository.findById(entity.getRole().getId())
                 .orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);

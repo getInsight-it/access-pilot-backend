@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_098" author="luan.rodrigues@getinsight.it">
+
+        <createSequence sequenceName="SQ_POLITICA_APROVACAO" minValue="1" incrementBy="1" startValue="1"/>
+        <createSequence sequenceName="SQ_POLITICA_APROVACAO_ROLE" minValue="1" incrementBy="1" startValue="1"/>
+
+        <createTable tableName="TB_POLITICA_APROVACAO">
+            <column name="ID" type="BIGINT" defaultValueSequenceNext="SQ_POLITICA_APROVACAO">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="ID_ROLE" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TIPO_POLITICA" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="HABILITADA" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ATIVO" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_CRIACAO" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP"/>
+        </createTable>
+
+        <addUniqueConstraint tableName="TB_POLITICA_APROVACAO"
+                             columnNames="ID_ROLE, TIPO_POLITICA"
+                             constraintName="UK_POLITICA_APROVACAO_ROLE_TIPO"/>
+
+        <addForeignKeyConstraint constraintName="FK_POLITICA_APROVACAO_ROLE"
+                                 baseTableName="TB_POLITICA_APROVACAO"
+                                 baseColumnNames="ID_ROLE"
+                                 referencedTableName="TB_ROLE"
+                                 referencedColumnNames="ID"/>
+
+        <createIndex tableName="TB_POLITICA_APROVACAO" indexName="IDX_POLITICA_APROVACAO_ROLE">
+            <column name="ID_ROLE"/>
+        </createIndex>
+
+        <createTable tableName="TB_POLITICA_APROVACAO_ROLE">
+            <column name="ID" type="BIGINT" defaultValueSequenceNext="SQ_POLITICA_APROVACAO_ROLE">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="ID_POLITICA" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ID_ROLE" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="PODE_APROVAR" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="PODE_REJEITAR" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="PODE_REVOGAR" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ATIVO" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CRIADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_CRIACAO" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ATUALIZADO_POR" type="VARCHAR(255)"/>
+            <column name="DATA_ATUALIZACAO" type="TIMESTAMP"/>
+        </createTable>
+
+        <addUniqueConstraint tableName="TB_POLITICA_APROVACAO_ROLE"
+                             columnNames="ID_POLITICA, ID_ROLE"
+                             constraintName="UK_POLITICA_APROVACAO_ROLE"/>
+
+        <addForeignKeyConstraint constraintName="FK_POLITICA_APROVACAO_ROLE_POLITICA"
+                                 baseTableName="TB_POLITICA_APROVACAO_ROLE"
+                                 baseColumnNames="ID_POLITICA"
+                                 referencedTableName="TB_POLITICA_APROVACAO"
+                                 referencedColumnNames="ID"/>
+
+        <addForeignKeyConstraint constraintName="FK_POLITICA_APROVACAO_ROLE_ROLE"
+                                 baseTableName="TB_POLITICA_APROVACAO_ROLE"
+                                 baseColumnNames="ID_ROLE"
+                                 referencedTableName="TB_ROLE"
+                                 referencedColumnNames="ID"/>
+
+        <createIndex tableName="TB_POLITICA_APROVACAO_ROLE" indexName="IDX_POLITICA_APROVACAO_ROLE_POLITICA">
+            <column name="ID_POLITICA"/>
+        </createIndex>
+
+        <createIndex tableName="TB_POLITICA_APROVACAO_ROLE" indexName="IDX_POLITICA_APROVACAO_ROLE_ROLE">
+            <column name="ID_ROLE"/>
+        </createIndex>
+
+        <sql>ALTER TABLE TB_ROLE DROP COLUMN IF EXISTS AUTO_APROVAVEL;</sql>
+
+        <rollback>
+            <addColumn tableName="TB_ROLE">
+                <column name="AUTO_APROVAVEL" type="BOOLEAN" defaultValueBoolean="false">
+                    <constraints nullable="false"/>
+                </column>
+            </addColumn>
+
+            <dropTable tableName="TB_POLITICA_APROVACAO_ROLE"/>
+            <dropTable tableName="TB_POLITICA_APROVACAO"/>
+            <dropSequence sequenceName="SQ_POLITICA_APROVACAO_ROLE"/>
+            <dropSequence sequenceName="SQ_POLITICA_APROVACAO"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

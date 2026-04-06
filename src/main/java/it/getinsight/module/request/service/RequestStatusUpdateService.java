@@ -4,7 +4,6 @@ import it.getinsight.module.request.dto.RequestUpdateDTO;
 import it.getinsight.module.request.entity.RequestEntity;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.request.repository.RequestRepository;
-import it.getinsight.module.role.service.RoleService;
 import it.getinsight.module.user.repository.UserRepository;
 import it.getinsight.module.user.service.AuthenticationContextService;
 import it.getinsight.module.user.service.UserService;
@@ -25,22 +24,18 @@ public class RequestStatusUpdateService {
 
     private final AuthenticationContextService authenticationContextService;
     private final UserService userService;
-    private final RoleService roleService;
     private final UserAccessValidationService userAccessValidationService;
     private final UserRepository userRepository;
     private final RequestRepository requestRepository;
 
 
     public boolean isLoggedUserAssignedAsApprover(RequestEntity requestEntity) {
-        if (userAccessValidationService.hasNoValidScopeWithHierarchyForRequest(requestEntity)) {
-            return false;
-        }
-
-        var currentUserId = authenticationContextService.getCurrentUserId();
-        var approvingUserDTO = userService.findOrImportByExternalId(currentUserId);
-        var approvingUsersDTO = roleService.getOrImportApprovesByRequest(requestEntity);
-
-        return approvingUsersDTO.stream().anyMatch(obj -> obj.id().equals(approvingUserDTO.id()));
+        return switch (requestEntity.getStatus()) {
+            case APPROVED -> userAccessValidationService.canApproveRequest(requestEntity);
+            case REJECTED -> userAccessValidationService.canRejectRequest(requestEntity);
+            case REVOKED -> userAccessValidationService.canRevokeRequest(requestEntity);
+            default -> false;
+        };
     }
 
 
@@ -53,11 +48,7 @@ public class RequestStatusUpdateService {
         var newStatus = RequestStatus.valueOf(requestUpdateDTO.status());
         var currentStatus = requestEntity.getStatus();
 
-        if (newStatus == RequestStatus.REVOKED && currentStatus != RequestStatus.APPROVED) {
-                throw REQUEST_INVALID_STATUS_TRANSITION
-                    .bind(currentStatus.name(), newStatus.name())
-                    .businessException();
-        }
+        validateStatusTransition(currentStatus, newStatus);
 
         requestEntity.setStatus(newStatus);
 
@@ -71,6 +62,20 @@ public class RequestStatusUpdateService {
                 requestEntity.setFinalReason(requestUpdateDTO.finalReason());
             }
             default -> log.warn("Invalid status transition from {} to {}", currentStatus, newStatus);
+        }
+    }
+
+    private void validateStatusTransition(RequestStatus currentStatus, RequestStatus newStatus) {
+        boolean isValid = switch (newStatus) {
+            case APPROVED, REJECTED, CANCELED -> currentStatus == RequestStatus.PENDING;
+            case REVOKED -> currentStatus == RequestStatus.APPROVED;
+            default -> false;
+        };
+
+        if (!isValid) {
+            throw REQUEST_INVALID_STATUS_TRANSITION
+                .bind(currentStatus.name(), newStatus.name())
+                .businessException();
         }
     }
 
