@@ -61,6 +61,15 @@ public interface RoleRepository extends JpaRepository<RoleEntity, Long>, Dynamic
     List<RoleEntity> findDescendantRoles(@Param("parentRoleId") Long parentRoleId, @Param("clientId") Long clientId);
 
     @Query(value = """
+        SELECT r.*
+        FROM TB_ROLE r
+        WHERE r.ID_ROLE_PARENT = :parentRoleId
+          AND r.ATIVO = true
+          AND (:clientId IS NULL OR r.ID_CLIENTE = :clientId)
+        """, nativeQuery = true)
+    List<RoleEntity> findDirectChildRoles(@Param("parentRoleId") Long parentRoleId, @Param("clientId") Long clientId);
+
+    @Query(value = """
         WITH RECURSIVE role_ancestors AS (
             SELECT r.*
             FROM TB_ROLE r

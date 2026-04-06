@@ -236,7 +236,9 @@ public class UserAccessValidationService {
         if (!roleService.isFallbackScenario(requestEntity)) {
             return false;
         }
-        return isCurrentUserApproverForRequest(requestEntity);
+
+        var currentUserExternalId = authenticationContextService.getCurrentUserId();
+        return roleService.isFallbackApproverExternalId(currentUserExternalId);
     }
 
     public void validateUserPermissionToUpdateToAllowOrDenyRequest(RequestEntity requestEntity) {

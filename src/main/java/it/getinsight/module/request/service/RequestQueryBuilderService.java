@@ -256,7 +256,12 @@ public class RequestQueryBuilderService {
             return null;
         }
 
-        var currentUser = userService.findOrImportByExternalId(authenticationContextService.getCurrentUserId());
+        var currentUserExternalId = authenticationContextService.getCurrentUserId();
+        if (!roleService.isFallbackApproverExternalId(currentUserExternalId)) {
+            log.debug("Fallback spec skipped: user is not accesspilot fallback approver. externalId={}", currentUserExternalId);
+            return null;
+        }
+
         var structurallyFallbackRoleIds = findStructurallyFallbackRoleIds();
         if (structurallyFallbackRoleIds.isEmpty()) {
             log.debug("Fallback spec skipped: no structurally fallback-eligible roles found");
@@ -271,20 +276,16 @@ public class RequestQueryBuilderService {
 
         var fallbackRequestIds = candidateFallbackRequests.stream()
             .filter(roleService::isFallbackScenario)
-            .filter(request ->
-                roleService.getOrImportApprovesByRequest(request).stream()
-                    .anyMatch(user -> user.id().equals(currentUser.id()))
-            )
             .map(RequestEntity::getId)
             .distinct()
             .toList();
 
         if (fallbackRequestIds.isEmpty()) {
-            log.debug("Fallback spec result empty for userId={}", currentUser.id());
+            log.debug("Fallback spec result empty for externalId={}", currentUserExternalId);
             return null;
         }
 
-        log.debug("Fallback spec request IDs for userId={}: {}", currentUser.id(), fallbackRequestIds);
+        log.debug("Fallback spec request IDs for externalId={}: {}", currentUserExternalId, fallbackRequestIds);
         return RequestSpecification.requestIdIn(fallbackRequestIds);
     }
 

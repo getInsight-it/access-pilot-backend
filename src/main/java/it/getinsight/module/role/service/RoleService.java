@@ -182,11 +182,11 @@ public class RoleService {
             log.debug("Fallback scenario=false: request or role is null");
             return false;
         }
-        if (!resolveApproversByLateralPolicy(
+        if (hasEligibleApproversByLateralPolicy(
             requestEntity.getRole(),
             requestEntity,
             target -> Boolean.TRUE.equals(target.getCanApprove()) || Boolean.TRUE.equals(target.getCanReject())
-        ).isEmpty()) {
+        )) {
             log.debug("Fallback scenario=false: lateral approvers found for requestId={}", requestEntity.getId());
             return false;
         }
@@ -199,9 +199,19 @@ public class RoleService {
             log.debug("Fallback scenario=false: requested role parent has parent for requestId={}", requestEntity.getId());
             return false;
         }
-        var fallback = findEligibleApproversByRole(requestedRole.getRole(), requestEntity).isEmpty();
-        log.debug("Fallback scenario={} for requestId={} (parent approvers empty={})", fallback, requestEntity.getId(), fallback);
+        var hasParentApprovers = hasEligibleApproversByRole(requestedRole.getRole(), requestEntity);
+        var fallback = !hasParentApprovers;
+        log.debug("Fallback scenario={} for requestId={} (parent approvers empty={})", fallback, requestEntity.getId(), !hasParentApprovers);
         return fallback;
+    }
+
+    public boolean isFallbackApproverExternalId(String externalId) {
+        if (StringUtils.isBlank(externalId)) {
+            return false;
+        }
+        return findFallbackApproverUsersFromIdentityProvider().stream()
+            .map(UserRepresentationDTO::id)
+            .anyMatch(externalId::equals);
     }
 
     private List<UserDTO> findEligibleApproversByRole(RoleEntity approverRole, RequestEntity requestEntity) {
@@ -234,6 +244,24 @@ public class RoleService {
                 Collectors.toMap(UserDTO::id, user -> user, (left, right) -> left),
                 map -> List.copyOf(map.values())
             ));
+    }
+
+    private boolean hasEligibleApproversByLateralPolicy(
+        RoleEntity requestedRole,
+        RequestEntity requestEntity,
+        Predicate<ApprovalPolicyRoleEntity> targetPredicate
+    ) {
+        var lateralPolicy = approvalPolicyService.findEnabledLateralPolicy(requestedRole).orElse(null);
+        if (lateralPolicy == null || lateralPolicy.getRoles() == null || lateralPolicy.getRoles().isEmpty()) {
+            return false;
+        }
+
+        return lateralPolicy.getRoles().stream()
+            .filter(target -> Boolean.TRUE.equals(target.getActive()))
+            .filter(targetPredicate)
+            .map(ApprovalPolicyRoleEntity::getRole)
+            .filter(Objects::nonNull)
+            .anyMatch(targetRole -> hasEligibleApproversByRole(targetRole, requestEntity));
     }
 
     private List<UserDTO> unionApprovers(List<UserDTO> first, List<UserDTO> second) {
@@ -300,7 +328,21 @@ public class RoleService {
         }
     }
 
+    private boolean hasEligibleApproversByRole(RoleEntity approverRole, RequestEntity requestEntity) {
+        if (approverRole == null || approverRole.getClient() == null) {
+            return false;
+        }
+        return identityProviderService.getUsersByClientUUIDAndRoleName(approverRole.getClient().getClientUUID(), approverRole.getName()).stream()
+            .anyMatch(user -> isEligibleApproverForRequest(user, approverRole, requestEntity));
+    }
+
     private List<UserDTO> findFallbackApprovers() {
+        return findFallbackApproverUsersFromIdentityProvider().stream()
+            .map(user -> userService.findOrImportByExternalId(user.id()))
+            .toList();
+    }
+
+    private List<UserRepresentationDTO> findFallbackApproverUsersFromIdentityProvider() {
         var accessPilotClient = clientRepository.findByClientId(keycloakProperties.getClientId()).orElse(null);
         if (accessPilotClient == null || StringUtils.isBlank(accessPilotClient.getClientUUID())) {
             log.debug("No fallback approvers: accesspilot client not found or missing UUID. clientId={}", keycloakProperties.getClientId());
@@ -308,9 +350,7 @@ public class RoleService {
         }
         var users = identityProviderService.getUsersByClientUUIDAndRoleName(accessPilotClient.getClientUUID(), ADMIN_ROLE_NAME);
         log.debug("Fallback approvers fetched from IDP: {} user(s) for clientUUID={}", users.size(), accessPilotClient.getClientUUID());
-        return users.stream()
-            .map(user -> userService.findOrImportByExternalId(user.id()))
-            .toList();
+        return users;
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -320,6 +360,10 @@ public class RoleService {
             final var entity = roleRepository.findById(role.id()).orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
             final var roleEntityParent = role.parentId() != null ? roleRepository.findById(role.parentId()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::resourceNotFoundException) : null;
             final var clientEntity = role.clientId() != null ? clientRepository.findById(role.clientId()).orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException) : null;
+
+            if (requestRepository.countByStatusAndRole(RequestStatus.PENDING, entity) > 0) {
+                throw ROLE_WITH_PENDING_REQUESTS_ERROR.businessException();
+            }
 
             if (roleEntityParent != null) {
                 Long parentLevelId = roleEntityParent.getLevel() != null ? roleEntityParent.getLevel().getId() : null;
