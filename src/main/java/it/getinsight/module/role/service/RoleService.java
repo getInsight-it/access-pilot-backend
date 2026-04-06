@@ -20,8 +20,10 @@ import it.getinsight.module.role.dto.RoleDTO;
 import it.getinsight.module.role.dto.RoleFilterDTO;
 import it.getinsight.module.role.dto.RoleResponseDTO;
 import it.getinsight.module.role.dto.RoleUpdateHierarchyDTO;
+import it.getinsight.module.role.entity.ApprovalPolicyRoleEntity;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.mapper.RoleFilterMapper;
+import it.getinsight.module.role.mapper.ApprovalPolicyMapper;
 import it.getinsight.module.role.mapper.RoleMapper;
 import it.getinsight.module.role.mapper.RoleRepresentationMapper;
 import it.getinsight.module.role.mapper.RoleResponseMapper;
@@ -32,6 +34,7 @@ import it.getinsight.module.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -40,6 +43,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static it.getinsight.message.MessageProperty.*;
 import static it.getinsight.module.role.repository.specification.RoleSpecification.*;
@@ -57,6 +62,8 @@ public class RoleService {
     private final RoleFilterMapper roleFilterMapper;
     private final IdentityProviderService identityProviderService;
     private final RoleSynchronizationService roleSynchronizationService;
+    private final ApprovalPolicyService approvalPolicyService;
+    private final ApprovalPolicyMapper approvalPolicyMapper;
     private final UserService userService;
     private final RequestRepository requestRepository;
     private final LevelRepository levelRepository;
@@ -70,7 +77,7 @@ public class RoleService {
 
     public List<RoleResponseDTO> getAllRoles(String filter, Boolean hasParent) {
         return roleRepository.findAll(hasClientId(filter).and(hasParent(hasParent))).stream()
-            .map(roleResponseMapper::toDto)
+            .map(this::toRoleResponseDto)
             .toList();
     }
 
@@ -90,7 +97,10 @@ public class RoleService {
             ));
 
         final var page = roleRepository.findAll(spec, PaginationHelper.toPageable(configPage));
-        return PaginationHelper.toPageResponse(roleResponseMapper.toDto(page.getContent()), page.getTotalElements());
+        return PaginationHelper.toPageResponse(
+            page.getContent().stream().map(this::toRoleResponseDto).toList(),
+            page.getTotalElements()
+        );
     }
 
     public PageableResponseModel<RoleResponseDTO> getAllRolesPageableByName(PageableRequestModel<String> configPage) {
@@ -100,16 +110,20 @@ public class RoleService {
         final var spec = nameContains(model.getName());
 
         final var page = roleRepository.findAll(spec, PaginationHelper.toPageable(configPage));
-        return PaginationHelper.toPageResponse(roleResponseMapper.toDto(page.getContent()), page.getTotalElements());
+        return PaginationHelper.toPageResponse(
+            page.getContent().stream().map(this::toRoleResponseDto).toList(),
+            page.getTotalElements()
+        );
     }
 
     public RoleResponseDTO getById(Long id) {
         var entity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
-        return roleResponseMapper.toDto(entity);
+        return toRoleResponseDto(entity);
     }
 
 
     @Transactional(propagation = Propagation.REQUIRED)
+    @CacheEvict(value = "securityScopes", allEntries = true)
     public void synchronizeRoles(List<String> clientIds) {
         roleSynchronizationService.synchronizeRoles(clientIds);
     }
@@ -117,7 +131,14 @@ public class RoleService {
     @Transactional(propagation = Propagation.REQUIRED)
     public List<UserDTO> getOrImportApprovesByRoleId(Long id) {
         var requestedRole = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
-        return resolveApproversByHierarchy(requestedRole);
+        return unionApprovers(
+            resolveApproversByHierarchy(requestedRole),
+            resolveApproversByLateralPolicy(
+                requestedRole,
+                null,
+                target -> Boolean.TRUE.equals(target.getCanApprove()) || Boolean.TRUE.equals(target.getCanReject())
+            )
+        );
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -125,7 +146,14 @@ public class RoleService {
         if (requestEntity == null || requestEntity.getRole() == null) {
             return List.of();
         }
-        return resolveApproversByHierarchy(requestEntity.getRole(), requestEntity);
+        return unionApprovers(
+            resolveApproversByHierarchy(requestEntity.getRole(), requestEntity),
+            resolveApproversByLateralPolicy(
+                requestEntity.getRole(),
+                requestEntity,
+                target -> Boolean.TRUE.equals(target.getCanApprove()) || Boolean.TRUE.equals(target.getCanReject())
+            )
+        );
     }
 
     private List<UserDTO> resolveApproversByHierarchy(RoleEntity requestedRole) {
@@ -151,16 +179,39 @@ public class RoleService {
 
     public boolean isFallbackScenario(RequestEntity requestEntity) {
         if (requestEntity == null || requestEntity.getRole() == null) {
+            log.debug("Fallback scenario=false: request or role is null");
+            return false;
+        }
+        if (hasEligibleApproversByLateralPolicy(
+            requestEntity.getRole(),
+            requestEntity,
+            target -> Boolean.TRUE.equals(target.getCanApprove()) || Boolean.TRUE.equals(target.getCanReject())
+        )) {
+            log.debug("Fallback scenario=false: lateral approvers found for requestId={}", requestEntity.getId());
             return false;
         }
         var requestedRole = requestEntity.getRole();
         if (requestedRole.getRole() == null) {
+            log.debug("Fallback scenario=true: requested role has no parent for requestId={}", requestEntity.getId());
             return true;
         }
         if (requestedRole.getRole().getRole() != null) {
+            log.debug("Fallback scenario=false: requested role parent has parent for requestId={}", requestEntity.getId());
             return false;
         }
-        return findEligibleApproversByRole(requestedRole.getRole(), requestEntity).isEmpty();
+        var hasParentApprovers = hasEligibleApproversByRole(requestedRole.getRole(), requestEntity);
+        var fallback = !hasParentApprovers;
+        log.debug("Fallback scenario={} for requestId={} (parent approvers empty={})", fallback, requestEntity.getId(), !hasParentApprovers);
+        return fallback;
+    }
+
+    public boolean isFallbackApproverExternalId(String externalId) {
+        if (StringUtils.isBlank(externalId)) {
+            return false;
+        }
+        return findFallbackApproverUsersFromIdentityProvider().stream()
+            .map(UserRepresentationDTO::id)
+            .anyMatch(externalId::equals);
     }
 
     private List<UserDTO> findEligibleApproversByRole(RoleEntity approverRole, RequestEntity requestEntity) {
@@ -171,6 +222,57 @@ public class RoleService {
             .filter(user -> isEligibleApproverForRequest(user, approverRole, requestEntity))
             .map(user -> userService.findOrImportByExternalId(user.id()))
             .toList();
+    }
+
+    private List<UserDTO> resolveApproversByLateralPolicy(
+        RoleEntity requestedRole,
+        RequestEntity requestEntity,
+        Predicate<ApprovalPolicyRoleEntity> targetPredicate
+    ) {
+        var lateralPolicy = approvalPolicyService.findEnabledLateralPolicy(requestedRole).orElse(null);
+        if (lateralPolicy == null || lateralPolicy.getRoles() == null || lateralPolicy.getRoles().isEmpty()) {
+            return List.of();
+        }
+
+        return lateralPolicy.getRoles().stream()
+            .filter(target -> Boolean.TRUE.equals(target.getActive()))
+            .filter(targetPredicate)
+            .map(ApprovalPolicyRoleEntity::getRole)
+            .filter(Objects::nonNull)
+            .flatMap(targetRole -> findEligibleApproversByRole(targetRole, requestEntity).stream())
+            .collect(Collectors.collectingAndThen(
+                Collectors.toMap(UserDTO::id, user -> user, (left, right) -> left),
+                map -> List.copyOf(map.values())
+            ));
+    }
+
+    private boolean hasEligibleApproversByLateralPolicy(
+        RoleEntity requestedRole,
+        RequestEntity requestEntity,
+        Predicate<ApprovalPolicyRoleEntity> targetPredicate
+    ) {
+        var lateralPolicy = approvalPolicyService.findEnabledLateralPolicy(requestedRole).orElse(null);
+        if (lateralPolicy == null || lateralPolicy.getRoles() == null || lateralPolicy.getRoles().isEmpty()) {
+            return false;
+        }
+
+        return lateralPolicy.getRoles().stream()
+            .filter(target -> Boolean.TRUE.equals(target.getActive()))
+            .filter(targetPredicate)
+            .map(ApprovalPolicyRoleEntity::getRole)
+            .filter(Objects::nonNull)
+            .anyMatch(targetRole -> hasEligibleApproversByRole(targetRole, requestEntity));
+    }
+
+    private List<UserDTO> unionApprovers(List<UserDTO> first, List<UserDTO> second) {
+        return java.util.stream.Stream.concat(
+                Optional.ofNullable(first).orElse(List.of()).stream(),
+                Optional.ofNullable(second).orElse(List.of()).stream()
+            )
+            .collect(Collectors.collectingAndThen(
+                Collectors.toMap(UserDTO::id, user -> user, (left, right) -> left),
+                map -> List.copyOf(map.values())
+            ));
     }
 
     private boolean isEligibleApproverForRequest(UserRepresentationDTO user, RoleEntity approverRole, RequestEntity requestEntity) {
@@ -226,22 +328,42 @@ public class RoleService {
         }
     }
 
-    private List<UserDTO> findFallbackApprovers() {
-        var accessPilotClient = clientRepository.findByClientId(keycloakProperties.getClientId()).orElse(null);
-        if (accessPilotClient == null || StringUtils.isBlank(accessPilotClient.getClientUUID())) {
-            return List.of();
+    private boolean hasEligibleApproversByRole(RoleEntity approverRole, RequestEntity requestEntity) {
+        if (approverRole == null || approverRole.getClient() == null) {
+            return false;
         }
-        return identityProviderService.getUsersByClientUUIDAndRoleName(accessPilotClient.getClientUUID(), ADMIN_ROLE_NAME).stream()
+        return identityProviderService.getUsersByClientUUIDAndRoleName(approverRole.getClient().getClientUUID(), approverRole.getName()).stream()
+            .anyMatch(user -> isEligibleApproverForRequest(user, approverRole, requestEntity));
+    }
+
+    private List<UserDTO> findFallbackApprovers() {
+        return findFallbackApproverUsersFromIdentityProvider().stream()
             .map(user -> userService.findOrImportByExternalId(user.id()))
             .toList();
     }
 
+    private List<UserRepresentationDTO> findFallbackApproverUsersFromIdentityProvider() {
+        var accessPilotClient = clientRepository.findByClientId(keycloakProperties.getClientId()).orElse(null);
+        if (accessPilotClient == null || StringUtils.isBlank(accessPilotClient.getClientUUID())) {
+            log.debug("No fallback approvers: accesspilot client not found or missing UUID. clientId={}", keycloakProperties.getClientId());
+            return List.of();
+        }
+        var users = identityProviderService.getUsersByClientUUIDAndRoleName(accessPilotClient.getClientUUID(), ADMIN_ROLE_NAME);
+        log.debug("Fallback approvers fetched from IDP: {} user(s) for clientUUID={}", users.size(), accessPilotClient.getClientUUID());
+        return users;
+    }
+
     @Transactional(propagation = Propagation.REQUIRED)
+    @CacheEvict(value = "securityScopes", allEntries = true)
     public void updateHierarchyRoles(List<RoleUpdateHierarchyDTO> roles) {
         for (RoleUpdateHierarchyDTO role : roles) {
             final var entity = roleRepository.findById(role.id()).orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
             final var roleEntityParent = role.parentId() != null ? roleRepository.findById(role.parentId()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::resourceNotFoundException) : null;
             final var clientEntity = role.clientId() != null ? clientRepository.findById(role.clientId()).orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException) : null;
+
+            if (requestRepository.countByStatusAndRole(RequestStatus.PENDING, entity) > 0) {
+                throw ROLE_WITH_PENDING_REQUESTS_ERROR.businessException();
+            }
 
             if (roleEntityParent != null) {
                 Long parentLevelId = roleEntityParent.getLevel() != null ? roleEntityParent.getLevel().getId() : null;
@@ -252,11 +374,13 @@ public class RoleService {
 
             entity.setRole(roleEntityParent);
             entity.setClient(clientEntity);
+            approvalPolicyService.syncPolicies(entity, approvalPolicyMapper.toRequestDtoList(entity.getApprovalPolicies()));
             roleRepository.save(entity);
         }
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
+    @CacheEvict(value = "securityScopes", allEntries = true)
     public RoleDTO createRole(RoleDTO roleDTO) {
         roleValidationService.validateRoleInput(roleDTO);
 
@@ -281,6 +405,10 @@ public class RoleService {
                 levelRepository.findById(roleDTO.levelId()).ifPresent(roleEntity::setLevel);
             }
             roleSynchronizationService.synchronizeWithDatabase(roleEntity);
+            var persistedRole = roleRepository.findByNameAndClient(roleDTO.name(), roleEntity.getClient())
+                .orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
+            approvalPolicyService.syncPolicies(persistedRole, roleDTO.approvalPolicies());
+            roleRepository.save(persistedRole);
         } catch (InfraException e) {
             log.info("Role already exists: {}", roleDTO.name());
             throw ROLE_ALREADY_EXISTS_ERROR.businessException(e);
@@ -305,6 +433,7 @@ public class RoleService {
 
 
     @Transactional(propagation = Propagation.REQUIRED)
+    @CacheEvict(value = "securityScopes", allEntries = true)
     public RoleDTO update(Long id, RoleDTO roleDTO) {
         var entity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
         if (requestRepository.countByStatusAndRole(RequestStatus.PENDING, entity) > 0) {
@@ -337,13 +466,15 @@ public class RoleService {
         entity.setDescription(roleDTO.description());
         entity.setLabel(roleDTO.label());
         entity.setIcon(roleDTO.icon());
+        approvalPolicyService.syncPolicies(entity, roleDTO.approvalPolicies());
         var saved = roleRepository.save(entity);
 
         validateDescendantLevels(saved);
-        return roleMapper.toDto(saved);
+        return toRoleDto(saved);
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
+    @CacheEvict(value = "securityScopes", allEntries = true)
     public void delete(Long id) {
         var roleEntity = roleRepository.findById(id).orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
         try {
@@ -362,5 +493,37 @@ public class RoleService {
             Long childLevelId = child.getLevel() != null ? child.getLevel().getId() : null;
             roleLevelPolicyService.validateChildLevelAssignment(parentLevelId, childLevelId);
         }
+    }
+
+    private RoleResponseDTO toRoleResponseDto(RoleEntity entity) {
+        var base = roleResponseMapper.toDto(entity);
+        return RoleResponseDTO.builder()
+            .id(base.id())
+            .roleExternalId(base.roleExternalId())
+            .name(base.name())
+            .label(base.label())
+            .icon(base.icon())
+            .description(base.description())
+            .roleParent(base.roleParent())
+            .client(base.client())
+            .level(base.level())
+            .approvalPolicies(approvalPolicyMapper.toDtoList(entity.getApprovalPolicies()))
+            .build();
+    }
+
+    private RoleDTO toRoleDto(RoleEntity entity) {
+        var base = roleMapper.toDto(entity);
+        return RoleDTO.builder()
+            .id(base.id())
+            .roleExternalId(base.roleExternalId())
+            .name(base.name())
+            .label(base.label())
+            .icon(base.icon())
+            .description(base.description())
+            .roleParent(base.roleParent())
+            .client(base.client())
+            .levelId(base.levelId())
+            .approvalPolicies(approvalPolicyMapper.toRequestDtoList(entity.getApprovalPolicies()))
+            .build();
     }
 }

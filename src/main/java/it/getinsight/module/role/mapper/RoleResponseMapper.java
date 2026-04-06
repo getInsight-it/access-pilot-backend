@@ -22,6 +22,7 @@ public interface RoleResponseMapper extends BaseMapper<RoleEntity, RoleResponseD
         target = "roleParent",
         source = "role"
     )
+    @Mapping(target = "approvalPolicies", ignore = true)
     @Mapping(target = "roleParent.roleParent", ignore = true)
     RoleResponseDTO toDto(RoleEntity entity);
 

@@ -121,7 +121,15 @@ public enum MessageProperty implements IMessageProperty {
     APPROVER_HIERARCHY_INVALID_ERROR("approver.hierarchy.invalid"),
     LEVEL_CANNOT_DELETE_WITH_CHILDREN("level.cannot.delete.with.children"),
 
-    CLIENT_ROLE_MANAGEMENT_NOT_ENABLED_ERROR("client.role.management.not.enabled.error");
+    CLIENT_ROLE_MANAGEMENT_NOT_ENABLED_ERROR("client.role.management.not.enabled.error"),
+
+    // Lateral Approval Policy Validation
+    LATERAL_POLICY_REQUIRES_PARENT_ERROR("lateral.policy.requires.parent"),
+    LATERAL_TARGET_SELF_REFERENCE_ERROR("lateral.target.self.reference"),
+    LATERAL_TARGET_INACTIVE_ERROR("lateral.target.inactive"),
+    LATERAL_TARGET_DIFFERENT_CLIENT_ERROR("lateral.target.different.client"),
+    LATERAL_TARGET_DIFFERENT_LEVEL_ERROR("lateral.target.different.level"),
+    LATERAL_TARGET_DIFFERENT_PARENT_ERROR("lateral.target.different.parent");
 
     private final String key;
 

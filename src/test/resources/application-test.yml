@@ -1,0 +1,107 @@
+app:
+  bootstrap:
+    import:
+      enabled: false
+
+server:
+  port: 0
+
+spring:
+  docker:
+    compose:
+      enabled: false
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      auto-commit: false
+      minimum-idle: 1
+      maximum-pool-size: 5
+      connection-timeout: 30000
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    generate-ddl: false
+    open-in-view: true
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        show_sql: false
+        format_sql: true
+        envers:
+          audit_table_suffix: _AUD
+          store_data_at_delete: true
+
+  liquibase:
+    enabled: true
+    drop-first: false
+    change-log: classpath:db/changelog-master.xml
+
+  data:
+    redis:
+      timeout: 2000ms
+
+  mail:
+    protocol: smtp
+    host: localhost
+    port: 3025
+    username:
+    password:
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${keycloak.issuer-uri}
+
+provider:
+  keycloak:
+    url: ${keycloak.url}
+    realm: access-pilot
+    client-id: accesspilot-backend
+    client-secret: test-secret
+    ignore-clients:
+      - realm-management
+      - broker
+      - security-admin-console
+      - account
+      - admin-cli
+      - account-console
+    ignore-roles:
+      - uma_protection
+
+jwt:
+  auth:
+    converter:
+      resource-id: accesspilot-backend
+      principal-attribute: preferred_username
+
+
+email-notification:
+  approver:
+    subject: Test Approval
+  status-request:
+    subject: Test Status
+  invitation:
+    subject: Test Invitation
+  url:
+    hint: Test URL
+    client-url: http://localhost:8080
+    frontend-url: http://localhost:3000
+
+logging:
+  level:
+    it.getinsight.module.request: DEBUG
+    it.getinsight.module.role: DEBUG
+    it.getinsight.module.level: DEBUG
+    it.getinsight.core.test: DEBUG
+    org.testcontainers: INFO
+    org.hibernate.SQL: INFO
+    org.springframework.boot.test: INFO

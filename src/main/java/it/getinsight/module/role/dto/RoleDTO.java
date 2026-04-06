@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Builder;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Builder
 public record RoleDTO(
@@ -30,6 +31,8 @@ public record RoleDTO(
 
     ClientDTO client,
 
-    Long levelId
+    Long levelId,
+
+    List<ApprovalPolicyDTO> approvalPolicies
 
 ) implements Serializable {}

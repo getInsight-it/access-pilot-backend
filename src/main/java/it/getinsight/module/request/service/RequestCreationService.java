@@ -10,6 +10,7 @@ import it.getinsight.module.request.mapper.RequestMapper;
 import it.getinsight.module.request.repository.RequestRepository;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.repository.RoleRepository;
+import it.getinsight.module.role.service.ApprovalPolicyService;
 import it.getinsight.module.role.service.RoleLevelPolicyService;
 import it.getinsight.module.user.entity.UserEntity;
 import it.getinsight.module.user.repository.UserRepository;
@@ -43,7 +44,9 @@ public class RequestCreationService {
     private final ProtocolGeneratorService protocolGeneratorService;
     private final RoleLevelPolicyService roleLevelPolicyService;
     private final RequestNotificationService requestNotificationService;
+    private final RequestStatusManagementService requestStatusManagementService;
     private final InvitationService invitationService;
+    private final ApprovalPolicyService approvalPolicyService;
 
     @Transactional(propagation = Propagation.REQUIRED)
     public RequestDTO createRequest(RequestDTO requestDTO, MultiValueMap<String, MultipartFile> attachments) {
@@ -59,14 +62,20 @@ public class RequestCreationService {
         var currentUserId = authenticationContextService.getCurrentUserId();
         var user = findOrCreateUser(currentUserId);
 
-        var entity = buildRequestEntityWithPendingStatus(requestDTO, user, roleEntity);
+        var isAutoApprovable = approvalPolicyService.isAutoApprovalEnabled(roleEntity);
+        var entity = buildRequestEntity(requestDTO, user, roleEntity, isAutoApprovable);
 
         requestRepository.save(entity);
         log.info("Request created with protocol: {} for user: {}", entity.getProtocolCode(), user.getEmail());
 
         requestAttachmentService.saveRequestFiles(attachments, configurations, entity);
 
-        requestNotificationService.publishRequestCreated(entity, user.getId().toString());
+        if (isAutoApprovable) {
+            requestStatusManagementService.confirmRoles(entity);
+            requestNotificationService.publishRequestStatusChanged(entity, user.getId().toString());
+        } else {
+            requestNotificationService.publishRequestCreated(entity, user.getId().toString());
+        }
 
         if (invitation != null) {
             invitationService.consumeInvitation(invitation.getId(), entity);
@@ -102,13 +111,14 @@ public class RequestCreationService {
         }
     }
 
-    private RequestEntity buildRequestEntityWithPendingStatus(RequestDTO requestDTO, UserEntity user, RoleEntity roleEntity) {
+    private RequestEntity buildRequestEntity(RequestDTO requestDTO, UserEntity user, RoleEntity roleEntity, boolean autoApprovable) {
         var entity = requestMapper.toEntity(requestDTO);
         entity.setRequestingUser(user);
         entity.setRole(roleEntity);
         entity.setLevel(roleEntity.getLevel());
         entity.setCodeItem(requestDTO.codeItem());
-        entity.setStatus(RequestStatus.PENDING);
+        entity.setStatus(autoApprovable ? RequestStatus.APPROVED : RequestStatus.PENDING);
+        entity.setApprovingUser(autoApprovable ? user : null);
         entity.setProtocolCode(protocolGeneratorService.generateUniqueProtocolCode());
         return entity;
     }

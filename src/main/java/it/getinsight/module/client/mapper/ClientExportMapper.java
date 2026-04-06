@@ -19,6 +19,7 @@ public interface ClientExportMapper {
 
     @Mapping(target = "parentName", source = "role.name")
     @Mapping(target = "levelName", source = "level.name")
+    @Mapping(target = "approvalPolicies", ignore = true)
     @Mapping(
         target = "levelType",
         expression = "java(entity.getLevel() != null && entity.getLevel().getType() != null ? entity.getLevel().getType().name() : null)"

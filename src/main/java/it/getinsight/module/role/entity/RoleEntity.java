@@ -8,6 +8,9 @@ import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.envers.Audited;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @Setter
 @Entity
@@ -55,5 +58,9 @@ public class RoleEntity extends AuditableEntity<Long, String> {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_ESFERA")
     private LevelEntity level;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ApprovalPolicyEntity> approvalPolicies = new ArrayList<>();
 
 }
