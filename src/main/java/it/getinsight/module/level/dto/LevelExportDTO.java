@@ -1,6 +1,7 @@
 package it.getinsight.module.level.dto;
 
 import it.getinsight.module.level.entity.LevelType;
+import it.getinsight.module.shared.enums.ColorPalette;
 import lombok.Builder;
 
 import java.io.Serial;
@@ -17,6 +18,7 @@ public record LevelExportDTO(
     String parentName,
     String externalUrl,
     String icon,
+    ColorPalette color,
     String apiKey,
     UUID uuid,
     List<LevelItemExportDTO> items

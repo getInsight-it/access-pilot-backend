@@ -368,20 +368,23 @@ public class RequestApprovalFixtureService {
         UserEntity user = userRepository.findByUsername(username)
             .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-        String roleCacheKey = clientCode + ":" + roleName;
         RoleEntity role = resolveRole(clientCode, roleName);
-
-        Long levelId = role.getLevel() != null ? role.getLevel().getId() : 0L;
-        String levelAttribute = String.format("%d:%d:%d:%s",
-            role.getClient().getId(),
-            role.getId(),
-            levelId,
-            itemCode != null ? itemCode : "0"
-        );
-
-        log.info("Setting levelAttribute for user {}: {}", username, levelAttribute);
-
-        keycloakHelper.setLevelAttribute(user.getExternalId(), levelAttribute);
+        String levelAttribute = null;
+        if (role.getLevel() != null) {
+            if (itemCode == null || itemCode.isBlank()) {
+                throw new RuntimeException("itemCode is required when role has level: " + roleName);
+            }
+            levelAttribute = String.format("%d:%d:%d:%s",
+                role.getClient().getId(),
+                role.getId(),
+                role.getLevel().getId(),
+                itemCode
+            );
+            log.info("Setting levelAttribute for user {}: {}", username, levelAttribute);
+            keycloakHelper.setLevelAttribute(user.getExternalId(), levelAttribute);
+        } else {
+            log.info("Skipping levelAttribute for user {}: role {} has no level", username, roleName);
+        }
 
         keycloakHelper.ensureClientExists(clientCode);
         keycloakHelper.ensureClientRoleExists(clientCode, roleName);

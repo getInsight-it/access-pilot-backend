@@ -145,6 +145,7 @@ public class ClientExportService {
             .label(base.label())
             .description(base.description())
             .icon(base.icon())
+            .color(base.color())
             .parentName(base.parentName())
             .levelName(base.levelName())
             .levelType(base.levelType())
@@ -472,6 +473,7 @@ public class ClientExportService {
             entity.setRequired(dto.required() != null ? dto.required() : Boolean.FALSE);
             entity.setAllowedExtensions(dto.allowedExtensions());
             entity.setIcon(dto.icon());
+            entity.setColor(dto.color());
             entity.setActive(dto.active() != null ? dto.active() : Boolean.TRUE);
 
             attachmentConfigurationRepository.save(entity);
@@ -537,6 +539,7 @@ public class ClientExportService {
             entity.setLabel(label != null ? label : name);
             entity.setDescription(dto.description());
             entity.setIcon(dto.icon());
+            entity.setColor(dto.color());
             entity.setActive(true);
             entity.setLevel(resolveRoleLevel(dto));
             entity.setRole(null);

@@ -4,6 +4,7 @@ import it.getinsight.core.model.jpa.entity.AuditableEntity;
 import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.configuration.converter.FileExtensionTypeSetConverter;
 import it.getinsight.module.configuration.enums.FileExtensionType;
+import it.getinsight.module.shared.enums.ColorPalette;
 import jakarta.persistence.*;
 import lombok.*;
 import org.apache.commons.lang3.StringUtils;
@@ -57,6 +58,10 @@ public class AttachmentConfigurationEntity extends AuditableEntity<Long, String>
 
     @Column(name = "ICON")
     private String icon;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "COLOR")
+    private ColorPalette color;
 
     @PrePersist
     public void prePersist() {

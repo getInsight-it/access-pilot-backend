@@ -3,6 +3,7 @@ package it.getinsight.module.role.entity;
 import it.getinsight.core.model.jpa.entity.AuditableEntity;
 import it.getinsight.module.client.entity.ClientEntity;
 import it.getinsight.module.level.entity.LevelEntity;
+import it.getinsight.module.shared.enums.ColorPalette;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
@@ -39,6 +40,10 @@ public class RoleEntity extends AuditableEntity<Long, String> {
 
     @Column(name = "icon")
     private String icon;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "COLOR")
+    private ColorPalette color;
 
     @Column(name = "DESCRICAO")
     private String description;

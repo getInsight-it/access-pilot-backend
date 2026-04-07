@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_101" author="luan.rodrigues@getinsight.it">
+
+        <addColumn tableName="TB_ROLE">
+            <column name="COLOR" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="TB_ROLE_AUD">
+            <column name="COLOR" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="TB_ESFERA">
+            <column name="COLOR" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="TB_ESFERA_AUD">
+            <column name="COLOR" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="TB_CONFIGURACAO_ANEXO">
+            <column name="COLOR" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addColumn tableName="TB_CONFIGURACAO_ANEXO_AUD">
+            <column name="COLOR" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <rollback>
+            <dropColumn tableName="TB_CONFIGURACAO_ANEXO_AUD" columnName="COLOR"/>
+            <dropColumn tableName="TB_CONFIGURACAO_ANEXO" columnName="COLOR"/>
+            <dropColumn tableName="TB_ESFERA_AUD" columnName="COLOR"/>
+            <dropColumn tableName="TB_ESFERA" columnName="COLOR"/>
+            <dropColumn tableName="TB_ROLE_AUD" columnName="COLOR"/>
+            <dropColumn tableName="TB_ROLE" columnName="COLOR"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

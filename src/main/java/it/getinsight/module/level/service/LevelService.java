@@ -1,5 +1,6 @@
 package it.getinsight.module.level.service;
 
+import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.message.CoreMessageSource;
 import it.getinsight.core.pagination.PageableRequestModel;
@@ -19,6 +20,9 @@ import it.getinsight.module.level.repository.LevelRepository;
 import it.getinsight.module.level.specification.LevelSpecification;
 import it.getinsight.module.request.enuns.RequestStatus;
 import it.getinsight.module.request.repository.RequestRepository;
+import it.getinsight.module.shared.dto.ColorUsageDTO;
+import it.getinsight.module.shared.mapper.NativeStringMapper;
+import it.getinsight.module.shared.service.ColorPaletteService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +56,9 @@ public class LevelService {
     private final LevelResponseMapper levelResponseMapper;
     private final LevelHierarchyResponseMapper levelHierarchyResponseMapper;
     private final LevelFilterMapper levelFilterMapper;
+    private final ColorPaletteService colorPaletteService;
+    private final NativeStringMapper nativeStringMapper;
+    private static final String NAME_QUERY_FIND_USED_LEVEL_COLORS = "find-used-level-colors";
 
     public PageableResponseModel<LevelResponseDTO> getAllPaginatedLevels(PageableRequestModel<LevelFilterDTO> configPage) {
         final var filter = configPage.getFilter();
@@ -84,6 +91,11 @@ public class LevelService {
         return levelRepository.findById(id).map(levelHierarchyResponseMapper::toDto).orElse(null);
     }
 
+    public List<ColorUsageDTO> getColors() {
+        List<String> usedColors = levelRepository.findAllNative(NAME_QUERY_FIND_USED_LEVEL_COLORS, DynamicParameters.get(), nativeStringMapper);
+        return colorPaletteService.toUsageList(usedColors);
+    }
+
     @Transactional(propagation = Propagation.REQUIRED)
     public LevelDTO create(LevelDTO levelDTO) {
         if (LevelType.BUILT_IN.equals(levelDTO.type())) {
@@ -93,6 +105,7 @@ public class LevelService {
             throw LEVEL_ALREADY_EXISTS_ERROR.businessException();
         }
         var entity = levelMapper.toEntity(levelDTO);
+        entity.setColor(colorPaletteService.normalizeForPersistence(levelDTO.color()));
         return levelMapper.toDto(levelRepository.save(entity));
     }
 
@@ -170,6 +183,7 @@ public class LevelService {
         }
 
         levelMapper.fromDto(levelDTO, levelEntity);
+        levelEntity.setColor(colorPaletteService.normalizeForPersistence(levelDTO.color()));
         var levelParent = levelDTO.parentId() != null ? levelRepository.findById(levelDTO.parentId()).orElseThrow(LEVEL_NOT_FOUND_ERROR::resourceNotFoundException) : null;
         levelEntity.setParent(levelParent);
 

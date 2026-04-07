@@ -2,6 +2,7 @@ package it.getinsight.module.level.dto;
 
 
 import it.getinsight.module.level.entity.LevelType;
+import it.getinsight.module.shared.enums.ColorPalette;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import org.apache.commons.text.WordUtils;
@@ -22,6 +23,7 @@ public record LevelDTO(
     String externalUrl,
     LevelType type,
     String icon,
+    ColorPalette color,
     String apiKey
 ) implements Serializable {
 

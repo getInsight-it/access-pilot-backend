@@ -3,6 +3,7 @@ package it.getinsight.module.configuration.service;
 import it.getinsight.module.configuration.dto.AttachmentConfigurationDTO;
 import it.getinsight.module.configuration.entity.AttachmentConfigurationEntity;
 import it.getinsight.module.configuration.enums.FileExtensionType;
+import it.getinsight.module.shared.service.ColorPaletteService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
@@ -25,6 +26,8 @@ import static it.getinsight.utilitario.PropertyPathConstants.*;
 @RequiredArgsConstructor
 @Slf4j
 public class AttachmentConfigurationCsvParser {
+
+    private final ColorPaletteService colorPaletteService;
 
     public List<AttachmentConfigurationDTO> parseToDTO(MultipartFile file) {
         try (Reader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8)) {
@@ -58,6 +61,7 @@ public class AttachmentConfigurationCsvParser {
 
             String description = csvRecord.isSet(AttachmentConfigurationCSV.DESCRIPTION) ? csvRecord.get(AttachmentConfigurationCSV.DESCRIPTION) : null;
             String icon = csvRecord.isSet(AttachmentConfigurationCSV.ICON) ? csvRecord.get(AttachmentConfigurationCSV.ICON) : null;
+            String color = csvRecord.isSet(AttachmentConfigurationCSV.COLOR) ? csvRecord.get(AttachmentConfigurationCSV.COLOR) : null;
             Boolean required = Boolean.parseBoolean(csvRecord.get(AttachmentConfigurationCSV.REQUIRED));
             String allowedExtensionsRaw = csvRecord.get(AttachmentConfigurationCSV.ALLOWED_EXTENSIONS);
 
@@ -72,6 +76,7 @@ public class AttachmentConfigurationCsvParser {
                     .name(name)
                     .description(description)
                     .icon(icon)
+                    .color(colorPaletteService.parseFromHex(color))
                     .required(required)
                     .allowedExtensions(allowedExtensions)
                     .build()
@@ -85,9 +90,16 @@ public class AttachmentConfigurationCsvParser {
     public byte [] toCsv(List<AttachmentConfigurationEntity> configs) {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream();
              OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
-             CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT
+                 CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT
                  .builder()
-                 .setHeader(AttachmentConfigurationCSV.NAME, AttachmentConfigurationCSV.DESCRIPTION, AttachmentConfigurationCSV.REQUIRED, AttachmentConfigurationCSV.ALLOWED_EXTENSIONS, AttachmentConfigurationCSV.ICON)
+                 .setHeader(
+                     AttachmentConfigurationCSV.NAME,
+                     AttachmentConfigurationCSV.DESCRIPTION,
+                     AttachmentConfigurationCSV.REQUIRED,
+                     AttachmentConfigurationCSV.ALLOWED_EXTENSIONS,
+                     AttachmentConfigurationCSV.ICON,
+                     AttachmentConfigurationCSV.COLOR
+                 )
                  .setDelimiter(',')
                  .setQuote('\"')
                  .setQuoteMode(QuoteMode.ALL)
@@ -104,7 +116,8 @@ public class AttachmentConfigurationCsvParser {
                         .map(Enum::name)
                         .collect(Collectors.joining(","))
                         : "",
-                    config.getIcon()
+                    config.getIcon(),
+                    config.getColor() != null ? config.getColor().hex() : null
                 );
             }
             csvPrinter.flush();
@@ -117,9 +130,16 @@ public class AttachmentConfigurationCsvParser {
     public byte[] toCsvFromDto(List<AttachmentConfigurationDTO> configs) {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream();
              OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
-             CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT
+                 CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT
                  .builder()
-                 .setHeader(AttachmentConfigurationCSV.NAME, AttachmentConfigurationCSV.DESCRIPTION, AttachmentConfigurationCSV.REQUIRED, AttachmentConfigurationCSV.ALLOWED_EXTENSIONS, AttachmentConfigurationCSV.ICON)
+                 .setHeader(
+                     AttachmentConfigurationCSV.NAME,
+                     AttachmentConfigurationCSV.DESCRIPTION,
+                     AttachmentConfigurationCSV.REQUIRED,
+                     AttachmentConfigurationCSV.ALLOWED_EXTENSIONS,
+                     AttachmentConfigurationCSV.ICON,
+                     AttachmentConfigurationCSV.COLOR
+                 )
                  .setDelimiter(',')
                  .setQuote('\"')
                  .setQuoteMode(QuoteMode.ALL)
@@ -136,7 +156,8 @@ public class AttachmentConfigurationCsvParser {
                         .map(Enum::name)
                         .collect(Collectors.joining(","))
                         : "",
-                    config.icon()
+                    config.icon(),
+                    config.color() != null ? config.color().hex() : null
                 );
             }
             csvPrinter.flush();

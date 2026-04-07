@@ -16,6 +16,7 @@ import it.getinsight.module.client.dto.ClientStatusUpdateDTO;
 import it.getinsight.module.client.service.ClientExportService;
 import it.getinsight.module.client.service.ClientService;
 import it.getinsight.module.configuration.dto.AttachmentConfigurationDTO;
+import it.getinsight.module.shared.dto.ColorUsageDTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -131,6 +132,15 @@ public class ClientController {
     @PreAuthorize(value = "hasRole('ADMIN')")
     public ResponseEntity<List<AttachmentConfigurationDTO>> previewImport(@RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(clientService.previewAttachmentConfiguration(file));
+    }
+
+    @Operation(
+        summary = "Retrieve available attachment configuration colors by client",
+        description = "Retrieve all allowed attachment configuration colors with usage flag by client"
+    )
+    @GetMapping(value = "/{id}/attachments-configurations/colors", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<ColorUsageDTO>> getAttachmentConfigurationColors(@PathVariable Long id) {
+        return ResponseEntity.ok(clientService.getAttachmentConfigurationColors(id));
     }
 
     @Operation(

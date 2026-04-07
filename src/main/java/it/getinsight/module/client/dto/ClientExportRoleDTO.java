@@ -1,6 +1,7 @@
 package it.getinsight.module.client.dto;
 
 import lombok.Builder;
+import it.getinsight.module.shared.enums.ColorPalette;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -12,6 +13,7 @@ public record ClientExportRoleDTO(
     String label,
     String description,
     String icon,
+    ColorPalette color,
     String parentName,
     String levelName,
     String levelType,

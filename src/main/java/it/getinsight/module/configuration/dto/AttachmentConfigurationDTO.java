@@ -1,6 +1,7 @@
 package it.getinsight.module.configuration.dto;
 
 import it.getinsight.module.configuration.enums.FileExtensionType;
+import it.getinsight.module.shared.enums.ColorPalette;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -24,6 +25,7 @@ public record AttachmentConfigurationDTO(
     Boolean required,
     Set<FileExtensionType> allowedExtensions,
     String icon,
+    ColorPalette color,
     Boolean active
 ) implements Serializable {
     @Serial

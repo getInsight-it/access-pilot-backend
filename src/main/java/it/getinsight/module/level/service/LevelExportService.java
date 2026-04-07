@@ -288,6 +288,7 @@ public class LevelExportService {
             .parentName(base.parentName())
             .externalUrl(base.externalUrl())
             .icon(base.icon())
+            .color(base.color())
             .apiKey(base.apiKey())
             .uuid(base.uuid())
             .items(items)
@@ -512,6 +513,7 @@ public class LevelExportService {
             .externalUrl(export.externalUrl())
             .type(export.type())
             .icon(export.icon())
+            .color(export.color())
             .apiKey(export.apiKey())
             .build();
     }

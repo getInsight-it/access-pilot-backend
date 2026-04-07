@@ -1,6 +1,7 @@
 package it.getinsight.module.role.service;
 
 import it.getinsight.core.exception.InfraException;
+import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.helper.PaginationHelper;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
@@ -28,6 +29,9 @@ import it.getinsight.module.role.mapper.RoleMapper;
 import it.getinsight.module.role.mapper.RoleRepresentationMapper;
 import it.getinsight.module.role.mapper.RoleResponseMapper;
 import it.getinsight.module.role.repository.RoleRepository;
+import it.getinsight.module.shared.dto.ColorUsageDTO;
+import it.getinsight.module.shared.mapper.NativeStringMapper;
+import it.getinsight.module.shared.service.ColorPaletteService;
 import it.getinsight.module.user.dto.UserDTO;
 import it.getinsight.module.user.service.ScopeRef;
 import it.getinsight.module.user.service.UserService;
@@ -73,12 +77,23 @@ public class RoleService {
 
     private final RoleValidationService roleValidationService;
     private final RoleLevelPolicyService roleLevelPolicyService;
+    private final ColorPaletteService colorPaletteService;
+    private final NativeStringMapper nativeStringMapper;
     private static final String ADMIN_ROLE_NAME = "ADMIN";
+    private static final String NAME_QUERY_FIND_USED_ROLE_COLORS = "find-used-role-colors";
 
     public List<RoleResponseDTO> getAllRoles(String filter, Boolean hasParent) {
         return roleRepository.findAll(hasClientId(filter).and(hasParent(hasParent))).stream()
             .map(this::toRoleResponseDto)
             .toList();
+    }
+
+    public List<ColorUsageDTO> getColors(String clientId) {
+        clientRepository.findByClientId(clientId).orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException);
+
+        DynamicParameters parameters = DynamicParameters.get().append("clientId", clientId);
+        List<String> usedColors = roleRepository.findAllNative(NAME_QUERY_FIND_USED_ROLE_COLORS, parameters, nativeStringMapper);
+        return colorPaletteService.toUsageList(usedColors);
     }
 
     public PageableResponseModel<RoleResponseDTO> getAllRolesPageable(PageableRequestModel<RoleFilterDTO> configPage) {
@@ -401,6 +416,7 @@ public class RoleService {
             var roleEntity = roleMapper.toEntity(roleDTO);
             roleEntity.setLabel(roleDTO.label());
             roleEntity.setIcon(roleDTO.icon());
+            roleEntity.setColor(colorPaletteService.normalizeForPersistence(roleDTO.color()));
             if (roleDTO.levelId() != null) {
                 levelRepository.findById(roleDTO.levelId()).ifPresent(roleEntity::setLevel);
             }
@@ -466,6 +482,7 @@ public class RoleService {
         entity.setDescription(roleDTO.description());
         entity.setLabel(roleDTO.label());
         entity.setIcon(roleDTO.icon());
+        entity.setColor(colorPaletteService.normalizeForPersistence(roleDTO.color()));
         approvalPolicyService.syncPolicies(entity, roleDTO.approvalPolicies());
         var saved = roleRepository.save(entity);
 
@@ -503,6 +520,7 @@ public class RoleService {
             .name(base.name())
             .label(base.label())
             .icon(base.icon())
+            .color(base.color())
             .description(base.description())
             .roleParent(base.roleParent())
             .client(base.client())
@@ -519,6 +537,7 @@ public class RoleService {
             .name(base.name())
             .label(base.label())
             .icon(base.icon())
+            .color(base.color())
             .description(base.description())
             .roleParent(base.roleParent())
             .client(base.client())

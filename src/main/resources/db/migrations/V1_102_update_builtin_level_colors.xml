@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <changeSet id="V1_102" author="luan.rodrigues@getinsight.it">
+
+        <update tableName="TB_ESFERA">
+            <column name="COLOR" value="BLUE"/>
+            <where>TIPO = 'BUILT_IN' AND NOME = 'FEDERAL'</where>
+        </update>
+
+        <update tableName="TB_ESFERA">
+            <column name="COLOR" value="GREEN"/>
+            <where>TIPO = 'BUILT_IN' AND NOME = 'ESTADUAL'</where>
+        </update>
+
+        <update tableName="TB_ESFERA">
+            <column name="COLOR" value="YELLOW"/>
+            <where>TIPO = 'BUILT_IN' AND NOME = 'MUNICIPAL'</where>
+        </update>
+
+        <rollback>
+            <update tableName="TB_ESFERA">
+                <column name="COLOR" valueComputed="NULL"/>
+                <where>TIPO = 'BUILT_IN' AND NOME IN ('FEDERAL', 'ESTADUAL', 'MUNICIPAL')</where>
+            </update>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

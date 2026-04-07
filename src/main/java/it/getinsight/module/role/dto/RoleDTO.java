@@ -1,6 +1,7 @@
 package it.getinsight.module.role.dto;
 
 import it.getinsight.module.client.dto.ClientDTO;
+import it.getinsight.module.shared.enums.ColorPalette;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
@@ -22,6 +23,8 @@ public record RoleDTO(
     String label,
 
     String icon,
+
+    ColorPalette color,
 
     @NotEmpty
     @Size(min = 3, max = 100)

@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.level.dto.*;
+import it.getinsight.module.shared.dto.ColorUsageDTO;
 import it.getinsight.module.level.service.ItemService;
 import it.getinsight.module.level.service.LevelExportService;
 import it.getinsight.module.level.service.LevelService;
@@ -52,6 +53,12 @@ public class LevelController {
     public ResponseEntity<LevelResponseDTO> getLevelById(@PathVariable Long id
     ) {
         return ResponseEntity.ok(levelService.findById(id));
+    }
+
+    @Operation(summary = "Retrieve available level colors", description = "Retrieve all allowed level colors with usage flag")
+    @GetMapping(value = "/colors", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<ColorUsageDTO>> getLevelColors() {
+        return ResponseEntity.ok(levelService.getColors());
     }
 
     @GetMapping("/{id}/hierarchy")

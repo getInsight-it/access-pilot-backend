@@ -2,6 +2,7 @@ package it.getinsight.module.level.entity;
 
 
 import it.getinsight.core.model.jpa.entity.BaseEntity;
+import it.getinsight.module.shared.enums.ColorPalette;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
@@ -51,6 +52,10 @@ public class LevelEntity extends BaseEntity<Long> {
 
     @Column(name = "ICON")
     private String icon;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "COLOR")
+    private ColorPalette color;
 
     @Column(name = "API_KEY")
     private String apiKey;

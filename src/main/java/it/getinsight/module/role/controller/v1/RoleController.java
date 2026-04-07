@@ -12,6 +12,7 @@ import it.getinsight.module.role.dto.RoleDTO;
 import it.getinsight.module.role.dto.RoleFilterDTO;
 import it.getinsight.module.role.dto.RoleResponseDTO;
 import it.getinsight.module.role.dto.RoleUpdateHierarchyDTO;
+import it.getinsight.module.shared.dto.ColorUsageDTO;
 import it.getinsight.module.role.service.RoleService;
 import it.getinsight.module.user.dto.UserDTO;
 import jakarta.validation.constraints.Min;
@@ -46,6 +47,12 @@ public class RoleController {
         @RequestParam(required = false) Boolean hasParent
         ) {
         return ResponseEntity.ok(roleService.getAllRoles(clientId,hasParent));
+    }
+
+    @GetMapping(path = "/colors", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Retrieve available role colors by client", description = "Retrieve all allowed role colors with usage flag by client")
+    public ResponseEntity<List<ColorUsageDTO>> getRoleColors(@RequestParam String clientId) {
+        return ResponseEntity.ok(roleService.getColors(clientId));
     }
 
     @Operation(

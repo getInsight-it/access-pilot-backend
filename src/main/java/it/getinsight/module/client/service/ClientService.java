@@ -1,5 +1,6 @@
 package it.getinsight.module.client.service;
 
+import it.getinsight.core.dynamicquery.parameters.DynamicParameters;
 import it.getinsight.core.pagination.PageableRequestModel;
 import it.getinsight.core.pagination.PageableResponseModel;
 import it.getinsight.module.client.dto.ClientDTO;
@@ -21,6 +22,9 @@ import it.getinsight.module.keycloak.dto.ClientRepresentationDTO;
 import it.getinsight.module.keycloak.service.IdentityProviderService;
 import it.getinsight.module.role.entity.RoleEntity;
 import it.getinsight.module.role.service.RoleSynchronizationService;
+import it.getinsight.module.shared.dto.ColorUsageDTO;
+import it.getinsight.module.shared.mapper.NativeStringMapper;
+import it.getinsight.module.shared.service.ColorPaletteService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -57,6 +61,9 @@ public class ClientService {
 
     private final ClientValidationService clientValidationService;
     private final ClientQueryService clientQueryService;
+    private final ColorPaletteService colorPaletteService;
+    private final NativeStringMapper nativeStringMapper;
+    private static final String NAME_QUERY_FIND_USED_ATTACHMENT_COLORS = "find-used-attachment-colors";
 
     public List<ClientDTO> getAllClientsPublished() {
         return clientQueryService.getAllClientsPublished();
@@ -76,6 +83,18 @@ public class ClientService {
     public ClientDTO findByClientId(String clientId) {
         var entity = clientRepository.findByClientId(clientId).orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException);
         return clientMapper.toDto(entity);
+    }
+
+    public List<ColorUsageDTO> getAttachmentConfigurationColors(Long clientId) {
+        clientRepository.findById(clientId).orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException);
+
+        DynamicParameters parameters = DynamicParameters.get().append("clientId", clientId);
+        List<String> usedColors = attachmentConfigurationRepository.findAllNative(
+            NAME_QUERY_FIND_USED_ATTACHMENT_COLORS,
+            parameters,
+            nativeStringMapper
+        );
+        return colorPaletteService.toUsageList(usedColors);
     }
 
 
@@ -190,6 +209,7 @@ public class ClientService {
                         : attachmentConfigurationMapper.toEntity(configuration);
 
                     entity.setClient(entityUpdated);
+                    entity.setColor(colorPaletteService.normalizeForPersistence(configuration.color()));
                     return entity;
                 })
                 .toList();

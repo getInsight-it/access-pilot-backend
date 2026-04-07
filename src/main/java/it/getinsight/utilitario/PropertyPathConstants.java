@@ -18,6 +18,7 @@ public final class PropertyPathConstants {
         public static final String DESCRIPTION = "description";
         public static final String ALLOWED_EXTENSIONS = "allowedExtensions";
         public static final String ICON = "icon";
+        public static final String COLOR = "color";
         public static final String REQUIRED = "required";
         public static final String KEY = "key";
 
