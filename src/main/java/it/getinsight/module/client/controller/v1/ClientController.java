@@ -138,9 +138,9 @@ public class ClientController {
         summary = "Retrieve available attachment configuration colors by client",
         description = "Retrieve all allowed attachment configuration colors with usage flag by client"
     )
-    @GetMapping(value = "/{id}/attachments-configurations/colors", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<ColorUsageDTO>> getAttachmentConfigurationColors(@PathVariable Long id) {
-        return ResponseEntity.ok(clientService.getAttachmentConfigurationColors(id));
+    @GetMapping(value = "/attachments-configurations/colors", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<ColorUsageDTO>> getAttachmentConfigurationColors(@RequestParam(required = false) String clientId) {
+        return ResponseEntity.ok(clientService.getAttachmentConfigurationColors(clientId));
     }
 
     @Operation(
