@@ -373,6 +373,10 @@ public class RoleService {
     public void updateHierarchyRoles(List<RoleUpdateHierarchyDTO> roles) {
         for (RoleUpdateHierarchyDTO role : roles) {
             final var entity = roleRepository.findById(role.id()).orElseThrow(ROLE_NOT_FOUND_ERROR::resourceNotFoundException);
+            if (!hasHierarchyChanges(entity, role)) {
+                continue;
+            }
+
             final var roleEntityParent = role.parentId() != null ? roleRepository.findById(role.parentId()).orElseThrow(ROLE_NOT_FOUND_PARENT_ERROR::resourceNotFoundException) : null;
             final var clientEntity = role.clientId() != null ? clientRepository.findById(role.clientId()).orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException) : null;
 
@@ -392,6 +396,13 @@ public class RoleService {
             approvalPolicyService.syncPolicies(entity, approvalPolicyMapper.toRequestDtoList(entity.getApprovalPolicies()));
             roleRepository.save(entity);
         }
+    }
+
+    private boolean hasHierarchyChanges(RoleEntity entity, RoleUpdateHierarchyDTO roleUpdate) {
+        Long currentParentId = entity.getRole() != null ? entity.getRole().getId() : null;
+        Long currentClientId = entity.getClient() != null ? entity.getClient().getId() : null;
+        return !Objects.equals(currentParentId, roleUpdate.parentId())
+            || !Objects.equals(currentClientId, roleUpdate.clientId());
     }
 
     @Transactional(propagation = Propagation.REQUIRED)

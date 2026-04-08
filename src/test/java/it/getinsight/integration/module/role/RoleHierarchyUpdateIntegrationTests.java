@@ -126,6 +126,42 @@ class RoleHierarchyUpdateIntegrationTests extends BaseIntegrationTest {
         assertEquals(originalBlockedParentId, blockedReloaded.getRole().getId());
     }
 
+    @Test
+    @DisplayName("Deve ignorar pendencia de role sem alteracao no batch de hierarquia")
+    void shouldIgnorePendingRequestsForUnchangedRolesInHierarchyBatch() {
+        var cleanRole = fixtureService.ensureRole(
+            "protocolo-eletronico-interno",
+            uniqueRoleName("ROLE_HIER_CLEAN_CHANGED"),
+            "ANALISTA_PROTOCOLO",
+            null
+        );
+        var unchangedPendingRole = fixtureService.ensureRole(
+            "protocolo-eletronico-interno",
+            uniqueRoleName("ROLE_HIER_PENDING_UNCHANGED"),
+            "ANALISTA_PROTOCOLO",
+            null
+        );
+        var adminProtocolo = fixtureService.getRole("protocolo-eletronico-interno", "ADMIN_PROTOCOLO");
+
+        var originalUnchangedParentId = unchangedPendingRole.getRole().getId();
+
+        createPendingRequestForRole(unchangedPendingRole, "proto.tramitador");
+        assertTrue(requestRepository.countByStatusAndRole(RequestStatus.PENDING, unchangedPendingRole) > 0);
+
+        var updates = List.of(
+            toHierarchyUpdate(cleanRole, adminProtocolo.getId()),
+            toHierarchyUpdate(unchangedPendingRole, originalUnchangedParentId)
+        );
+
+        ResponseEntity<Void> response = updateHierarchy(updates);
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+
+        var cleanReloaded = roleRepository.findById(cleanRole.getId()).orElseThrow();
+        var unchangedReloaded = roleRepository.findById(unchangedPendingRole.getId()).orElseThrow();
+        assertEquals(adminProtocolo.getId(), cleanReloaded.getRole().getId());
+        assertEquals(originalUnchangedParentId, unchangedReloaded.getRole().getId());
+    }
+
     private ResponseEntity<Void> updateHierarchy(List<RoleUpdateHierarchyDTO> roles) {
         HttpEntity<List<RoleUpdateHierarchyDTO>> request = new HttpEntity<>(roles, jsonAuth("admin", "123456"));
         return testRestTemplate.exchange("/v1/roles", HttpMethod.PUT, request, Void.class);

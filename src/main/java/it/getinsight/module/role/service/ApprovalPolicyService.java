@@ -68,17 +68,46 @@ public class ApprovalPolicyService {
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void syncPolicies(RoleEntity roleEntity, List<ApprovalPolicyDTO> inputPolicies) {
+        if (roleEntity == null) {
+            return;
+        }
+
+        var inputMap = toInputMap(inputPolicies);
+        if (roleEntity.getId() == null) {
+            syncPoliciesInMemory(roleEntity, inputMap);
+            return;
+        }
+
+        syncPoliciesPersisted(roleEntity.getId(), inputMap);
+    }
+
+    private EnumMap<ApprovalPolicyType, ApprovalPolicyDTO> toInputMap(List<ApprovalPolicyDTO> inputPolicies) {
         var inputMap = new EnumMap<ApprovalPolicyType, ApprovalPolicyDTO>(ApprovalPolicyType.class);
         Optional.ofNullable(inputPolicies).orElse(List.of())
             .stream()
             .filter(Objects::nonNull)
             .filter(policy -> policy.type() != null)
             .forEach(policy -> inputMap.put(policy.type(), policy));
+        return inputMap;
+    }
 
-        var existingPolicies = roleEntity.getId() == null
-            ? Optional.ofNullable(roleEntity.getApprovalPolicies()).orElse(List.of())
-            : approvalPolicyRepository.findAllByRoleId(roleEntity.getId());
+    private void syncPoliciesInMemory(RoleEntity roleEntity, EnumMap<ApprovalPolicyType, ApprovalPolicyDTO> inputMap) {
+        var existingPolicies = Optional.ofNullable(roleEntity.getApprovalPolicies()).orElse(List.of());
+        var normalized = normalizePolicies(roleEntity, inputMap, existingPolicies);
+        roleEntity.getApprovalPolicies().clear();
+        roleEntity.getApprovalPolicies().addAll(normalized);
+    }
 
+    private void syncPoliciesPersisted(Long roleId, EnumMap<ApprovalPolicyType, ApprovalPolicyDTO> inputMap) {
+        var managedRole = roleRepository.getReferenceById(roleId);
+        var existingPolicies = approvalPolicyRepository.findAllByRoleId(roleId);
+        var normalized = normalizePolicies(managedRole, inputMap, existingPolicies);
+        approvalPolicyRepository.saveAll(normalized);
+    }
+
+    private List<ApprovalPolicyEntity> normalizePolicies(RoleEntity roleEntity,
+                                                         EnumMap<ApprovalPolicyType, ApprovalPolicyDTO> inputMap,
+                                                         List<ApprovalPolicyEntity> existingPolicies) {
         var existingByType = new EnumMap<ApprovalPolicyType, ApprovalPolicyEntity>(ApprovalPolicyType.class);
         existingPolicies.stream()
             .filter(Objects::nonNull)
@@ -92,9 +121,7 @@ public class ApprovalPolicyService {
             applyPolicy(roleEntity, policyEntity, type, policyInput);
             normalized.add(policyEntity);
         }
-
-        roleEntity.getApprovalPolicies().clear();
-        roleEntity.getApprovalPolicies().addAll(normalized);
+        return normalized;
     }
 
     private void applyPolicy(RoleEntity roleEntity,
