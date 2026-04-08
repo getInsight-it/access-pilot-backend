@@ -85,10 +85,17 @@ public class ClientService {
         return clientMapper.toDto(entity);
     }
 
-    public List<ColorUsageDTO> getAttachmentConfigurationColors(Long clientId) {
-        clientRepository.findById(clientId).orElseThrow(CLIENT_NOT_FOUND_ERROR::resourceNotFoundException);
+    public List<ColorUsageDTO> getAttachmentConfigurationColors(String clientId) {
+        if (StringUtils.isBlank(clientId)) {
+            return colorPaletteService.toUsageList(List.of());
+        }
 
-        DynamicParameters parameters = DynamicParameters.get().append("clientId", clientId);
+        Optional<ClientEntity> client = clientRepository.findByClientId(clientId);
+        if (client.isEmpty()) {
+            return colorPaletteService.toUsageList(List.of());
+        }
+
+        DynamicParameters parameters = DynamicParameters.get().append("clientId", client.get().getId());
         List<String> usedColors = attachmentConfigurationRepository.findAllNative(
             NAME_QUERY_FIND_USED_ATTACHMENT_COLORS,
             parameters,
