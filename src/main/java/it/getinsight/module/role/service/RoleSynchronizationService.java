@@ -162,10 +162,14 @@ public class RoleSynchronizationService {
 
     private void createNewRoleFromIDP(RoleRepresentationDTO role, RoleEntity roleEntityUnsaved,
                                      ClientEntity clientEntity, LevelEntity levelEntity) {
+        var icon = roleEntityUnsaved != null ? roleEntityUnsaved.getIcon() : null;
+        var color = roleEntityUnsaved != null ? roleEntityUnsaved.getColor() : null;
         var roleEntity = RoleEntity.builder()
             .roleExternalId(role.id())
             .name(role.name())
             .label(resolveRoleLabel(role, roleEntityUnsaved))
+            .icon(icon)
+            .color(color)
             .active(true)
             .level(levelEntity)
             .description(role.description())
